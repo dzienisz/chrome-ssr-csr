@@ -3,13 +3,13 @@
   "name": "CSR vs SSR Detector",
   "version": "1.0",
   "description": "Determine if a page is Client-Side Rendered or Server-Side Rendered.",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "scripting"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+      "16": "icon.webp",
+      "48": "icon.webp",
+      "128": "icon.webp"
     }
   },
   "background": {
