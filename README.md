@@ -14,6 +14,10 @@ The **CSR vs SSR Detector** is a Chrome extension that allows users to identify 
 
 The extension analyzes the content of the page to detect if it was rendered on the server or by the client. It then provides this information in a clear, easily accessible format within your Chrome browser.
 
+## Sequence Diagram
+
+![Sequence Diagram](sequence_diagram.png)
+
 ## Installation
 
 1. Download the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg).
