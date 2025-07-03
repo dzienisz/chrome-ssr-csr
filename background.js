@@ -1,25 +1,75 @@
+// Listen for extension icon click
 chrome.action.onClicked.addListener((tab) => {
+  // First inject the analyzer.js script
   chrome.scripting.executeScript(
     {
       target: { tabId: tab.id },
-      function: analyzePage,
+      files: ['analyzer.js']
     },
-    (results) => {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError.message);
-      } else {
-        console.log("Page analyzed");
-      }
+    () => {
+      // After analyzer.js is injected, run the analysis
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tab.id },
+          function: () => window.pageAnalyzer()
+        },
+        (results) => {
+          if (results && results[0] && results[0].result) {
+            const analysisResults = results[0].result;
+            
+            // Show notification with results
+            showNotification(analysisResults, tab.url);
+            
+            // Save to history
+            saveToHistory(tab.url, tab.title || tab.url, analysisResults);
+          } else {
+            // Show error notification
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icon.webp',
+              title: 'Analysis Failed',
+              message: 'Unable to analyze the current page. Please try again.',
+              priority: 1
+            });
+          }
+        }
+      );
     }
   );
 });
 
-function analyzePage() {
-  const isCSR =
-    !document.body.innerHTML.includes('<div id="root">') &&
-    !document.body.innerHTML.includes('<div id="app">');
-  const result = isCSR ? "Client-Side Rendered" : "Server-Side Rendered";
+// Show notification with analysis results
+function showNotification(results, url) {
+  const { renderType, confidence, indicators } = results;
+  
+  // Create notification
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icon.webp',
+    title: `${renderType} (${confidence}% confidence)`,
+    message: `Key indicators: ${indicators.slice(0, 2).join(', ')}${indicators.length > 2 ? '...' : ''}`,
+    priority: 1
+  });
+}
 
-  // Display the result to the user
-  alert(`This page is: ${result}`);
+// Save analysis to history
+function saveToHistory(url, title, results) {
+  chrome.storage.local.get(['analysisHistory'], (data) => {
+    const history = data.analysisHistory || [];
+    
+    // Add new entry (limit to 10 entries)
+    const newEntry = {
+      url: url,
+      title: title,
+      timestamp: Date.now(),
+      results: results
+    };
+    
+    // Add to beginning of array and limit to 10 entries
+    history.unshift(newEntry);
+    if (history.length > 10) history.pop();
+    
+    // Save back to storage
+    chrome.storage.local.set({ analysisHistory: history });
+  });
 }

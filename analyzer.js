@@ -1,90 +1,3 @@
-chrome.action.onClicked.addListener((tab) => {
-  chrome.scripting.executeScript(
-    {
-      target: { tabId: tab.id },
-      function: pageAnalyzer,
-    },
-    () => {
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tab.id },
-          function: pageAnalyzer,
-        },
-        (results) => {
-          if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
-          } else if (results && results[0] && results[0].result) {
-          const { renderType, confidence, indicators, detailedInfo } = results[0].result;
-          
-          // Create enhanced result display
-          let resultHTML = `
-            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #2563eb;">Render Type:</strong>
-                <br>
-                <span style="font-weight: 600; color: ${getTypeColor(renderType)}">${renderType}</span>
-              </div>
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #2563eb;">Confidence:</strong> 
-                <span style="font-weight: 600;">${confidence}%</span>
-                ${getConfidenceBar(confidence)}
-              </div>
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #2563eb;">Analysis Score:</strong> 
-                <br>
-                <span style="font-size: 12px; color: #666;">
-                  SSR: ${detailedInfo.ssrScore} | CSR: ${detailedInfo.csrScore} 
-                  (${detailedInfo.ssrPercentage}% SSR)
-                </span>
-              </div>
-            </div>
-            
-            <div style="margin-bottom: 10px;">
-              <strong style="color: #2563eb;">Key Indicators (${detailedInfo.totalIndicators}):</strong>
-              <div style="margin-top: 4px; font-size: 13px; line-height: 1.4;">
-                ${indicators.map(indicator => `<span style="display: inline-block; background: #f1f5f9; padding: 2px 6px; margin: 2px 2px; border-radius: 5px; font-size: 11px;">${indicator}</span>`).join('')}
-              </div>
-            </div>
-          `;
-          
-          // Add framework detection if available
-          if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
-            resultHTML += `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #2563eb;">Detected Frameworks:</strong> 
-                <span style="font-weight:700;">${detailedInfo.frameworks.join(', ').toUpperCase()}</span>
-              </div>
-            `;
-          }
-          
-          // Add timing information if available
-          if (detailedInfo.timing) {
-            resultHTML += `
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #2563eb;">Performance:</strong>
-                <div style="font-size: 12px; color: #666; margin-top: 2px;">
-                  DOM Ready: ${detailedInfo.timing.domContentLoaded}ms
-                  ${detailedInfo.timing.firstContentfulPaint ? 
-                    ` | FCP: ${detailedInfo.timing.firstContentfulPaint}ms` : ''}
-                </div>
-              </div>
-            `;
-          }
-          
-          document.getElementById("result").innerHTML = resultHTML;
-        } else {
-            document.getElementById("result").innerHTML = `
-              <div style="color: #dc2626; font-weight: 500;">
-                ❌ Analysis failed. Please try again.
-              </div>
-            `;
-          }
-        }
-      );
-    }
-  );
-});
-
 // Enhanced Page Analysis Module - Improved SSR vs CSR Detection
 function pageAnalyzer() {
   const indicators = [];
@@ -103,10 +16,10 @@ function pageAnalyzer() {
   
   if (hasRichInitialContent) {
     ssrScore += 35;
-    indicators.push("rich initial content structure");
+    indicators.push("rich initial content structure (SSR)");
   } else if (bodyText.length < 50) {
     csrScore += 30;
-    indicators.push("minimal text content");
+    indicators.push("minimal text content (CSR)");
   }
 
   // === FRAMEWORK-SPECIFIC DETECTION ===
@@ -117,7 +30,10 @@ function pageAnalyzer() {
     nuxt: document.querySelector('#__nuxt, #__NUXT__') !== null,
     gatsby: document.querySelector('#___gatsby') !== null,
     sveltekit: document.querySelector('#svelte') !== null,
-    astro: document.querySelector('[data-astro-island]') !== null
+    astro: document.querySelector('[data-astro-island]') !== null,
+    remix: document.querySelector('[data-remix-run]') !== null,
+    qwik: document.querySelector('[q\\:container]') !== null,
+    solidjs: document.querySelector('[data-solid]') !== null
   };
 
   const foundFrameworks = Object.entries(frameworkMarkers)
@@ -126,7 +42,7 @@ function pageAnalyzer() {
 
   if (foundFrameworks.length > 0) {
     ssrScore += 30;
-    indicators.push(`${foundFrameworks.join(', ')} hydration markers`);
+    indicators.push(`${foundFrameworks.join(', ')} hydration markers (SSR)`);
     detailedInfo.frameworks = foundFrameworks;
   }
 
@@ -141,7 +57,7 @@ function pageAnalyzer() {
 
   if (hasInlineData) {
     ssrScore += 25;
-    indicators.push("serialized data detected");
+    indicators.push("serialized data detected (SSR)");
   }
 
   // === META TAGS AND SEO ANALYSIS ===
@@ -173,7 +89,7 @@ function pageAnalyzer() {
   
   if (hasRichMeta) {
     ssrScore += 15;
-    indicators.push("rich meta tags present");
+    indicators.push("rich meta tags present (SSR)");
   }
 
   // === SCRIPT ANALYSIS ===
@@ -202,11 +118,29 @@ function pageAnalyzer() {
   if (frameworkScriptCount > 0) {
     if (hasLazyChunks || hasHydrationScripts) {
       ssrScore += 15; // Likely SSR with hydration
-      indicators.push("SSR hydration scripts detected (SSR)");
+      indicators.push("SSR hydration scripts detected");
     } else {
       csrScore += 25; // Likely pure CSR
-      indicators.push("CSR framework scripts detected (CSR)");
+      indicators.push("CSR framework scripts detected");
     }
+  }
+
+  // === STATIC SITE GENERATOR DETECTION ===
+  const staticGeneratorMarkers = {
+    jekyll: document.querySelector('meta[name="generator"][content*="Jekyll"]') !== null,
+    hugo: document.querySelector('meta[name="generator"][content*="Hugo"]') !== null,
+    eleventy: document.querySelector('meta[name="generator"][content*="Eleventy"]') !== null,
+    hexo: document.querySelector('meta[name="generator"][content*="Hexo"]') !== null
+  };
+
+  const foundGenerators = Object.entries(staticGeneratorMarkers)
+    .filter(([_, found]) => found)
+    .map(([generator, _]) => generator);
+
+  if (foundGenerators.length > 0) {
+    ssrScore += 40;
+    indicators.push(`${foundGenerators.join(', ')} static site generator detected (SSR)`);
+    detailedInfo.generators = foundGenerators;
   }
 
   // === PERFORMANCE TIMING ANALYSIS ===
@@ -219,16 +153,16 @@ function pageAnalyzer() {
     // Fast initial render suggests SSR
     if (domContentLoadedTime < 30) {
       ssrScore += 25;
-      indicators.push("very fast DOM ready (DOM Ready)");
+      indicators.push("very fast DOM ready (SSR)");
     } else if (domContentLoadedTime > 500) {
       csrScore += 20;
-      indicators.push("slow DOM ready (DOM Ready)");
+      indicators.push("slow DOM ready (CSR)");
     }
     
     // FCP timing analysis
     if (firstContentfulPaint && firstContentfulPaint.startTime < 800) {
       ssrScore += 15;
-      indicators.push("fast first contentful paint (FCP)");
+      indicators.push("fast first contentful paint (SSR)");
     }
     
     detailedInfo.timing = {
@@ -345,3 +279,80 @@ function getConfidenceBar(confidence) {
     </div>
   `;
 }
+
+// Helper function to create results HTML
+function createResultsHTML(results) {
+  const { renderType, confidence, indicators, detailedInfo } = results;
+  
+  let resultHTML = `
+    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Render Type:</strong>
+        <br>
+        <span style="font-weight: 600; color: ${getTypeColor(renderType)}">${renderType}</span>
+      </div>
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Confidence:</strong> 
+        <span style="font-weight: 600;">${confidence}%</span>
+        ${getConfidenceBar(confidence)}
+      </div>
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Analysis Score:</strong> 
+        <br>
+        <span style="font-size: 12px; color: #666;">
+          SSR: ${detailedInfo.ssrScore} | CSR: ${detailedInfo.csrScore} 
+          (${detailedInfo.ssrPercentage}% SSR)
+        </span>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 10px;">
+      <strong style="color: #2563eb;">Key Indicators (${detailedInfo.totalIndicators}):</strong>
+      <div style="margin-top: 4px; font-size: 13px; line-height: 1.4;">
+        ${indicators.map(indicator => `<span style="display: inline-block; background: #f1f5f9; padding: 2px 6px; margin: 2px 2px; border-radius: 5px; font-size: 11px;">${indicator}</span>`).join('')}
+      </div>
+    </div>
+  `;
+  
+  // Add framework detection if available
+  if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Detected Frameworks:</strong> 
+        <span style="font-weight:700;">${detailedInfo.frameworks.join(', ').toUpperCase()}</span>
+      </div>
+    `;
+  }
+  
+  // Add static generator information if available
+  if (detailedInfo.generators && detailedInfo.generators.length > 0) {
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Static Site Generator:</strong> 
+        <span style="font-weight:700;">${detailedInfo.generators.join(', ').toUpperCase()}</span>
+      </div>
+    `;
+  }
+  
+  // Add timing information if available
+  if (detailedInfo.timing) {
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: #2563eb;">Performance:</strong>
+        <div style="font-size: 12px; color: #666; margin-top: 2px;">
+          DOM Ready: ${detailedInfo.timing.domContentLoaded}ms
+          ${detailedInfo.timing.firstContentfulPaint ? 
+            ` | FCP: ${detailedInfo.timing.firstContentfulPaint}ms` : ''}
+        </div>
+      </div>
+    `;
+  }
+  
+  return resultHTML;
+}
+
+// Export functions for use in other files
+window.pageAnalyzer = pageAnalyzer;
+window.getTypeColor = getTypeColor;
+window.getConfidenceBar = getConfidenceBar;
+window.createResultsHTML = createResultsHTML;
