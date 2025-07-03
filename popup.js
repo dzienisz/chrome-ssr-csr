@@ -149,14 +149,14 @@ function showError() {
 }
 
 // Save analysis to history
-function saveToHistory(url, results) {
+function saveToHistory(url, results, title) {
   chrome.storage.local.get(['analysisHistory'], (data) => {
     const history = data.analysisHistory || [];
     
     // Add new entry (limit to 10 entries)
     const newEntry = {
       url: url,
-      title: document.title || url,
+      title: title || url,
       timestamp: Date.now(),
       results: results
     };
