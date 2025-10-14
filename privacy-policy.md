@@ -19,4 +19,4 @@ You can clear all stored data by clearing your browser's extension storage or by
 ## Third-Party Access
 No third parties have access to your data. All processing occurs locally on your device.
 
-Last updated: 2025-07-03
+Last updated: 2024-10-14

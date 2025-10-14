@@ -1,9 +1,10 @@
 // Enhanced Page Analysis Module - Improved SSR vs CSR Detection
 function pageAnalyzer() {
-  const indicators = [];
-  let ssrScore = 0;
-  let csrScore = 0;
-  const detailedInfo = {};
+  try {
+    const indicators = [];
+    let ssrScore = 0;
+    let csrScore = 0;
+    const detailedInfo = {};
 
   // === ENHANCED HTML CONTENT ANALYSIS ===
   const bodyHTML = document.body.innerHTML;
@@ -25,7 +26,8 @@ function pageAnalyzer() {
   // === FRAMEWORK-SPECIFIC DETECTION ===
   // Enhanced hydration markers detection
   const frameworkMarkers = {
-    react: document.querySelector('[data-reactroot], [data-react-hydration-marker]') !== null,
+    react: document.querySelector('[data-reactroot], [data-reactid], [data-react-checksum]') !== null ||
+           document.getElementById('root')?._reactRootContainer !== undefined,
     nextjs: document.querySelector('#__next, #__NEXT_DATA__') !== null,
     nuxt: document.querySelector('#__nuxt, #__NUXT__') !== null,
     gatsby: document.querySelector('#___gatsby') !== null,
@@ -246,18 +248,33 @@ function pageAnalyzer() {
     confidence = Math.min(baseConfidence + 10, 70);
   }
 
-  return {
-    renderType,
-    confidence: Math.max(confidence, 30), // Minimum confidence of 30%
-    indicators: indicators.length > 0 ? indicators : ["basic analysis"],
-    detailedInfo: {
-      ssrScore,
-      csrScore,
-      ssrPercentage,
-      totalIndicators: indicatorCount,
-      ...detailedInfo
-    }
-  };
+    return {
+      renderType,
+      confidence: Math.max(confidence, 30), // Minimum confidence of 30%
+      indicators: indicators.length > 0 ? indicators : ["basic analysis"],
+      detailedInfo: {
+        ssrScore,
+        csrScore,
+        ssrPercentage,
+        totalIndicators: indicatorCount,
+        ...detailedInfo
+      }
+    };
+  } catch (error) {
+    console.error('CSR/SSR Detector: Analysis failed', error);
+    return {
+      renderType: "Analysis Error",
+      confidence: 0,
+      indicators: ["analysis failed - " + error.message],
+      detailedInfo: {
+        ssrScore: 0,
+        csrScore: 0,
+        ssrPercentage: 50,
+        totalIndicators: 0,
+        error: error.message
+      }
+    };
+  }
 }
 
 // Helper function to get color based on render type

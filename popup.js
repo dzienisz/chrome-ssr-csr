@@ -55,10 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (htmlResults && htmlResults[0] && htmlResults[0].result) {
                       // Display the formatted results
                       document.getElementById("result").innerHTML = htmlResults[0].result;
-                      
+
                       // Save to history
-                      saveToHistory(tabs[0].url, analysisResults);
-                      
+                      saveToHistory(tabs[0].url, analysisResults, tabs[0].title);
+
                       // Show history button
                       document.getElementById("history-button").style.display = "block";
                     } else {
