@@ -75,22 +75,6 @@ function resetSettings() {
   }
 }
 
-// Export settings as JSON
-function exportSettings() {
-  chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
-    const dataStr = JSON.stringify(settings, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'csr-ssr-detector-settings.json';
-    link.click();
-
-    URL.revokeObjectURL(url);
-    showStatusMessage('Settings exported!');
-  });
-}
 
 // Show status message
 function showStatusMessage(message) {
@@ -110,9 +94,6 @@ function setupEventListeners() {
 
   // Reset button
   document.getElementById('resetButton').addEventListener('click', resetSettings);
-
-  // Export settings button
-  document.getElementById('exportSettings').addEventListener('click', exportSettings);
 
   // Dark mode toggle - apply immediately
   document.getElementById('darkMode').addEventListener('change', (e) => {
