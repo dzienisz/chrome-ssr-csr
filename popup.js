@@ -84,22 +84,64 @@ function analyzeCurrentPage() {
 
   // Execute analysis
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    lastAnalysisUrl = tabs[0].url;
-    lastAnalysisTitle = tabs[0].title;
+    const tab = tabs[0];
+    lastAnalysisUrl = tab.url;
+    lastAnalysisTitle = tab.title;
+
+    // Check if URL is restricted (chrome://, edge://, about:, etc.)
+    const restrictedProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'view-source:'];
+    const isRestricted = restrictedProtocols.some(protocol => tab.url.startsWith(protocol));
+
+    if (isRestricted) {
+      document.getElementById("result").innerHTML = `
+        <div style="color: var(--text-secondary); text-align: center; padding: 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;">
+          <p style="font-size: 24px; margin-bottom: 10px;">🚫</p>
+          <p style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Cannot Analyze This Page</p>
+          <p style="font-size: 13px; line-height: 1.5;">
+            Chrome extensions cannot access internal browser pages like:
+            <br><br>
+            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">chrome://</code>
+            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">edge://</code>
+            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">about:</code>
+            <br><br>
+            Please navigate to a regular website to analyze it.
+          </p>
+        </div>
+      `;
+      return;
+    }
 
     chrome.scripting.executeScript(
       {
-        target: { tabId: tabs[0].id },
+        target: { tabId: tab.id },
         files: ['src/analyzer-bundle.js']
       },
       () => {
+        // Check for injection errors
+        if (chrome.runtime.lastError) {
+          document.getElementById("result").innerHTML = `
+            <div style="color: var(--danger-color, #dc2626); font-weight: 500; text-align: center; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;">
+              ❌ Cannot access this page
+              <p style="font-size: 13px; margin-top: 8px; font-weight: normal; color: var(--text-secondary);">
+                ${chrome.runtime.lastError.message}
+              </p>
+            </div>
+          `;
+          return;
+        }
+
         // After analyzer.js is injected, run the analysis
         chrome.scripting.executeScript(
           {
-            target: { tabId: tabs[0].id },
+            target: { tabId: tab.id },
             function: () => window.pageAnalyzer()
           },
           (results) => {
+            if (chrome.runtime.lastError) {
+              showError();
+              return;
+            }
+
             if (results && results[0] && results[0].result) {
               // Get the analysis results
               const analysisResults = results[0].result;
@@ -108,7 +150,7 @@ function analyzeCurrentPage() {
               // Generate HTML for results
               chrome.scripting.executeScript(
                 {
-                  target: { tabId: tabs[0].id },
+                  target: { tabId: tab.id },
                   function: (results) => window.createResultsHTML(results),
                   args: [analysisResults]
                 },
@@ -121,13 +163,13 @@ function analyzeCurrentPage() {
                     document.getElementById("exportButtons").style.display = "flex";
 
                     // Save to history
-                    saveToHistory(tabs[0].url, analysisResults, tabs[0].title);
+                    saveToHistory(tab.url, analysisResults, tab.title);
 
                     // Show history button
                     document.getElementById("history-button").style.display = "block";
 
                     // Send data if sharing is enabled
-                    sendDataIfEnabled(tabs[0].url, analysisResults);
+                    sendDataIfEnabled(tab.url, analysisResults);
                   } else {
                     showError();
                   }
