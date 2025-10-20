@@ -5,6 +5,14 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.3] - 2025-10-20
+
+### Fixed
+- **Dropdown Styling in Dark Mode**: Fixed dropdown options visibility
+  - Options now properly styled with theme-aware colors
+  - Ensures readability when opening dropdowns in dark mode
+  - Applies to both theme selector and history limit dropdowns
+
 ## [3.0.2] - 2025-10-20
 
 ### Added
