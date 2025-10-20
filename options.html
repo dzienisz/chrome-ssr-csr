@@ -192,10 +192,16 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
-    /* Dropdown options styling */
+    /* Dropdown options styling for light mode */
     select option {
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
+      background-color: #ffffff;
+      color: #1f2937;
+    }
+
+    /* Dropdown options styling for dark mode */
+    [data-theme="dark"] select option {
+      background-color: #1f2937;
+      color: #f9fafb;
     }
 
     /* Buttons */

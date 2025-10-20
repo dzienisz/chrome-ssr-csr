@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.3] - 2025-10-20
 
 ### Fixed
-- **Dropdown Styling in Dark Mode**: Fixed dropdown options visibility
-  - Options now properly styled with theme-aware colors
-  - Ensures readability when opening dropdowns in dark mode
+- **Dropdown Styling in Both Themes**: Fixed dropdown options visibility
+  - Options now properly styled with explicit colors for both light and dark modes
+  - Light mode: white background with dark text
+  - Dark mode: dark background with light text
+  - Ensures readability when opening dropdowns in all themes
   - Applies to both theme selector and history limit dropdowns
+  - Note: CSS variables don't work reliably for native browser dropdown controls
 
 ## [3.0.2] - 2025-10-20
 
