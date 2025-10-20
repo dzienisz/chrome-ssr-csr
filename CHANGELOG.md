@@ -5,16 +5,24 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] - 2025-10-20
+
+### Fixed
+- **Complete Dropdown Styling Fix**: All dropdown elements now properly styled in both themes
+  - Fixed select element text color in dark mode (white text instead of dark)
+  - Fixed dropdown options with explicit colors for both light and dark modes
+  - Light mode: white background with dark text
+  - Dark mode: dark background with white text
+  - Both closed and open dropdowns are now readable in all themes
+  - Applies to theme selector and history limit dropdowns
+  - Note: CSS variables don't work reliably for native browser dropdown controls
+
 ## [3.0.3] - 2025-10-20
 
 ### Fixed
-- **Dropdown Styling in Both Themes**: Fixed dropdown options visibility
-  - Options now properly styled with explicit colors for both light and dark modes
-  - Light mode: white background with dark text
-  - Dark mode: dark background with light text
-  - Ensures readability when opening dropdowns in all themes
-  - Applies to both theme selector and history limit dropdowns
-  - Note: CSS variables don't work reliably for native browser dropdown controls
+- **Initial Dropdown Styling**: First attempt at fixing dropdown visibility
+  - Added basic styling for dropdown options
+  - Discovered CSS variable limitations with native controls
 
 ## [3.0.2] - 2025-10-20
 
