@@ -3,8 +3,6 @@
  * All scoring weights and thresholds in one place
  */
 
-// Use guard to prevent redeclaration errors
-if (typeof window.DETECTOR_CONFIG === 'undefined') {
 const CONFIG = {
   // Scoring weights for different indicators
   scoring: {
@@ -120,7 +118,6 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = CONFIG;
 }
-} // End guard check
 /**
  * Content Detector Module
  * Analyzes HTML content structure and text
@@ -619,8 +616,12 @@ function getConfidenceBar(confidence) {
   const width = Math.max(confidence, 10);
   const color = confidence >= 70 ? '#059669' : confidence >= 50 ? '#d97706' : '#dc2626';
 
+  // Detect dark mode for background
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const barBg = isDark ? '#374151' : '#f1f5f9';
+
   return `
-    <div style="background: #f1f5f9; border-radius: 4px; height: 6px; width: 100%; margin-top: 4px; overflow: hidden;">
+    <div style="background: ${barBg}; border-radius: 4px; height: 6px; width: 100%; margin-top: 4px; overflow: hidden;">
       <div style="background: ${color}; height: 100%; width: ${width}%; border-radius: 4px; transition: width 0.3s ease;"></div>
     </div>
   `;
@@ -634,22 +635,30 @@ function getConfidenceBar(confidence) {
 function createResultsHTML(results) {
   const { renderType, confidence, indicators, detailedInfo } = results;
 
+  // Detect dark mode
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const borderColor = isDark ? '#374151' : '#ddd';
+  const accentColor = isDark ? '#3b82f6' : '#2563eb';
+  const textSecondary = isDark ? '#9ca3af' : '#666';
+  const badgeBg = isDark ? '#374151' : '#f1f5f9';
+  const badgeText = isDark ? '#f9fafb' : '#1f2937';
+
   let resultHTML = `
-    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+    <div style="border: 1px solid ${borderColor}; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Render Type:</strong>
+        <strong style="color: ${accentColor};">Render Type:</strong>
         <br>
         <span style="font-weight: 600; color: ${getTypeColor(renderType)}">${renderType}</span>
       </div>
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Confidence:</strong>
+        <strong style="color: ${accentColor};">Confidence:</strong>
         <span style="font-weight: 600;">${confidence}%</span>
         ${getConfidenceBar(confidence)}
       </div>
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Analysis Score:</strong>
+        <strong style="color: ${accentColor};">Analysis Score:</strong>
         <br>
-        <span style="font-size: 12px; color: #666;">
+        <span style="font-size: 12px; color: ${textSecondary};">
           SSR: ${detailedInfo.ssrScore} | CSR: ${detailedInfo.csrScore}
           (${detailedInfo.ssrPercentage}% SSR)
         </span>
@@ -657,9 +666,9 @@ function createResultsHTML(results) {
     </div>
 
     <div style="margin-bottom: 10px;">
-      <strong style="color: #2563eb;">Key Indicators (${detailedInfo.totalIndicators}):</strong>
+      <strong style="color: ${accentColor};">Key Indicators (${detailedInfo.totalIndicators}):</strong>
       <div style="margin-top: 4px; font-size: 13px; line-height: 1.4;">
-        ${indicators.map(indicator => `<span style="display: inline-block; background: #f1f5f9; padding: 2px 6px; margin: 2px 2px; border-radius: 5px; font-size: 11px;">${indicator}</span>`).join('')}
+        ${indicators.map(indicator => `<span style="display: inline-block; background: ${badgeBg}; color: ${badgeText}; padding: 2px 6px; margin: 2px 2px; border-radius: 5px; font-size: 11px;">${indicator}</span>`).join('')}
       </div>
     </div>
   `;
@@ -668,7 +677,7 @@ function createResultsHTML(results) {
   if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
     resultHTML += `
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Detected Frameworks:</strong>
+        <strong style="color: ${accentColor};">Detected Frameworks:</strong>
         <span style="font-weight:700;">${detailedInfo.frameworks.join(', ').toUpperCase()}</span>
       </div>
     `;
@@ -678,7 +687,7 @@ function createResultsHTML(results) {
   if (detailedInfo.generators && detailedInfo.generators.length > 0) {
     resultHTML += `
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Static Site Generator:</strong>
+        <strong style="color: ${accentColor};">Static Site Generator:</strong>
         <span style="font-weight:700;">${detailedInfo.generators.join(', ').toUpperCase()}</span>
       </div>
     `;
@@ -688,8 +697,8 @@ function createResultsHTML(results) {
   if (detailedInfo.timing) {
     resultHTML += `
       <div style="margin-bottom: 8px;">
-        <strong style="color: #2563eb;">Performance:</strong>
-        <div style="font-size: 12px; color: #666; margin-top: 2px;">
+        <strong style="color: ${accentColor};">Performance:</strong>
+        <div style="font-size: 12px; color: ${textSecondary}; margin-top: 2px;">
           DOM Ready: ${detailedInfo.timing.domContentLoaded}ms
           ${detailedInfo.timing.firstContentfulPaint ?
             ` | FCP: ${detailedInfo.timing.firstContentfulPaint}ms` : ''}
