@@ -5,6 +5,50 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0] - 2025-10-20
+
+### Added
+- **⚙️ Settings Page**: Full-featured options page (`options.html`)
+  - Dark mode toggle with smooth theme transitions
+  - Configurable history limit (5, 10, 25, 50, 100, or unlimited)
+  - Desktop notifications toggle
+  - Anonymous data sharing opt-in (UI ready for v3.1 backend)
+  - Export settings as JSON
+  - Reset to defaults functionality
+- **🌙 Dark Mode**: Beautiful dark theme throughout the extension
+  - CSS variable-based theming system
+  - Syncs between popup and settings page
+  - Smooth transitions and animations
+  - Persists user preference across sessions
+- **📤 Export Functionality**: Download analysis results in multiple formats
+  - **JSON export**: Structured data for developers
+  - **CSV export**: Spreadsheet-friendly format
+  - **Markdown export**: Documentation-ready reports
+  - Includes URL, timestamp, all metrics, and indicators
+- **🔒 Data Sharing Opt-in**: Privacy-first anonymous data collection (v3.1)
+  - Clear explanation of what data is shared
+  - Fully GDPR-compliant UI
+  - Currently logs to console (backend coming in v3.1)
+- **🎨 UI Improvements**:
+  - Settings gear icon in popup header
+  - Export buttons appear after analysis
+  - Better visual hierarchy
+  - Improved dark mode compatibility
+
+### Changed
+- Updated popup UI with settings access
+- History limit now respects user preference from settings
+- All UI elements support both light and dark themes
+- Improved loading state animations with theme awareness
+
+### Technical
+- Added `options_page` to manifest.json
+- Created `options.html` and `options.js` for settings management
+- Completely rewrote `popup.js` with dark mode, export, and settings integration
+- Updated `popup.html` with new header layout and export buttons
+- Uses `chrome.storage.sync` for settings persistence
+- Bumped version to 3.0 in manifest.json
+
 ## [2.3] - 2025-10-20
 
 ### Changed

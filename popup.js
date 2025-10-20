@@ -1,86 +1,283 @@
+// Store last analysis results for export
+let lastAnalysisResult = null;
+let lastAnalysisUrl = null;
+let lastAnalysisTitle = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Load and apply settings
+  loadSettings();
+
   // Initialize UI elements
   setupUI();
-  
-  // Add event listener for analyze button
-  document.getElementById("analyze").addEventListener("click", () => {
-    // Show loading state
-    document.getElementById("result").innerHTML = `
-      <div style="text-align: center; padding: 20px;">
-        <div style="border: 4px solid #f3f4f6; border-top: 4px solid #2563eb; border-radius: 50%; width: 30px; height: 30px; margin: 0 auto; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 10px; color: #4b5563;">Analyzing page...</p>
-      </div>
-    `;
-    
-    // Add animation style
-    if (!document.getElementById('spinner-style')) {
-      const style = document.createElement('style');
-      style.id = 'spinner-style';
-      style.textContent = `
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
-    // Execute analysis
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tabs[0].id },
-          files: ['src/analyzer-bundle.js']
-        },
-        () => {
-          // After analyzer.js is injected, run the analysis
-          chrome.scripting.executeScript(
-            {
-              target: { tabId: tabs[0].id },
-              function: () => window.pageAnalyzer()
-            },
-            (results) => {
-              if (results && results[0] && results[0].result) {
-                // Get the analysis results
-                const analysisResults = results[0].result;
-                
-                // Generate HTML for results
-                chrome.scripting.executeScript(
-                  {
-                    target: { tabId: tabs[0].id },
-                    function: (results) => window.createResultsHTML(results),
-                    args: [analysisResults]
-                  },
-                  (htmlResults) => {
-                    if (htmlResults && htmlResults[0] && htmlResults[0].result) {
-                      // Display the formatted results
-                      document.getElementById("result").innerHTML = htmlResults[0].result;
 
-                      // Save to history
-                      saveToHistory(tabs[0].url, analysisResults, tabs[0].title);
-
-                      // Show history button
-                      document.getElementById("history-button").style.display = "block";
-                    } else {
-                      showError();
-                    }
-                  }
-                );
-              } else {
-                showError();
-              }
-            }
-          );
-        }
-      );
-    });
+  // Add event listener for settings button
+  document.getElementById("settingsButton").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
   });
-  
+
+  // Add event listener for analyze button
+  document.getElementById("analyze").addEventListener("click", analyzeCurrentPage);
+
   // Add event listener for history button
-  document.getElementById("history-button").addEventListener("click", () => {
-    toggleHistory();
+  document.getElementById("history-button").addEventListener("click", toggleHistory);
+
+  // Export button listeners
+  document.getElementById("exportJson").addEventListener("click", () => exportResults('json'));
+  document.getElementById("exportCsv").addEventListener("click", () => exportResults('csv'));
+  document.getElementById("exportMd").addEventListener("click", () => exportResults('markdown'));
+
+  // Listen for settings updates
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'settingsUpdated') {
+      applySettings(message.settings);
+    }
   });
 });
+
+// Load settings from storage
+function loadSettings() {
+  chrome.storage.sync.get({
+    darkMode: false,
+    historyLimit: 10,
+    notifications: true,
+    shareData: false
+  }, (settings) => {
+    applySettings(settings);
+  });
+}
+
+// Apply settings to UI
+function applySettings(settings) {
+  // Apply dark mode
+  if (settings.darkMode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+// Analyze current page
+function analyzeCurrentPage() {
+  // Show loading state
+  document.getElementById("result").innerHTML = `
+    <div style="text-align: center; padding: 20px;">
+      <div style="border: 4px solid var(--bg-secondary); border-top: 4px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; margin: 0 auto; animation: spin 1s linear infinite;"></div>
+      <p style="margin-top: 10px; color: var(--text-secondary);">Analyzing page...</p>
+    </div>
+  `;
+
+  // Hide export buttons during analysis
+  document.getElementById("exportButtons").style.display = "none";
+
+  // Add animation style
+  if (!document.getElementById('spinner-style')) {
+    const style = document.createElement('style');
+    style.id = 'spinner-style';
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Execute analysis
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    lastAnalysisUrl = tabs[0].url;
+    lastAnalysisTitle = tabs[0].title;
+
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabs[0].id },
+        files: ['src/analyzer-bundle.js']
+      },
+      () => {
+        // After analyzer.js is injected, run the analysis
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tabs[0].id },
+            function: () => window.pageAnalyzer()
+          },
+          (results) => {
+            if (results && results[0] && results[0].result) {
+              // Get the analysis results
+              const analysisResults = results[0].result;
+              lastAnalysisResult = analysisResults;
+
+              // Generate HTML for results
+              chrome.scripting.executeScript(
+                {
+                  target: { tabId: tabs[0].id },
+                  function: (results) => window.createResultsHTML(results),
+                  args: [analysisResults]
+                },
+                (htmlResults) => {
+                  if (htmlResults && htmlResults[0] && htmlResults[0].result) {
+                    // Display the formatted results
+                    document.getElementById("result").innerHTML = htmlResults[0].result;
+
+                    // Show export buttons
+                    document.getElementById("exportButtons").style.display = "flex";
+
+                    // Save to history
+                    saveToHistory(tabs[0].url, analysisResults, tabs[0].title);
+
+                    // Show history button
+                    document.getElementById("history-button").style.display = "block";
+
+                    // Send data if sharing is enabled
+                    sendDataIfEnabled(tabs[0].url, analysisResults);
+                  } else {
+                    showError();
+                  }
+                }
+              );
+            } else {
+              showError();
+            }
+          }
+        );
+      }
+    );
+  });
+}
+
+// Export results in different formats
+function exportResults(format) {
+  if (!lastAnalysisResult) {
+    alert('No analysis results to export');
+    return;
+  }
+
+  const timestamp = new Date().toISOString().split('T')[0];
+  const filename = `csr-ssr-analysis-${timestamp}`;
+
+  if (format === 'json') {
+    exportAsJSON(filename);
+  } else if (format === 'csv') {
+    exportAsCSV(filename);
+  } else if (format === 'markdown') {
+    exportAsMarkdown(filename);
+  }
+}
+
+// Export as JSON
+function exportAsJSON(filename) {
+  const data = {
+    url: lastAnalysisUrl,
+    title: lastAnalysisTitle,
+    timestamp: new Date().toISOString(),
+    analysis: lastAnalysisResult
+  };
+
+  const dataStr = JSON.stringify(data, null, 2);
+  downloadFile(dataStr, `${filename}.json`, 'application/json');
+}
+
+// Export as CSV
+function exportAsCSV(filename) {
+  const { renderType, confidence, indicators, detailedInfo } = lastAnalysisResult;
+
+  const csvContent = [
+    ['Field', 'Value'],
+    ['URL', lastAnalysisUrl],
+    ['Title', lastAnalysisTitle],
+    ['Timestamp', new Date().toISOString()],
+    ['Render Type', renderType],
+    ['Confidence', `${confidence}%`],
+    ['SSR Score', detailedInfo.ssrScore],
+    ['CSR Score', detailedInfo.csrScore],
+    ['SSR Percentage', `${detailedInfo.ssrPercentage}%`],
+    ['Frameworks', detailedInfo.frameworks ? detailedInfo.frameworks.join(', ') : 'None'],
+    ['Generators', detailedInfo.generators ? detailedInfo.generators.join(', ') : 'None'],
+    ['Key Indicators', indicators.join('; ')],
+    ['DOM Ready Time', detailedInfo.timing ? `${detailedInfo.timing.domContentLoaded}ms` : 'N/A'],
+    ['First Contentful Paint', detailedInfo.timing && detailedInfo.timing.firstContentfulPaint ? `${detailedInfo.timing.firstContentfulPaint}ms` : 'N/A']
+  ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+  downloadFile(csvContent, `${filename}.csv`, 'text/csv');
+}
+
+// Export as Markdown
+function exportAsMarkdown(filename) {
+  const { renderType, confidence, indicators, detailedInfo } = lastAnalysisResult;
+
+  let markdown = `# CSR vs SSR Analysis Report\n\n`;
+  markdown += `**URL:** ${lastAnalysisUrl}\n\n`;
+  markdown += `**Title:** ${lastAnalysisTitle}\n\n`;
+  markdown += `**Date:** ${new Date().toLocaleString()}\n\n`;
+  markdown += `---\n\n`;
+  markdown += `## Results\n\n`;
+  markdown += `- **Render Type:** ${renderType}\n`;
+  markdown += `- **Confidence:** ${confidence}%\n`;
+  markdown += `- **SSR Score:** ${detailedInfo.ssrScore}\n`;
+  markdown += `- **CSR Score:** ${detailedInfo.csrScore}\n`;
+  markdown += `- **SSR Percentage:** ${detailedInfo.ssrPercentage}%\n\n`;
+
+  if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
+    markdown += `### Detected Frameworks\n\n`;
+    detailedInfo.frameworks.forEach(fw => {
+      markdown += `- ${fw.toUpperCase()}\n`;
+    });
+    markdown += `\n`;
+  }
+
+  if (detailedInfo.generators && detailedInfo.generators.length > 0) {
+    markdown += `### Static Site Generators\n\n`;
+    detailedInfo.generators.forEach(gen => {
+      markdown += `- ${gen.toUpperCase()}\n`;
+    });
+    markdown += `\n`;
+  }
+
+  markdown += `### Key Indicators (${detailedInfo.totalIndicators})\n\n`;
+  indicators.forEach(indicator => {
+    markdown += `- ${indicator}\n`;
+  });
+  markdown += `\n`;
+
+  if (detailedInfo.timing) {
+    markdown += `### Performance Metrics\n\n`;
+    markdown += `- **DOM Ready:** ${detailedInfo.timing.domContentLoaded}ms\n`;
+    if (detailedInfo.timing.firstContentfulPaint) {
+      markdown += `- **First Contentful Paint:** ${detailedInfo.timing.firstContentfulPaint}ms\n`;
+    }
+    markdown += `\n`;
+  }
+
+  markdown += `---\n\n`;
+  markdown += `*Generated by CSR vs SSR Detector v3.0*\n`;
+
+  downloadFile(markdown, `${filename}.md`, 'text/markdown');
+}
+
+// Download file helper
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// Send data if sharing is enabled (placeholder for v3.1)
+function sendDataIfEnabled(url, results) {
+  chrome.storage.sync.get({ shareData: false }, (settings) => {
+    if (settings.shareData) {
+      // TODO: In v3.1, send data to backend
+      // For now, just log that it would be sent
+      console.log('Data sharing enabled - would send to backend in v3.1:', {
+        url,
+        renderType: results.renderType,
+        confidence: results.confidence,
+        frameworks: results.detailedInfo.frameworks
+      });
+    }
+  });
+}
 
 // Setup UI elements
 function setupUI() {
@@ -90,19 +287,20 @@ function setupUI() {
     historyButton.id = "history-button";
     historyButton.textContent = "View History";
     historyButton.style.cssText = `
-      background-color: #f3f4f6;
-      color: #1f2937;
+      background-color: var(--button-secondary);
+      color: var(--text-primary);
       padding: 8px 16px;
-      border: none;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       margin-top: 10px;
       display: none;
+      width: 100%;
     `;
-    document.body.insertBefore(historyButton, document.getElementById("result"));
+    document.body.insertBefore(historyButton, document.getElementById("exportButtons"));
   }
-  
+
   // Add history container
   if (!document.getElementById("history-container")) {
     const historyContainer = document.createElement("div");
@@ -112,12 +310,13 @@ function setupUI() {
       margin-top: 15px;
       max-height: 200px;
       overflow-y: auto;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
+      background-color: var(--bg-secondary);
     `;
     document.body.appendChild(historyContainer);
   }
-  
+
   // Add help section
   if (!document.getElementById("help-section")) {
     const helpSection = document.createElement("div");
@@ -125,10 +324,11 @@ function setupUI() {
     helpSection.style.cssText = `
       margin-top: 15px;
       padding: 10px;
-      background-color: #f3f4f6;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       font-size: 12px;
-      color: #4b5563;
+      color: var(--text-secondary);
     `;
     helpSection.innerHTML = `
       <p><strong>What's the difference?</strong></p>
@@ -142,7 +342,7 @@ function setupUI() {
 // Show error message
 function showError() {
   document.getElementById("result").innerHTML = `
-    <div style="color: #dc2626; font-weight: 500; text-align: center; padding: 15px;">
+    <div style="color: var(--danger-color, #dc2626); font-weight: 500; text-align: center; padding: 15px;">
       ❌ Analysis failed. Please try again.
     </div>
   `;
@@ -150,23 +350,30 @@ function showError() {
 
 // Save analysis to history
 function saveToHistory(url, results, title) {
-  chrome.storage.local.get(['analysisHistory'], (data) => {
-    const history = data.analysisHistory || [];
-    
-    // Add new entry (limit to 10 entries)
-    const newEntry = {
-      url: url,
-      title: title || url,
-      timestamp: Date.now(),
-      results: results
-    };
-    
-    // Add to beginning of array and limit to 10 entries
-    history.unshift(newEntry);
-    if (history.length > 10) history.pop();
-    
-    // Save back to storage
-    chrome.storage.local.set({ analysisHistory: history });
+  chrome.storage.sync.get({ historyLimit: 10 }, (settings) => {
+    chrome.storage.local.get(['analysisHistory'], (data) => {
+      const history = data.analysisHistory || [];
+
+      // Add new entry
+      const newEntry = {
+        url: url,
+        title: title || url,
+        timestamp: Date.now(),
+        results: results
+      };
+
+      // Add to beginning of array
+      history.unshift(newEntry);
+
+      // Apply history limit
+      const limit = settings.historyLimit === -1 ? Infinity : settings.historyLimit;
+      if (history.length > limit) {
+        history.splice(limit);
+      }
+
+      // Save back to storage
+      chrome.storage.local.set({ analysisHistory: history });
+    });
   });
 }
 
@@ -174,7 +381,7 @@ function saveToHistory(url, results, title) {
 function toggleHistory() {
   const historyContainer = document.getElementById("history-container");
   const isVisible = historyContainer.style.display === "block";
-  
+
   if (isVisible) {
     historyContainer.style.display = "none";
     document.getElementById("history-button").textContent = "View History";
@@ -182,41 +389,41 @@ function toggleHistory() {
     // Load and display history
     chrome.storage.local.get(['analysisHistory'], (data) => {
       const history = data.analysisHistory || [];
-      
+
       if (history.length === 0) {
         historyContainer.innerHTML = `
-          <div style="padding: 15px; text-align: center; color: #6b7280;">
+          <div style="padding: 15px; text-align: center; color: var(--text-secondary);">
             No analysis history yet
           </div>
         `;
       } else {
         historyContainer.innerHTML = history.map((entry, index) => `
-          <div style="padding: 10px; border-bottom: ${index < history.length - 1 ? '1px solid #e5e7eb' : 'none'};">
-            <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <div style="padding: 10px; border-bottom: ${index < history.length - 1 ? '1px solid var(--border-color)' : 'none'};">
+            <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">
               ${entry.title}
             </div>
-            <div style="font-size: 12px; color: #6b7280;">
+            <div style="font-size: 12px; color: var(--text-secondary);">
               ${new Date(entry.timestamp).toLocaleString()}
             </div>
             <div style="margin-top: 5px;">
               <span style="display: inline-block; background: ${getTypeColor(entry.results.renderType)}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">
                 ${entry.results.renderType}
               </span>
-              <span style="font-size: 12px; margin-left: 5px;">
+              <span style="font-size: 12px; margin-left: 5px; color: var(--text-secondary);">
                 ${entry.results.confidence}% confidence
               </span>
             </div>
           </div>
         `).join('');
       }
-      
+
       historyContainer.style.display = "block";
       document.getElementById("history-button").textContent = "Hide History";
     });
   }
 }
 
-// Helper function to get color based on render type (fallback if analyzer.js not loaded)
+// Helper function to get color based on render type
 function getTypeColor(renderType) {
   if (renderType.includes('SSR')) return '#059669';
   if (renderType.includes('CSR')) return '#dc2626';

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CSR vs SSR Detector",
-  "version": "2.3",
+  "version": "3.0",
   "description": "Detect if a webpage is using Client-Side Rendering or Server-Side Rendering",
   "permissions": ["activeTab", "scripting", "storage", "notifications"],
   "action": {
@@ -12,6 +12,7 @@
       "128": "icon128.png"
     }
   },
+  "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
   },

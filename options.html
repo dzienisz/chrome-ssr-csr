@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CSR vs SSR Detector - Settings</title>
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f3f4f6;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --accent-color: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success-color: #059669;
+      --danger-color: #dc2626;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #1f2937;
+      --bg-secondary: #111827;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --border-color: #374151;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --success-color: #10b981;
+      --danger-color: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: var(--bg-primary);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      transition: background-color 0.3s;
+    }
+
+    header {
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: var(--accent-color);
+      font-size: 28px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1 img {
+      width: 32px;
+      height: 32px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .section h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: var(--text-primary);
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .setting-description {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .setting-control {
+      margin-left: 20px;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.3s;
+      border-radius: 26px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-color);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Select Dropdown */
+    select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    select:hover {
+      border-color: var(--accent-color);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border-color);
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #b91c1c;
+    }
+
+    /* Status Message */
+    .status-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      background-color: var(--success-color);
+      color: white;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .status-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Privacy Notice */
+    .privacy-notice {
+      background-color: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    [data-theme="dark"] .privacy-notice {
+      background-color: #451a03;
+      border-color: #78350f;
+      color: #fbbf24;
+    }
+
+    .privacy-notice strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <img src="icon.webp" alt="Logo">
+        Settings
+      </h1>
+      <p class="subtitle">Customize your CSR vs SSR Detector experience</p>
+    </header>
+
+    <!-- Appearance Section -->
+    <div class="section">
+      <h2>🎨 Appearance</h2>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Dark Mode</div>
+          <div class="setting-description">Switch between light and dark theme</div>
+        </div>
+        <div class="setting-control">
+          <label class="switch">
+            <input type="checkbox" id="darkMode">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Section -->
+    <div class="section">
+      <h2>📊 Analysis Settings</h2>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">History Limit</div>
+          <div class="setting-description">Number of past analyses to store</div>
+        </div>
+        <div class="setting-control">
+          <select id="historyLimit">
+            <option value="5">5 entries</option>
+            <option value="10" selected>10 entries</option>
+            <option value="25">25 entries</option>
+            <option value="50">50 entries</option>
+            <option value="100">100 entries</option>
+            <option value="-1">Unlimited</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Desktop Notifications</div>
+          <div class="setting-description">Show notifications when analysis completes</div>
+        </div>
+        <div class="setting-control">
+          <label class="switch">
+            <input type="checkbox" id="notifications" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Sharing Section -->
+    <div class="section">
+      <h2>🔒 Privacy & Data</h2>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Share Anonymous Data</div>
+          <div class="setting-description">Help improve detection by sharing anonymous analysis data</div>
+        </div>
+        <div class="setting-control">
+          <label class="switch">
+            <input type="checkbox" id="shareData">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="privacy-notice">
+        <strong>🔒 What data is shared?</strong>
+        When enabled, we collect: URL analyzed, render type, confidence score, detected frameworks, and performance metrics.
+        <strong>We never collect:</strong> personal information, browsing history, or any identifiable data.
+        <br><br>
+        <strong>Note:</strong> Backend coming in v3.1 - for now, this setting is saved but data is not sent anywhere.
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="button-group">
+      <button class="btn-primary" id="saveButton">Save Settings</button>
+      <button class="btn-secondary" id="exportSettings">Export Settings</button>
+      <button class="btn-danger" id="resetButton">Reset to Defaults</button>
+    </div>
+
+    <footer>
+      <p>
+        CSR vs SSR Detector v3.0 |
+        <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a> |
+        <a href="privacy-policy.md" target="_blank">Privacy Policy</a>
+      </p>
+    </footer>
+  </div>
+
+  <div class="status-message" id="statusMessage">Settings saved!</div>
+
+  <script src="options.js"></script>
+</body>
+</html>

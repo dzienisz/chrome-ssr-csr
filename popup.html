@@ -3,31 +3,82 @@
   <head>
     <title>CSR vs SSR Detector</title>
     <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f3f4f6;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border-color: #e5e7eb;
+        --accent-color: #2563eb;
+        --accent-hover: #1d4ed8;
+        --button-secondary: #f3f4f6;
+        --button-secondary-hover: #e5e7eb;
+      }
+
+      [data-theme="dark"] {
+        --bg-primary: #1f2937;
+        --bg-secondary: #111827;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --accent-color: #3b82f6;
+        --accent-hover: #2563eb;
+        --button-secondary: #374151;
+        --button-secondary-hover: #4b5563;
+      }
+
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         width: 350px;
         padding: 16px;
         margin: 0;
-        color: #1f2937;
+        color: var(--text-primary);
+        background-color: var(--bg-primary);
+        transition: background-color 0.3s, color 0.3s;
       }
-      
-      h2 {
-        margin-top: 0;
-        color: #2563eb;
-        font-size: 20px;
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 16px;
+      }
+
+      h2 {
+        margin: 0;
+        color: var(--accent-color);
+        font-size: 20px;
         display: flex;
         align-items: center;
       }
-      
+
       h2 img {
         width: 24px;
         height: 24px;
         margin-right: 8px;
       }
-      
+
+      .settings-icon {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+      }
+
+      .settings-icon:hover {
+        background-color: var(--button-secondary);
+      }
+
+      .settings-icon svg {
+        width: 20px;
+        height: 20px;
+        fill: var(--text-secondary);
+      }
+
       #analyze {
-        background-color: #2563eb;
+        background-color: var(--accent-color);
         color: #FFFFFF;
         padding: 10px 20px;
         border: none;
@@ -41,42 +92,84 @@
         width: 100%;
         transition: background-color 0.2s;
       }
-      
+
       #analyze:hover {
-        background-color: #1d4ed8;
+        background-color: var(--accent-hover);
       }
-      
+
       #result {
         margin-top: 16px;
         min-height: 50px;
       }
-      
+
+      .export-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .export-buttons button {
+        flex: 1;
+        padding: 8px 12px;
+        background-color: var(--button-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .export-buttons button:hover {
+        background-color: var(--button-secondary-hover);
+      }
+
+      .export-buttons button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .footer {
         margin-top: 16px;
         font-size: 11px;
-        color: #6b7280;
+        color: var(--text-secondary);
         text-align: center;
       }
-      
+
       .footer a {
-        color: #2563eb;
+        color: var(--accent-color);
         text-decoration: none;
       }
-      
+
       .footer a:hover {
         text-decoration: underline;
       }
     </style>
   </head>
   <body>
-    <h2><img src="icon.webp" alt="Logo">CSR vs SSR Detector</h2>
+    <div class="header">
+      <h2><img src="icon.webp" alt="Logo">CSR vs SSR Detector</h2>
+      <button class="settings-icon" id="settingsButton" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      </button>
+    </div>
+
     <button id="analyze">Analyze Page</button>
     <div id="result"></div>
-    
-    <div class="footer">
-      <p>v2.3 - <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a></p>
+
+    <div class="export-buttons" id="exportButtons" style="display: none;">
+      <button id="exportJson">Export JSON</button>
+      <button id="exportCsv">Export CSV</button>
+      <button id="exportMd">Export MD</button>
     </div>
-    
+
+    <div class="footer">
+      <p>v3.0 - <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a></p>
+    </div>
+
     <script src="analyzer.js"></script>
     <script src="popup.js"></script>
   </body>
