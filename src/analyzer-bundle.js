@@ -1,3 +1,7 @@
+// Prevent duplicate injection
+if (typeof window.__SSR_CSR_ANALYZER_LOADED__ === 'undefined') {
+  window.__SSR_CSR_ANALYZER_LOADED__ = true;
+
 /**
  * Configuration for SSR/CSR Detection
  * All scoring weights and thresholds in one place
@@ -716,3 +720,5 @@ if (typeof window !== 'undefined') {
   window.getConfidenceBar = getConfidenceBar;
   window.createResultsHTML = createResultsHTML;
 }
+
+} // End injection guard

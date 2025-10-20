@@ -5,6 +5,22 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2025-10-20
+
+### Fixed
+- **Dark Mode Styling**: Fixed indicator badge styling in dark mode
+  - Badges now show proper contrast (gray background with white text)
+  - Fixed confidence bar background color for dark theme
+  - All accent colors and borders properly adapt to theme
+- **Script Injection Guard**: Added protection against duplicate analyzer injection
+  - Prevents "Identifier already declared" errors on repeated analysis
+  - Wrapped analyzer-bundle.js with injection guard
+
+### Technical
+- Updated `src/ui/components/results-renderer.js` with theme detection
+- Rebuilt `src/analyzer-bundle.js` with injection guard wrapper
+- Bumped version to 3.0.1 in manifest.json
+
 ## [3.0] - 2025-10-20
 
 ### Added
