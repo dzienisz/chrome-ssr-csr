@@ -5,6 +5,37 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2025-10-20
+
+### Added
+- **System Dark Mode Detection**: Theme now syncs with system preferences
+  - New "Auto (System)" option in settings (default)
+  - Automatically detects `prefers-color-scheme` media query
+  - Three theme options: Auto, Light, Dark
+  - Real-time switching between themes
+  - Works seamlessly across popup and settings pages
+
+### Changed
+- **Dynamic Version Display**: Version now read from manifest.json
+  - Removed hardcoded version strings from all HTML/JS files
+  - Uses `chrome.runtime.getManifest().version` for consistency
+  - Single source of truth for version number
+  - Auto-updates in popup footer and settings footer
+
+### Fixed
+- **CSP Compliance**: Removed inline scripts from HTML files
+  - Fixed Content Security Policy violations
+  - Moved version injection code to JavaScript files
+  - Follows Chrome extension best practices
+- **Theme Dropdown Default**: "Auto (System)" now properly selected by default
+
+### Technical
+- Modified `options.js` and `popup.js` for system theme detection
+- Updated `options.html` to use select dropdown instead of toggle
+- Added `window.matchMedia('(prefers-color-scheme: dark)')` detection
+- Version injection moved to DOMContentLoaded event listeners
+- Bumped version to 3.0.2 in manifest.json
+
 ## [3.0.1] - 2025-10-20
 
 ### Fixed
@@ -19,27 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows friendly message when trying to analyze chrome://, edge://, about:, etc.
   - No more console errors for restricted pages
   - Added chrome.runtime.lastError checks throughout popup.js
-
-### Added
-- **System Dark Mode Detection**: Theme now syncs with system preferences
-  - New "Auto (System)" option in settings
-  - Detects `prefers-color-scheme` media query
-  - Three options: Auto, Light, Dark
-  - Seamless switching between themes
-
-### Changed
-- **Dynamic Version Display**: Version now read from manifest.json
-  - Removed hardcoded version strings from popup.html, options.html, popup.js
-  - Uses `chrome.runtime.getManifest().version` for consistency
-  - Single source of truth for version number
+  - Beautiful error screen with clear instructions
 
 ### Technical
 - Updated `src/ui/components/results-renderer.js` with theme detection
 - Rebuilt `src/analyzer-bundle.js` with injection guard wrapper
-- Modified `options.js` and `popup.js` for system dark mode support
-- Updated `options.html` to use select dropdown for theme choice
-- Added `window.matchMedia('(prefers-color-scheme: dark)')` detection
-- Bumped version to 3.0.1 in manifest.json
+- Added URL validation and error handling in popup.js
 
 ## [3.0] - 2025-10-20
 
