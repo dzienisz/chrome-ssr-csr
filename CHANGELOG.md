@@ -5,6 +5,22 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3] - 2025-10-20
+
+### Changed
+- **Internal code refactoring**: Split monolithic `analyzer.js` (350+ lines) into modular architecture
+  - Created `src/core/` folder with config, analyzer, and scoring modules
+  - Created `src/detectors/` folder with 4 specialized detector modules
+  - Created `src/ui/components/` folder for results rendering
+  - All modules bundled into `src/analyzer-bundle.js` for deployment
+- Improved code maintainability and scalability for future v3.0 development
+- Fixed script injection guard to prevent redeclaration errors
+
+### Technical Notes
+- No user-facing changes - functionality remains identical to v2.2
+- Better organized codebase makes future feature development easier
+- Foundation for v3.0 features (settings page, dark mode, export functionality)
+
 ## [2.2] - 2024-10-14
 
 ### Added

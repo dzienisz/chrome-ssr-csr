@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.scripting.executeScript(
         {
           target: { tabId: tabs[0].id },
-          files: ['analyzer.js']
+          files: ['src/analyzer-bundle.js']
         },
         () => {
           // After analyzer.js is injected, run the analysis

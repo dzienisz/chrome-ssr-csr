@@ -4,7 +4,7 @@ chrome.action.onClicked.addListener((tab) => {
   chrome.scripting.executeScript(
     {
       target: { tabId: tab.id },
-      files: ['analyzer.js']
+      files: ['src/analyzer-bundle.js']
     },
     () => {
       // After analyzer.js is injected, run the analysis
