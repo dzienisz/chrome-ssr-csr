@@ -315,14 +315,15 @@
 
       <div class="setting-item">
         <div class="setting-info">
-          <div class="setting-label">Dark Mode</div>
-          <div class="setting-description">Switch between light and dark theme</div>
+          <div class="setting-label">Theme</div>
+          <div class="setting-description">Choose theme or sync with system preferences</div>
         </div>
         <div class="setting-control">
-          <label class="switch">
-            <input type="checkbox" id="darkMode">
-            <span class="slider"></span>
-          </label>
+          <select id="darkMode">
+            <option value="auto">Auto (System)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
         </div>
       </div>
     </div>
@@ -396,7 +397,7 @@
 
     <footer>
       <p>
-        CSR vs SSR Detector v3.0.1 |
+        CSR vs SSR Detector <span id="version"></span> |
         <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a> |
         <a href="privacy-policy.md" target="_blank">Privacy Policy</a>
       </p>

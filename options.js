@@ -1,6 +1,6 @@
 // Default settings
 const DEFAULT_SETTINGS = {
-  darkMode: false,
+  darkMode: 'auto', // 'auto', 'light', 'dark'
   historyLimit: 10,
   notifications: true,
   shareData: false
@@ -8,6 +8,9 @@ const DEFAULT_SETTINGS = {
 
 // Load settings when page opens
 document.addEventListener('DOMContentLoaded', () => {
+  // Inject version from manifest
+  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+
   loadSettings();
   setupEventListeners();
 });
@@ -16,22 +19,37 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadSettings() {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
     // Apply settings to UI
-    document.getElementById('darkMode').checked = settings.darkMode;
+    document.getElementById('darkMode').value = settings.darkMode;
     document.getElementById('historyLimit').value = settings.historyLimit;
     document.getElementById('notifications').checked = settings.notifications;
     document.getElementById('shareData').checked = settings.shareData;
 
-    // Apply dark mode if enabled
-    if (settings.darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
+    // Apply dark mode based on setting
+    applyDarkMode(settings.darkMode);
   });
+}
+
+// Apply dark mode based on setting (auto/light/dark)
+function applyDarkMode(mode) {
+  if (mode === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else if (mode === 'light') {
+    document.documentElement.removeAttribute('data-theme');
+  } else { // auto
+    // Detect system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
 }
 
 // Save settings to storage
 function saveSettings() {
   const settings = {
-    darkMode: document.getElementById('darkMode').checked,
+    darkMode: document.getElementById('darkMode').value,
     historyLimit: parseInt(document.getElementById('historyLimit').value),
     notifications: document.getElementById('notifications').checked,
     shareData: document.getElementById('shareData').checked
@@ -39,11 +57,7 @@ function saveSettings() {
 
   chrome.storage.sync.set(settings, () => {
     // Apply dark mode immediately
-    if (settings.darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
+    applyDarkMode(settings.darkMode);
 
     // Show success message
     showStatusMessage('Settings saved successfully!');
@@ -95,13 +109,9 @@ function setupEventListeners() {
   // Reset button
   document.getElementById('resetButton').addEventListener('click', resetSettings);
 
-  // Dark mode toggle - apply immediately
+  // Dark mode select - apply immediately on change
   document.getElementById('darkMode').addEventListener('change', (e) => {
-    if (e.target.checked) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
+    applyDarkMode(e.target.value);
   });
 
   // Auto-save on toggle switches (optional - comment out if you want manual save only)

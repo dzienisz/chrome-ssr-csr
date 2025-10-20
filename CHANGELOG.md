@@ -15,10 +15,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Script Injection Guard**: Added protection against duplicate analyzer injection
   - Prevents "Identifier already declared" errors on repeated analysis
   - Wrapped analyzer-bundle.js with injection guard
+- **Restricted URL Handling**: Better error handling for Chrome internal pages
+  - Shows friendly message when trying to analyze chrome://, edge://, about:, etc.
+  - No more console errors for restricted pages
+  - Added chrome.runtime.lastError checks throughout popup.js
+
+### Added
+- **System Dark Mode Detection**: Theme now syncs with system preferences
+  - New "Auto (System)" option in settings
+  - Detects `prefers-color-scheme` media query
+  - Three options: Auto, Light, Dark
+  - Seamless switching between themes
+
+### Changed
+- **Dynamic Version Display**: Version now read from manifest.json
+  - Removed hardcoded version strings from popup.html, options.html, popup.js
+  - Uses `chrome.runtime.getManifest().version` for consistency
+  - Single source of truth for version number
 
 ### Technical
 - Updated `src/ui/components/results-renderer.js` with theme detection
 - Rebuilt `src/analyzer-bundle.js` with injection guard wrapper
+- Modified `options.js` and `popup.js` for system dark mode support
+- Updated `options.html` to use select dropdown for theme choice
+- Added `window.matchMedia('(prefers-color-scheme: dark)')` detection
 - Bumped version to 3.0.1 in manifest.json
 
 ## [3.0] - 2025-10-20
