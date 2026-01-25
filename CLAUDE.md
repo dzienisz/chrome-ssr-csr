@@ -22,9 +22,22 @@ After making code changes:
 2. Click the refresh icon on the CSR vs SSR Detector card
 3. Test the extension on various websites (e.g., Next.js sites, React SPAs, static sites)
 
-### No Build Process
+### Code Organization
 
-This is a vanilla JavaScript project with no build step, transpilation, or package manager. All files are loaded directly by Chrome.
+This is a vanilla JavaScript project with no transpilation or package manager. The codebase uses:
+
+**Source Files** (`src/` directory):
+- Modular source files organized by functionality
+- Separate detector modules for clean separation of concerns
+- Centralized configuration in `src/core/config.js`
+
+**Bundle File** (`src/analyzer-bundle.js`):
+- All analysis code concatenated into a single file
+- This is the file injected into webpages by Chrome
+- Manual concatenation: if you modify any file in `src/core/` or `src/detectors/`, you must update the bundle
+- Bundle includes duplicate injection prevention via `window.__SSR_CSR_ANALYZER_LOADED__` flag
+
+**Note**: When modifying source files in `src/`, ensure changes are reflected in `src/analyzer-bundle.js` before testing.
 
 ## Architecture
 
@@ -37,62 +50,91 @@ The extension uses Chrome's Manifest V3 architecture with three distinct executi
    - Listens for extension icon clicks via `chrome.action.onClicked`
    - Orchestrates script injection into the active tab
    - Handles notifications and saves analysis history to `chrome.storage.local`
-   - Maximum 10 history entries stored
+   - History limit is configurable through settings (default: 10 entries)
 
-2. **analyzer.js** (Content Script - Injected)
-   - Injected into the target webpage on-demand
-   - Exposes `window.pageAnalyzer()` function that performs the core analysis
-   - Analyzes DOM structure, meta tags, script tags, performance timing, and framework markers
+2. **src/analyzer-bundle.js** (Content Script - Injected)
+   - Single bundled file containing all analysis logic, injected into target webpage on-demand
+   - Exposes `window.pageAnalyzer()` function that orchestrates the core analysis
+   - Modular architecture with specialized detectors:
+     - **src/core/config.js**: Centralized configuration for scoring weights and thresholds
+     - **src/core/analyzer.js**: Main orchestration logic that coordinates all detectors
+     - **src/core/scoring.js**: Classification and confidence calculation
+     - **src/detectors/content-detector.js**: Analyzes DOM structure and text content
+     - **src/detectors/framework-detector.js**: Detects frameworks and hydration markers
+     - **src/detectors/meta-detector.js**: Analyzes meta tags and structured data
+     - **src/detectors/performance-detector.js**: Evaluates performance timing metrics
+     - **src/ui/components/results-renderer.js**: Generates HTML for results display
    - Returns structured analysis results with:
      - `renderType`: Classification (SSR/CSR/Hybrid/etc.)
      - `confidence`: Percentage (30-95%)
      - `indicators`: Array of detection signals
      - `detailedInfo`: Scores, frameworks detected, performance metrics
-   - Also exposes helper functions: `getTypeColor()`, `getConfidenceBar()`, `createResultsHTML()`
 
 3. **popup.js** (Popup UI)
    - Runs when user clicks extension icon and popup opens
    - Handles "Analyze Page" button click
-   - Injects `analyzer.js` into the active tab
+   - Injects `src/analyzer-bundle.js` into the active tab
    - Calls `window.pageAnalyzer()` and `window.createResultsHTML()` in the tab context
    - Displays formatted results in the popup
    - Manages history display and toggle functionality
+   - Handles export functionality (JSON, CSV, Markdown)
 
-### Detection Algorithm (analyzer.js)
+4. **options.js** (Settings Page)
+   - Manages user preferences (dark mode, history limit, notifications, data sharing)
+   - Handles settings import/export
+   - Communicates settings changes to popup via `chrome.runtime.sendMessage`
 
-The `pageAnalyzer()` function uses a weighted scoring system:
+### Detection Algorithm
 
-- **SSR Indicators** (increase ssrScore):
-  - Rich initial content (paragraphs, headings, articles)
-  - Framework hydration markers (React, Next.js, Nuxt, Gatsby, Remix, etc.)
-  - Serialized data (`__NEXT_DATA__`, `__INITIAL_STATE__`, etc.)
-  - Rich meta tags and SSR framework meta
-  - Fast performance timing (DOM ready < 30ms, FCP < 800ms)
-  - Structured data (JSON-LD)
-  - Low script-to-content ratio
+The analysis uses a modular weighted scoring system coordinated by `src/core/analyzer.js`:
 
-- **CSR Indicators** (increase csrScore):
-  - Minimal initial text content
-  - Client-side routing elements
-  - Loading states with minimal content
-  - Slow DOM ready time (> 500ms)
-  - High script-to-content ratio
-  - Framework scripts without hydration markers
+**Scoring Process:**
+1. Each detector module returns `{ssrScore, csrScore, indicators, details}`
+2. Scores are aggregated by the main analyzer
+3. Final classification calculated by `src/core/scoring.js`
 
-- **Final Classification**:
-  - `ssrPercentage = (ssrScore / (ssrScore + csrScore)) * 100`
-  - ≥75%: "Server-Side Rendered (SSR)"
-  - ≤25%: "Client-Side Rendered (CSR)"
-  - 60-74%: "Likely SSR with Hydration"
-  - 26-40%: "Likely CSR/SPA"
-  - 41-59%: "Hybrid/Mixed Rendering"
+**SSR Indicators** (increase ssrScore):
+- Rich initial content: paragraphs, headings, articles (35 points)
+- Framework hydration markers: React, Next.js, Nuxt, etc. (30 points)
+- Serialized data: `__NEXT_DATA__`, `__INITIAL_STATE__`, etc. (25 points)
+- Static site generators detected (40 points)
+- Rich meta tags and SSR framework meta (15-20 points)
+- Fast performance timing: DOM ready < 30ms (25 points), FCP < 800ms (15 points)
+- Structured data: JSON-LD present (15 points)
+- Low script-to-content ratio (10 points)
+
+**CSR Indicators** (increase csrScore):
+- Minimal initial text content (30 points)
+- CSR framework scripts without hydration (25 points)
+- Client-side routing elements (20 points)
+- Loading states with minimal content (20 points)
+- Slow DOM ready time > 500ms (20 points)
+- High script-to-content ratio (15 points)
+
+**Final Classification** (calculated in `src/core/scoring.js`):
+- `ssrPercentage = (ssrScore / (ssrScore + csrScore)) * 100`
+- ≥75%: "Server-Side Rendered (SSR)"
+- ≤25%: "Client-Side Rendered (CSR)"
+- 60-74%: "Likely SSR with Hydration"
+- 26-40%: "Likely CSR/SPA"
+- 41-59%: "Hybrid/Mixed Rendering"
+
+**Confidence Calculation:**
+- Base confidence from score differential
+- Bonus for each indicator found (3 points each, max 20 bonus)
+- Capped at different maxima based on classification type
+- Minimum confidence: 30%
 
 ### Key Files
 
 - **manifest.json**: Chrome extension configuration (Manifest V3)
-- **popup.html/popup.js**: Extension popup interface
-- **background.js**: Background service worker for icon clicks
-- **analyzer.js**: Core detection algorithm (injected as content script)
+- **popup.html/popup.js**: Extension popup interface with export functionality
+- **options.html/options.js**: Settings page for user preferences
+- **background.js**: Background service worker for icon clicks and notifications
+- **src/analyzer-bundle.js**: Bundled analysis code (injected as content script)
+  - **src/core/**: Core analysis orchestration and configuration
+  - **src/detectors/**: Specialized detector modules (content, framework, meta, performance)
+  - **src/ui/components/**: UI rendering components
 
 ## Framework Detection
 
@@ -112,30 +154,53 @@ Detection is performed via:
 
 ### Adding New Framework Detection
 
-To detect a new framework, update `analyzer.js`:
+To detect a new framework, update `src/detectors/framework-detector.js`:
 
-1. Add to `frameworkMarkers` object (line 27-36):
+1. Add to `frameworkMarkers` object for hydration-based frameworks:
    ```javascript
    newframework: document.querySelector('[data-newframework]') !== null
    ```
 
-2. Or add to static site generators (line 129-134):
+2. Or add to `staticGenerators` object for static site generators:
    ```javascript
    newgenerator: document.querySelector('meta[name="generator"][content*="NewGen"]') !== null
    ```
 
+3. After modifying, regenerate the bundle by manually concatenating files or ensure `src/analyzer-bundle.js` includes your changes
+
 ### Adjusting Scoring Weights
 
-Modify the score increments in `analyzer.js` to change detection sensitivity:
+All scoring weights are centralized in `src/core/config.js`:
+- Modify the `CONFIG.scoring` object to adjust individual indicator weights
+- Modify the `CONFIG.thresholds` object to change classification boundaries
 - Higher scores = stronger signal for that rendering type
 - Current range: 10-40 points per indicator
 
-### Modifying History Limit
-
-Change the limit in both `background.js:70` and `popup.js:166`:
+Example:
 ```javascript
-if (history.length > 10) history.pop();  // Change 10 to desired limit
+scoring: {
+  richContent: 35,  // Increase to give more weight to content analysis
+  minimalContent: 30,
+  // ... other weights
+}
 ```
+
+### Adding New Detector Module
+
+To add a new detection module:
+
+1. Create new file in `src/detectors/` (e.g., `new-detector.js`)
+2. Follow the pattern: export a function that returns `{ssrScore, csrScore, indicators, details}`
+3. Add call to your detector in `src/core/analyzer.js` in the `pageAnalyzer()` function
+4. Update `src/analyzer-bundle.js` to include the new module
+
+### Modifying Settings
+
+Settings are stored in `chrome.storage.sync` and managed in `options.js`. Default values:
+- `darkMode`: 'auto' (options: 'auto', 'light', 'dark')
+- `historyLimit`: 10 (configurable: 5 to unlimited)
+- `notifications`: true
+- `shareData`: false
 
 ## Chrome Extension APIs Used
 
@@ -145,10 +210,25 @@ if (history.length > 10) history.pop();  // Change 10 to desired limit
 - `chrome.notifications`: Desktop notifications (background.js only)
 - `chrome.tabs.query`: Get active tab information
 
+## Export Functionality
+
+The extension supports exporting analysis results in three formats (handled by `popup.js`):
+
+1. **JSON**: Complete structured data including all indicators and detailed info
+2. **CSV**: Tabular format with key metrics (URL, render type, confidence, frameworks)
+3. **Markdown**: Human-readable format suitable for documentation
+
+Export triggers browser download using blob URLs. Data exported includes:
+- URL and page title
+- Render type and confidence
+- Detected frameworks
+- Performance metrics
+- Analysis timestamp
+
 ## Permissions
 
 Declared in manifest.json:
 - `activeTab`: Access current tab when extension is clicked
 - `scripting`: Inject and execute scripts
-- `storage`: Save analysis history
+- `storage`: Save analysis history and user settings (uses both `chrome.storage.local` for history and `chrome.storage.sync` for settings)
 - `notifications`: Show desktop notifications
