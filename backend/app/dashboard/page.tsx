@@ -94,16 +94,16 @@ export default async function Dashboard() {
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <RenderTypeDistribution data={stats.total} />
-          <FrameworkChart data={stats.frameworks || []} />
+          <FrameworkChart data={stats.frameworks as any || []} />
         </div>
 
         {/* Timeline Chart */}
         <div className="mb-6">
-          <TimelineChart data={stats.timeline || []} />
+          <TimelineChart data={stats.timeline as any || []} />
         </div>
 
         {/* Recent Analyses Table */}
-        <RecentAnalyses data={recentAnalyses} />
+        <RecentAnalyses data={recentAnalyses as any} />
       </div>
     </main>
   );
