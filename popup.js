@@ -317,18 +317,36 @@ function downloadFile(content, filename, mimeType) {
   URL.revokeObjectURL(url);
 }
 
-// Send data if sharing is enabled (placeholder for v3.1)
+// Send data if sharing is enabled
 function sendDataIfEnabled(url, results) {
-  chrome.storage.sync.get({ shareData: false }, (settings) => {
+  chrome.storage.sync.get({ shareData: false }, async (settings) => {
     if (settings.shareData) {
-      // TODO: In v3.1, send data to backend
-      // For now, just log that it would be sent
-      console.log('Data sharing enabled - would send to backend in v3.1:', {
-        url,
-        renderType: results.renderType,
-        confidence: results.confidence,
-        frameworks: results.detailedInfo.frameworks
-      });
+      try {
+        // Get the current tab for title
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const title = tabs[0]?.title || 'Unknown';
+
+        // Import and call telemetry function
+        const [{ result: sendFunction }] = await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          files: ['src/telemetry.js']
+        });
+
+        // Call the telemetry function in the page context
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          function: (url, title, results) => {
+            if (window.sendAnalysisData) {
+              window.sendAnalysisData(url, title, results);
+            }
+          },
+          args: [url, title, results]
+        });
+
+        console.log('[Extension] Telemetry data sent');
+      } catch (error) {
+        console.error('[Extension] Failed to send telemetry:', error);
+      }
     }
   });
 }
