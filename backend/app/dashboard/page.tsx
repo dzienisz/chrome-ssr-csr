@@ -1,6 +1,13 @@
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { FrameworkChart, RenderTypeDistribution, TimelineChart } from '@/components/dashboard/charts';
 import { RecentAnalyses } from '@/components/dashboard/recent-analyses';
+import {
+  getTotalStats,
+  getTopFrameworks,
+  getTopDomains,
+  getAnalysesByDate,
+  getRecentAnalyses as getRecentAnalysesFromDb,
+} from '@/lib/db';
 
 // Mark as dynamic - dashboard needs fresh data
 export const dynamic = 'force-dynamic';
@@ -8,16 +15,19 @@ export const revalidate = 0;
 
 async function getStats() {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/stats?type=all`, {
-      cache: 'no-store',
-    });
+    const [total, topFrameworks, topDomains, timelineData] = await Promise.all([
+      getTotalStats(),
+      getTopFrameworks(10),
+      getTopDomains(20),
+      getAnalysesByDate(30),
+    ]);
 
-    if (!res.ok) {
-      throw new Error('Failed to fetch stats');
-    }
-
-    return res.json();
+    return {
+      total,
+      frameworks: topFrameworks,
+      domains: topDomains,
+      timeline: timelineData,
+    };
   } catch (error) {
     console.error('Error fetching stats:', error);
     return null;
@@ -26,16 +36,7 @@ async function getStats() {
 
 async function getRecentAnalyses() {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/stats?type=recent&limit=50`, {
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch recent analyses');
-    }
-
-    return res.json();
+    return await getRecentAnalysesFromDb(50);
   } catch (error) {
     console.error('Error fetching recent analyses:', error);
     return [];
