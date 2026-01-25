@@ -7,6 +7,9 @@ import {
   getRecentAnalyses,
 } from '@/lib/db';
 
+// Mark as dynamic to prevent static optimization errors
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

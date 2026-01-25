@@ -2,6 +2,10 @@ import { StatsCard } from '@/components/dashboard/stats-card';
 import { FrameworkChart, RenderTypeDistribution, TimelineChart } from '@/components/dashboard/charts';
 import { RecentAnalyses } from '@/components/dashboard/recent-analyses';
 
+// Mark as dynamic - dashboard needs fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getStats() {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';

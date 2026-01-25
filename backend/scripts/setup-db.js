@@ -21,7 +21,7 @@ async function setupDatabase() {
         confidence INTEGER NOT NULL CHECK (confidence >= 0 AND confidence <= 100),
         frameworks JSONB DEFAULT '[]'::jsonb,
         performance_metrics JSONB DEFAULT '{}'::jsonb,
-        indicators TEXT[],
+        indicators JSONB DEFAULT '[]'::jsonb,
         extension_version VARCHAR(20),
         user_agent TEXT
       );

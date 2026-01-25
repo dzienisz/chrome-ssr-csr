@@ -30,7 +30,7 @@ export async function insertAnalysis(data: AnalysisRecord) {
         ${data.confidence},
         ${JSON.stringify(data.frameworks)},
         ${JSON.stringify(data.performance_metrics)},
-        ${data.indicators},
+        ${JSON.stringify(data.indicators)},
         ${data.extension_version},
         ${data.user_agent || null}
       )
