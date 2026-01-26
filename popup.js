@@ -3,6 +3,26 @@ let lastAnalysisResult = null;
 let lastAnalysisUrl = null;
 let lastAnalysisTitle = null;
 
+// Update extension badge based on render type
+function updateBadge(renderType, tabId) {
+  let text = '';
+  let color = '#6b7280'; // gray default
+
+  if (renderType.includes('SSR') || renderType.includes('Server')) {
+    text = 'SSR';
+    color = '#10b981'; // green
+  } else if (renderType.includes('CSR') || renderType.includes('Client')) {
+    text = 'CSR';
+    color = '#ef4444'; // red
+  } else if (renderType.includes('Hybrid') || renderType.includes('Mixed')) {
+    text = 'MIX';
+    color = '#f59e0b'; // amber
+  }
+
+  chrome.action.setBadgeText({ text, tabId });
+  chrome.action.setBadgeBackgroundColor({ color, tabId });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Inject version from manifest
   document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
@@ -172,6 +192,9 @@ function analyzeCurrentPage() {
 
                     // Show export buttons
                     document.getElementById("exportButtons").style.display = "flex";
+
+                    // Update badge on extension icon
+                    updateBadge(analysisResults.renderType, tab.id);
 
                     // Save to history
                     saveToHistory(tab.url, analysisResults, tab.title);

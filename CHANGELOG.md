@@ -5,6 +5,15 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-01-26
+
+### Added
+- **Badge on icon**: Shows SSR/CSR/MIX directly on extension icon after analysis
+  - Green badge for SSR
+  - Red badge for CSR
+  - Amber badge for Hybrid/Mixed
+  - No need to open popup to see result
+
 ## [3.1.1] - 2026-01-26
 
 ### Changed
@@ -267,6 +276,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v3.1.2**: Badge on icon showing SSR/CSR/MIX result
 - **v3.1.1**: Telemetry changed to opt-out (enabled by default)
 - **v3.1.0**: Analytics backend with dashboard, telemetry integration
 - **v3.0.5**: Critical hotfix for missing bundle file
