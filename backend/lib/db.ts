@@ -117,6 +117,10 @@ export async function getTopDomains(limit: number = 20) {
 
 export async function getAnalysesByDate(days: number = 30) {
   try {
+    // Calculate date threshold in JavaScript to avoid SQL interpolation issues
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - days);
+
     const result = await sql`
       SELECT
         DATE(timestamp) as date,
@@ -125,7 +129,7 @@ export async function getAnalysesByDate(days: number = 30) {
         COUNT(CASE WHEN render_type LIKE '%CSR%' THEN 1 END) as csr_count,
         COUNT(CASE WHEN render_type LIKE '%Hybrid%' THEN 1 END) as hybrid_count
       FROM analyses
-      WHERE timestamp >= NOW() - INTERVAL '${days} days'
+      WHERE timestamp >= ${dateThreshold.toISOString()}
       GROUP BY DATE(timestamp)
       ORDER BY date DESC;
     `;

@@ -320,33 +320,67 @@ function downloadFile(content, filename, mimeType) {
 // Send data if sharing is enabled
 function sendDataIfEnabled(url, results) {
   chrome.storage.sync.get({ shareData: false }, async (settings) => {
-    if (settings.shareData) {
+    if (!settings.shareData) {
+      console.log('[Telemetry] Data sharing is disabled');
+      return;
+    }
+
+    try {
+      console.log('[Telemetry] Sending analysis data to backend...');
+
+      // Backend configuration
+      const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
+      const API_KEY = 'fbfb6754dd6736d59cfd88aab8ab2123cd5fc64ee02f480e4dff9aa9c5cacade';
+
+      // Extract domain from URL
+      let domain = 'unknown';
+      let anonymizedUrl = url;
       try {
-        // Get the current tab for title
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        const title = tabs[0]?.title || 'Unknown';
-
-        // Import and call telemetry function
-        const [{ result: sendFunction }] = await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          files: ['src/telemetry.js']
-        });
-
-        // Call the telemetry function in the page context
-        await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          function: (url, title, results) => {
-            if (window.sendAnalysisData) {
-              window.sendAnalysisData(url, title, results);
-            }
-          },
-          args: [url, title, results]
-        });
-
-        console.log('[Extension] Telemetry data sent');
-      } catch (error) {
-        console.error('[Extension] Failed to send telemetry:', error);
+        const urlObj = new URL(url);
+        domain = urlObj.hostname;
+        anonymizedUrl = urlObj.origin;
+      } catch (e) {
+        console.error('[Telemetry] URL parse error:', e);
       }
+
+      // Prepare payload
+      const payload = {
+        url: anonymizedUrl,
+        domain: domain,
+        renderType: results.renderType,
+        confidence: results.confidence,
+        frameworks: results.detailedInfo?.frameworks || [],
+        performanceMetrics: {
+          domReady: results.detailedInfo?.timing?.domContentLoaded,
+          fcp: results.detailedInfo?.timing?.firstContentfulPaint,
+        },
+        indicators: results.indicators || [],
+        version: chrome.runtime.getManifest().version,
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log('[Telemetry] Payload:', payload);
+
+      // Send to backend
+      const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[Telemetry] Failed:', response.status, error);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('[Telemetry] Success:', result);
+    } catch (error) {
+      console.error('[Telemetry] Error:', error);
     }
   });
 }
