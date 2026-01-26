@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_noStore as noStore } from 'next/cache';
 import {
   getTotalStats,
   getTopFrameworks,
@@ -10,12 +11,15 @@ import {
 
 // Mark as dynamic to prevent static optimization errors
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const cacheHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
 export async function GET(request: NextRequest) {
+  noStore(); // Disable caching for fresh data
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type') || 'all';

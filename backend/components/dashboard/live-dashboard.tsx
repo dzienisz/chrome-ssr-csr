@@ -22,17 +22,34 @@ interface LiveDashboardProps {
 export function LiveDashboard({ initialData }: LiveDashboardProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       setIsRefreshing(true);
-      const response = await fetch('/api/stats?type=all');
+      setError(null);
+      const response = await fetch('/api/stats?type=all', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       if (response.ok) {
         const newData = await response.json();
-        setData(newData);
+        if (newData && newData.total) {
+          setData(newData);
+          setLastRefresh(new Date());
+        } else {
+          console.error('Invalid data structure:', newData);
+          setError('Invalid data');
+        }
+      } else {
+        setError(`HTTP ${response.status}`);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      setError('Network error');
     } finally {
       setIsRefreshing(false);
     }
@@ -65,7 +82,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
               </h1>
               <p className="text-gray-500 mt-1">
                 Chrome Extension Usage Dashboard
-                <span className="ml-2 text-xs text-emerald-600">● Live</span>
+                {error ? (
+                  <span className="ml-2 text-xs text-red-500">● Error: {error}</span>
+                ) : (
+                  <span className="ml-2 text-xs text-emerald-600">● Live (30s)</span>
+                )}
               </p>
             </div>
             <LastUpdated timestamp={data.latestTime} />
@@ -160,7 +181,16 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-400">
-          <p>SSR/CSR Detector Analytics • Data is anonymized and aggregated • Auto-refreshes every 30s</p>
+          <p>SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes every 30s</p>
+          <p className="mt-2">
+            Dashboard v1.0.0 •
+            <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/CHANGELOG.md"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="text-indigo-500 hover:text-indigo-600 ml-1">
+              Changelog
+            </a>
+          </p>
         </div>
       </div>
     </>
