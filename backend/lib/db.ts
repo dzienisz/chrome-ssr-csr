@@ -62,12 +62,13 @@ export async function getTotalStats() {
     const result = await sql`
       SELECT
         COUNT(*) as total_analyses,
-        COUNT(CASE WHEN render_type LIKE '%SSR%' THEN 1 END) as ssr_count,
-        COUNT(CASE WHEN render_type LIKE '%CSR%' THEN 1 END) as csr_count,
-        COUNT(CASE WHEN render_type LIKE '%Hybrid%' THEN 1 END) as hybrid_count,
-        AVG(confidence) as avg_confidence
+        COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END) as ssr_count,
+        COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END) as csr_count,
+        COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END) as hybrid_count,
+        COALESCE(AVG(confidence), 0) as avg_confidence
       FROM analyses;
     `;
+    console.log('getTotalStats result:', result.rows[0]);
     return result.rows[0];
   } catch (error) {
     console.error('Database query error:', error);
