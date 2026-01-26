@@ -19,11 +19,13 @@ interface LiveDashboardProps {
   initialData: DashboardData;
 }
 
+const REFRESH_INTERVAL = 30;
+
 export function LiveDashboard({ initialData }: LiveDashboardProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
 
   const fetchData = useCallback(async () => {
     try {
@@ -39,7 +41,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         const newData = await response.json();
         if (newData && newData.total) {
           setData(newData);
-          setLastRefresh(new Date());
+          setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
         } else {
           console.error('Invalid data structure:', newData);
           setError('Invalid data');
@@ -55,9 +57,19 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     }
   }, []);
 
+  // Countdown timer - ticks every second
   useEffect(() => {
-    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          fetchData();
+          return REFRESH_INTERVAL;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, [fetchData]);
 
   const totalAnalyses = parseInt(data.total?.total_analyses) || 0;
@@ -84,8 +96,10 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
                 Chrome Extension Usage Dashboard
                 {error ? (
                   <span className="ml-2 text-xs text-red-500">● Error: {error}</span>
+                ) : isRefreshing ? (
+                  <span className="ml-2 text-xs text-blue-500">● Refreshing...</span>
                 ) : (
-                  <span className="ml-2 text-xs text-emerald-600">● Live (30s)</span>
+                  <span className="ml-2 text-xs text-emerald-600">● Live · {countdown}s</span>
                 )}
               </p>
             </div>
