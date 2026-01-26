@@ -1,6 +1,7 @@
 import { FrameworkChart, RenderTypeDistribution, TimelineChart } from '@/components/dashboard/charts';
 import { RecentAnalyses } from '@/components/dashboard/recent-analyses';
 import { TopDomains } from '@/components/dashboard/top-domains';
+import { LastUpdated } from '@/components/dashboard/last-updated';
 import {
   getTotalStats,
   getTopFrameworks,
@@ -81,12 +82,7 @@ export default async function Dashboard() {
                 Chrome Extension Usage Dashboard
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Last updated</div>
-              <div className="text-sm font-medium text-gray-700">
-                {new Date().toLocaleString()}
-              </div>
-            </div>
+            <LastUpdated />
           </div>
         </div>
       </div>
