@@ -26,17 +26,18 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 │   │   └── ui/             # UI components
 │   ├── icon*.png           # Extension icons
 │   ├── promo-images/       # Chrome Web Store images
-│   └── privacy-policy.md   # Privacy policy
+│   ├── privacy-policy.md   # Privacy policy
+│   └── CHANGELOG.md        # Extension version history
 │
 ├── backend/                # Analytics Dashboard (Next.js)
 │   ├── app/
 │   │   ├── api/            # API routes
 │   │   └── dashboard/      # Dashboard page
 │   ├── components/         # React components
-│   └── lib/                # Database utilities
+│   ├── lib/                # Database utilities
+│   └── CHANGELOG.md        # Dashboard version history
 │
 ├── README.md               # Main project readme
-├── CHANGELOG.md            # Version history
 ├── CLAUDE.md               # This file
 └── LICENSE                 # MIT License
 ```

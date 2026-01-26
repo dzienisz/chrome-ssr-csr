@@ -198,7 +198,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
           <p>SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes every 30s</p>
           <p className="mt-2">
             Dashboard v1.0.0 •
-            <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/CHANGELOG.md"
+            <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/backend/CHANGELOG.md"
                target="_blank"
                rel="noopener noreferrer"
                className="text-indigo-500 hover:text-indigo-600 ml-1">
