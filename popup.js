@@ -326,11 +326,6 @@ function sendDataIfEnabled(url, results) {
 
     if (!settings.shareData) {
       console.log('[Telemetry] Data sharing is disabled - skipping');
-      // Show indicator that data sharing is off
-      const indicator = document.createElement('div');
-      indicator.style.cssText = 'background: #6b7280; color: white; padding: 8px; margin-top: 10px; border-radius: 4px; text-align: center; font-size: 12px;';
-      indicator.textContent = 'ℹ Analytics disabled. Enable in Settings.';
-      document.getElementById('result').appendChild(indicator);
       return;
     }
 
@@ -388,20 +383,9 @@ function sendDataIfEnabled(url, results) {
 
       const result = await response.json();
       console.log('[Telemetry] Success:', result);
-
-      // Show success indicator in UI
-      const indicator = document.createElement('div');
-      indicator.style.cssText = 'background: #10b981; color: white; padding: 8px; margin-top: 10px; border-radius: 4px; text-align: center; font-size: 12px;';
-      indicator.textContent = '✓ Analytics data sent successfully!';
-      document.getElementById('result').appendChild(indicator);
     } catch (error) {
       console.error('[Telemetry] Error:', error);
-
-      // Show error indicator in UI
-      const indicator = document.createElement('div');
-      indicator.style.cssText = 'background: #ef4444; color: white; padding: 8px; margin-top: 10px; border-radius: 4px; text-align: center; font-size: 12px;';
-      indicator.textContent = '✗ Failed to send analytics: ' + error.message;
-      document.getElementById('result').appendChild(indicator);
+      // Fail silently - don't disrupt user experience
     }
   });
 }

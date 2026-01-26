@@ -11,12 +11,12 @@ interface StatsCardProps {
 
 export function StatsCard({ title, metric, delta, deltaType }: StatsCardProps) {
   return (
-    <Card className="max-w-sm mx-auto">
+    <Card className="bg-white">
       <Flex justifyContent="between" alignItems="center">
-        <Text>{title}</Text>
+        <Text className="text-gray-600">{title}</Text>
         {delta && <BadgeDelta deltaType={deltaType}>{delta}</BadgeDelta>}
       </Flex>
-      <Metric className="mt-2">{metric}</Metric>
+      <Metric className="mt-2 text-gray-900">{metric}</Metric>
     </Card>
   );
 }

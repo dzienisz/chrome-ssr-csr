@@ -49,9 +49,9 @@ export default async function Dashboard() {
 
   if (!stats) {
     return (
-      <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+      <main className="min-h-screen p-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">SSR/CSR Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-8 text-gray-900">SSR/CSR Analytics Dashboard</h1>
           <p className="text-red-600">Error loading dashboard data. Make sure the database is set up.</p>
         </div>
       </main>
@@ -62,11 +62,11 @@ export default async function Dashboard() {
   const avgConfidence = parseFloat(stats.total?.avg_confidence) || 0;
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
+    <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">SSR/CSR Analytics Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">SSR/CSR Analytics Dashboard</h1>
+          <p className="text-gray-600">
             Real-time analytics from your Chrome extension
           </p>
         </div>
