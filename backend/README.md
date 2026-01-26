@@ -38,8 +38,8 @@ POSTGRES_HOST="..."
 POSTGRES_PASSWORD="..."
 POSTGRES_DATABASE="..."
 
-# Generate a secure random key for API authentication
-API_SECRET_KEY="your-super-secret-key-here"
+# Optional: API key for additional security (not required, CORS is used)
+# API_SECRET_KEY="your-super-secret-key-here"
 
 # Generate with: openssl rand -base64 32
 NEXTAUTH_SECRET="your-nextauth-secret"
@@ -129,8 +129,8 @@ This creates the `analyses` table with all necessary indexes.
 Submit analysis data from the extension.
 
 **Headers**:
-- `x-api-key`: Your API secret key
 - `Content-Type`: application/json
+- `x-api-key`: (Optional) API key if configured on server
 
 **Body**:
 ```json
@@ -195,10 +195,11 @@ See `EXTENSION_INTEGRATION.md` for detailed instructions.
 
 ## Security
 
-- API key authentication for all POST requests
+- CORS headers restrict browser requests to allowed origins
+- Optional API key authentication (disabled by default)
 - Rate limiting (implement with Upstash Redis in production)
 - Input validation and sanitization
-- No sensitive user data stored
+- No sensitive user data stored (only domains, not full URLs)
 - HTTPS only in production
 
 ## Monitoring
