@@ -57,8 +57,8 @@ Anonymous telemetry data is retained for statistical analysis and may be deleted
 You can clear all stored data by clearing your browser's extension storage or by uninstalling the extension.
 
 ### Telemetry
-- Telemetry is **disabled by default** (opt-in)
-- You can enable/disable it anytime in the extension settings
+- Telemetry is **enabled by default** (opt-out)
+- You can disable it anytime in the extension settings
 - Disabling telemetry stops all future data transmission
 
 ## Third-Party Access

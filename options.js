@@ -3,7 +3,7 @@ const DEFAULT_SETTINGS = {
   darkMode: 'auto', // 'auto', 'light', 'dark'
   historyLimit: 10,
   notifications: true,
-  shareData: false
+  shareData: true
 };
 
 // Load settings when page opens

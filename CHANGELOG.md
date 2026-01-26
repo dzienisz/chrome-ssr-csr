@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Top Domains component showing most analyzed sites
 
 ### Changed
-- **Telemetry Integration**: Extension sends anonymous data when opted-in
+- **Telemetry Integration**: Extension sends anonymous data (opt-out)
+  - Enabled by default, can be disabled in settings
   - Data sent: domain (not full URL), render type, confidence, frameworks
   - Controlled via "Share anonymous data" setting
   - Privacy-first: URLs anonymized to origin only

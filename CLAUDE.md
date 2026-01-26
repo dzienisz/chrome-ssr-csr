@@ -204,7 +204,7 @@ Settings are stored in `chrome.storage.sync` and managed in `options.js`. Defaul
 - `darkMode`: 'auto' (options: 'auto', 'light', 'dark')
 - `historyLimit`: 10 (configurable: 5 to unlimited)
 - `notifications`: true
-- `shareData`: false
+- `shareData`: true (opt-out)
 
 ## Chrome Extension APIs Used
 

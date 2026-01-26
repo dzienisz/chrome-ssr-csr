@@ -43,7 +43,7 @@ function loadSettings() {
     darkMode: 'auto',
     historyLimit: 10,
     notifications: true,
-    shareData: false
+    shareData: true
   }, (settings) => {
     applySettings(settings);
   });
@@ -321,7 +321,7 @@ function downloadFile(content, filename, mimeType) {
 function sendDataIfEnabled(url, results) {
   console.log('[Telemetry] sendDataIfEnabled called');
 
-  chrome.storage.sync.get({ shareData: false }, async (settings) => {
+  chrome.storage.sync.get({ shareData: true }, async (settings) => {
     console.log('[Telemetry] shareData setting:', settings.shareData);
 
     if (!settings.shareData) {
