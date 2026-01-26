@@ -319,9 +319,13 @@ function downloadFile(content, filename, mimeType) {
 
 // Send data if sharing is enabled
 function sendDataIfEnabled(url, results) {
+  console.log('[Telemetry] sendDataIfEnabled called');
+
   chrome.storage.sync.get({ shareData: false }, async (settings) => {
+    console.log('[Telemetry] shareData setting:', settings.shareData);
+
     if (!settings.shareData) {
-      console.log('[Telemetry] Data sharing is disabled');
+      console.log('[Telemetry] Data sharing is disabled - skipping');
       return;
     }
 
