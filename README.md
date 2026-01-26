@@ -64,9 +64,19 @@ The extension uses a sophisticated weighted scoring system that analyzes:
 
 Each indicator contributes to an SSR or CSR score, which determines the final classification with a confidence percentage.
 
-## Sequence Diagram
+## 📁 Project Structure
 
-![Sequence Diagram](sequence_diagram.png)
+This is a monorepo containing:
+
+```
+/
+├── extension/     # Chrome Extension source code
+├── backend/       # Analytics Dashboard (Next.js)
+├── CHANGELOG.md   # Version history
+└── README.md      # This file
+```
+
+**Live Dashboard**: [backend-mauve-beta-88.vercel.app/dashboard](https://backend-mauve-beta-88.vercel.app/dashboard)
 
 ## 📥 Installation
 
@@ -83,7 +93,7 @@ Each indicator contributes to an SSR or CSR score, which determines the final cl
    ```
 2. Open Chrome and navigate to `chrome://extensions`
 3. Enable **Developer Mode** (toggle in top-right)
-4. Click **Load unpacked** and select the project directory
+4. Click **Load unpacked** and select the `extension/` directory
 5. The extension is now loaded and ready to use
 
 ## 🚀 Usage
