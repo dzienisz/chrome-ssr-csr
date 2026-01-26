@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { insertAnalysis } from '@/lib/db';
 import { verifyApiKey } from '@/lib/auth';
 
+// CORS headers for all responses
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+};
+
 export async function POST(request: NextRequest) {
   // Verify API key
   if (!verifyApiKey(request)) {
     return NextResponse.json(
       { error: 'Unauthorized' },
-      { status: 401 }
+      { status: 401, headers: corsHeaders }
     );
   }
 
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!data.url || !data.domain || !data.renderType || !data.confidence) {
       return NextResponse.json(
         { error: 'Missing required fields' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -26,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (typeof data.confidence !== 'number' || data.confidence < 0 || data.confidence > 100) {
       return NextResponse.json(
         { error: 'Invalid confidence value' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -52,12 +59,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       id: result.id,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Analysis submission error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
