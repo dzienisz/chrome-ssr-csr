@@ -5,6 +5,7 @@ import {
   getTopDomains,
   getAnalysesByDate,
   getRecentAnalyses,
+  getLatestAnalysisTime,
 } from '@/lib/db';
 
 // Mark as dynamic to prevent static optimization errors
@@ -42,11 +43,13 @@ export async function GET(request: NextRequest) {
 
       case 'all':
       default:
-        const [total, topFrameworks, topDomains, timelineData] = await Promise.all([
+        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
-          getTopDomains(20),
+          getTopDomains(10),
           getAnalysesByDate(30),
+          getRecentAnalyses(20),
+          getLatestAnalysisTime(),
         ]);
 
         return NextResponse.json({
@@ -54,6 +57,8 @@ export async function GET(request: NextRequest) {
           frameworks: topFrameworks,
           domains: topDomains,
           timeline: timelineData,
+          recent: recentAnalyses,
+          latestTime,
         });
     }
   } catch (error) {
