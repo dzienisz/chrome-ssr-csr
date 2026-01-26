@@ -1,12 +1,9 @@
 {
   "manifest_version": 3,
   "name": "CSR vs SSR Detector",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "description": "Detect if a webpage is using Client-Side Rendering or Server-Side Rendering",
   "permissions": ["activeTab", "scripting", "storage", "notifications"],
-  "host_permissions": [
-    "https://backend-mauve-beta-88.vercel.app/*"
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
