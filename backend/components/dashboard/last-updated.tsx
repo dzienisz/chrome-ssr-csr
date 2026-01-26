@@ -4,36 +4,53 @@ import { useState, useEffect } from 'react';
 
 function getTimeAgo(date: Date): string {
   const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const totalSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (seconds < 5) return 'just now';
-  if (seconds < 60) return `${seconds} seconds ago`;
+  if (totalSeconds < 0) return 'just now';
 
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const days = Math.floor(totalSeconds / 86400);
+  if (days >= 1) {
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
 
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+
+  return `${parts.join(' ')} ago`;
 }
 
-export function LastUpdated() {
-  const [loadTime] = useState(() => new Date());
-  const [timeAgo, setTimeAgo] = useState('just now');
+interface LastUpdatedProps {
+  timestamp: string | null;
+}
+
+export function LastUpdated({ timestamp }: LastUpdatedProps) {
+  const [timeAgo, setTimeAgo] = useState('—');
 
   useEffect(() => {
+    if (!timestamp) {
+      setTimeAgo('No data yet');
+      return;
+    }
+
+    const date = new Date(timestamp);
+    setTimeAgo(getTimeAgo(date));
+
     const interval = setInterval(() => {
-      setTimeAgo(getTimeAgo(loadTime));
-    }, 10000); // Update every 10 seconds
+      setTimeAgo(getTimeAgo(date));
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [loadTime]);
+  }, [timestamp]);
 
   return (
     <div className="text-right">
-      <div className="text-sm text-gray-500">Last updated</div>
+      <div className="text-sm text-gray-500">Last analysis</div>
       <div className="text-sm font-medium text-gray-700">{timeAgo}</div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   getTopDomains,
   getAnalysesByDate,
   getRecentAnalyses as getRecentAnalysesFromDb,
+  getLatestAnalysisTime,
 } from '@/lib/db';
 
 // Mark as dynamic - dashboard needs fresh data
@@ -16,11 +17,12 @@ export const revalidate = 0;
 
 async function getStats() {
   try {
-    const [total, topFrameworks, topDomains, timelineData] = await Promise.all([
+    const [total, topFrameworks, topDomains, timelineData, latestTime] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
       getTopDomains(10),
       getAnalysesByDate(30),
+      getLatestAnalysisTime(),
     ]);
 
     return {
@@ -28,6 +30,7 @@ async function getStats() {
       frameworks: topFrameworks,
       domains: topDomains,
       timeline: timelineData,
+      latestTime,
     };
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -82,7 +85,7 @@ export default async function Dashboard() {
                 Chrome Extension Usage Dashboard
               </p>
             </div>
-            <LastUpdated />
+            <LastUpdated timestamp={stats.latestTime} />
           </div>
         </div>
       </div>

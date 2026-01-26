@@ -115,6 +115,20 @@ export async function getTopDomains(limit: number = 20) {
   }
 }
 
+export async function getLatestAnalysisTime() {
+  try {
+    const result = await sql`
+      SELECT timestamp FROM analyses
+      ORDER BY timestamp DESC
+      LIMIT 1;
+    `;
+    return result.rows[0]?.timestamp || null;
+  } catch (error) {
+    console.error('Database query error:', error);
+    return null;
+  }
+}
+
 export async function getAnalysesByDate(days: number = 30) {
   try {
     // Calculate date threshold in JavaScript to avoid SQL interpolation issues
