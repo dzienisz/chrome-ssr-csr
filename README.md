@@ -2,7 +2,7 @@
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)](https://github.com/dzienisz/chrome-ssr-csr/releases)
+[![Version](https://img.shields.io/badge/version-3.0.8-blue.svg)](https://github.com/dzienisz/chrome-ssr-csr/releases)
 
 The **CSR vs SSR Detector** is a Chrome extension that helps developers and SEO specialists identify whether a webpage is rendered using Client-Side Rendering (CSR), Server-Side Rendering (SSR), or a hybrid approach. Understanding this distinction is essential for making informed decisions about SEO, page performance, and overall application architecture.
 
@@ -25,7 +25,8 @@ The **CSR vs SSR Detector** is a Chrome extension that helps developers and SEO 
   - Desktop notifications toggle
   - Export/import your settings
 - **📜 Smart History**: Stores analyses with customizable limits
-- **🔒 Privacy-First**: All analysis happens locally, optional anonymous data sharing (v3.1+)
+- **🔒 Privacy-First**: All analysis happens locally, optional anonymous data sharing
+- **📈 Analytics Dashboard**: View aggregated usage data (opt-in telemetry)
 - **⚡ Instant Results**: One-click analysis with clear visual feedback
 
 ## 🎨 What's the Difference?

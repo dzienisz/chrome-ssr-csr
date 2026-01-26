@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Chrome Manifest V3 extension that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR). The extension is published on the Chrome Web Store and helps developers and SEO specialists understand page rendering strategies.
 
+The project includes:
+- **Chrome Extension** (root directory): The main extension code
+- **Analytics Backend** (`/backend`): Next.js app deployed on Vercel with PostgreSQL database for anonymous telemetry
+
 ## Development Setup
 
 ### Loading the Extension
@@ -232,3 +236,55 @@ Declared in manifest.json:
 - `scripting`: Inject and execute scripts
 - `storage`: Save analysis history and user settings (uses both `chrome.storage.local` for history and `chrome.storage.sync` for settings)
 - `notifications`: Show desktop notifications
+
+## Analytics Backend
+
+The project includes an optional analytics backend in the `/backend` directory.
+
+### Backend Stack
+- **Framework**: Next.js 14 (App Router)
+- **Database**: Vercel Postgres (Neon)
+- **UI Components**: Tremor for charts
+- **Hosting**: Vercel
+
+### Backend URLs
+- **Dashboard**: https://backend-mauve-beta-88.vercel.app/dashboard
+- **API Endpoint**: https://backend-mauve-beta-88.vercel.app/api/analyze
+
+### Backend Structure
+```
+backend/
+├── app/
+│   ├── api/
+│   │   ├── analyze/route.ts    # Receives telemetry data from extension
+│   │   ├── stats/route.ts      # Returns aggregated statistics
+│   │   └── setup/route.ts      # Database initialization
+│   └── dashboard/page.tsx      # Analytics dashboard UI
+├── components/dashboard/
+│   ├── charts.tsx              # FrameworkChart, RenderTypeDistribution, TimelineChart
+│   ├── recent-analyses.tsx     # Recent analyses table
+│   └── top-domains.tsx         # Top analyzed domains list
+└── lib/
+    ├── db.ts                   # Database queries
+    └── auth.ts                 # API authentication (optional)
+```
+
+### Telemetry Integration
+
+The extension sends anonymous telemetry when users opt-in via "Share anonymous data" in settings:
+
+1. **popup.js**: `sendDataIfEnabled()` function sends data after each analysis
+2. **Data sent**: Domain (not full URL), render type, confidence, frameworks, performance metrics
+3. **Privacy**: URLs are anonymized to origin only, no personal data collected
+
+### Backend Development
+
+```bash
+cd backend
+npm install
+npm run dev    # Local development at http://localhost:3000
+npx vercel --prod  # Deploy to production
+```
+
+### Environment Variables (Vercel)
+- `POSTGRES_URL`: Database connection string (auto-configured by Vercel Postgres)

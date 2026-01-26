@@ -5,6 +5,40 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.8] - 2026-01-26
+
+### Changed
+- **Removed host_permissions**: Extension no longer requires host permissions
+  - Fetch requests work via CORS headers from backend
+  - Cleaner permission model for Chrome Web Store
+
+## [3.0.7] - 2026-01-26
+
+### Added
+- **Analytics Backend**: New Next.js backend for anonymous telemetry
+  - Dashboard at https://backend-mauve-beta-88.vercel.app/dashboard
+  - Tracks render type distribution, top frameworks, analyzed domains
+  - Timeline charts showing usage over time
+  - Recent analyses table with detailed info
+
+### Changed
+- **Telemetry Integration**: Extension sends anonymous data when opted-in
+  - Data sent: domain (not full URL), render type, confidence, frameworks
+  - Controlled via "Share anonymous data" setting
+  - Privacy-first: URLs anonymized to origin only
+
+### Security
+- **Removed hardcoded API keys**: API authentication made optional
+  - Backend relies on CORS headers for protection
+  - No sensitive data in extension source code
+
+## [3.0.6] - 2026-01-25
+
+### Added
+- **Telemetry foundation**: Initial telemetry implementation
+  - Backend API endpoint for receiving analysis data
+  - Dashboard UI with Tremor charts
+
 ## [3.0.5] - 2025-10-21
 
 ### Fixed
@@ -236,6 +270,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v3.0.8**: Removed host_permissions for cleaner permission model
+- **v3.0.7**: Analytics backend with dashboard, telemetry integration
+- **v3.0.6**: Telemetry foundation
+- **v3.0.5**: Critical hotfix for missing bundle file
+- **v3.0**: Settings page, dark mode, export functionality
 - **v2.1**: UI polish, privacy policy, documentation improvements
 - **v2.0**: Major redesign with advanced detection, history, and modern UI
 - **v1.0**: Initial release with basic detection capabilities
