@@ -1,6 +1,20 @@
-# SSR/CSR Analytics Backend
+# SSR/CSR Analytics Dashboard
 
-Backend service and dashboard for the Chrome SSR/CSR Detector extension.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./CHANGELOG.md)
+[![Live Dashboard](https://img.shields.io/badge/dashboard-live-brightgreen)](https://backend-mauve-beta-88.vercel.app/dashboard)
+
+Real-time analytics dashboard for the [CSR vs SSR Detector](../extension) Chrome extension.
+
+## Live Dashboard
+
+**[View Live Dashboard](https://backend-mauve-beta-88.vercel.app/dashboard)**
+
+Features:
+- Real-time stats with 30-second auto-refresh
+- SSR/CSR/Hybrid distribution charts
+- Framework detection trends
+- Top analyzed domains
+- Recent analyses table
 
 ## Tech Stack
 
@@ -218,9 +232,24 @@ See `EXTENSION_INTEGRATION.md` for detailed instructions.
 - Vercel Pro: $20/month
 - Postgres Pro: $10+/month
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history.
+
+## Related
+
+- [Main Project README](../README.md)
+- [Chrome Extension](../extension)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
+
 ## Support
 
 For issues or questions:
+- [GitHub Issues](https://github.com/dzienisz/chrome-ssr-csr/issues)
 - Check Vercel logs for errors
 - Review database queries in Vercel Postgres dashboard
 - Check environment variables are set correctly
+
+## License
+
+MIT License - see [LICENSE](../LICENSE)
