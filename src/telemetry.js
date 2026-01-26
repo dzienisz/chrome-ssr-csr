@@ -6,9 +6,6 @@
 // Backend URL - Your deployed Vercel app
 const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
 
-// API Key - Matches the one set in Vercel environment variables
-const API_KEY = 'fbfb6754dd6736d59cfd88aab8ab2123cd5fc64ee02f480e4dff9aa9c5cacade';
-
 /**
  * Send analysis data to backend
  * @param {string} url - Page URL
@@ -43,7 +40,6 @@ async function sendAnalysisData(url, title, results) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
       },
       body: JSON.stringify(payload),
     });

@@ -58,32 +58,95 @@ export function RenderTypeDistribution({ data }: { data: any }) {
     return (
       <Card className="bg-white">
         <Title>Render Type Distribution</Title>
-        <div className="mt-6 flex items-center justify-center h-40">
+        <div className="mt-6 flex items-center justify-center h-48">
           <Text className="text-gray-500">No data yet</Text>
         </div>
       </Card>
     );
   }
 
-  const chartData = [
-    { name: 'SSR', value: ssrCount },
-    { name: 'CSR', value: csrCount },
-    { name: 'Hybrid', value: hybridCount },
-  ].filter(item => item.value > 0);
+  const ssrPercent = Math.round((ssrCount / total) * 100);
+  const csrPercent = Math.round((csrCount / total) * 100);
+  const hybridPercent = Math.round((hybridCount / total) * 100);
 
   return (
     <Card className="bg-white">
       <Title>Render Type Distribution</Title>
-      <DonutChart
-        className="mt-6 h-48"
-        data={chartData}
-        category="value"
-        index="name"
-        colors={['emerald', 'rose', 'amber']}
-        showAnimation={true}
-        showLabel={true}
-        valueFormatter={(value) => `${value} (${Math.round(value/total*100)}%)`}
-      />
+      <div className="mt-6 space-y-4">
+        {/* SSR */}
+        {ssrCount > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10b981' }}></div>
+                <span className="text-sm font-medium text-gray-700">SSR</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: '#059669' }}>{ssrPercent}%</span>
+                <span className="text-xs text-gray-400">({ssrCount})</span>
+              </div>
+            </div>
+            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+              <div
+                className="h-3 rounded-full transition-all duration-500"
+                style={{ width: `${ssrPercent}%`, backgroundColor: '#10b981' }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {/* CSR */}
+        {csrCount > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f43f5e' }}></div>
+                <span className="text-sm font-medium text-gray-700">CSR</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: '#e11d48' }}>{csrPercent}%</span>
+                <span className="text-xs text-gray-400">({csrCount})</span>
+              </div>
+            </div>
+            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+              <div
+                className="h-3 rounded-full transition-all duration-500"
+                style={{ width: `${csrPercent}%`, backgroundColor: '#f43f5e' }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {/* Hybrid */}
+        {hybridCount > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }}></div>
+                <span className="text-sm font-medium text-gray-700">Hybrid</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: '#d97706' }}>{hybridPercent}%</span>
+                <span className="text-xs text-gray-400">({hybridCount})</span>
+              </div>
+            </div>
+            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+              <div
+                className="h-3 rounded-full transition-all duration-500"
+                style={{ width: `${hybridPercent}%`, backgroundColor: '#f59e0b' }}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      <div className="mt-6 pt-4 border-t border-gray-100">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Total Analyses</span>
+          <span className="font-semibold text-gray-900">{total}</span>
+        </div>
+      </div>
     </Card>
   );
 }

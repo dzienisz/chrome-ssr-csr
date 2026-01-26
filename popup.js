@@ -334,7 +334,6 @@ function sendDataIfEnabled(url, results) {
 
       // Backend configuration
       const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
-      const API_KEY = 'fbfb6754dd6736d59cfd88aab8ab2123cd5fc64ee02f480e4dff9aa9c5cacade';
 
       // Extract domain from URL
       let domain = 'unknown';
@@ -370,7 +369,6 @@ function sendDataIfEnabled(url, results) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
         },
         body: JSON.stringify(payload),
       });
