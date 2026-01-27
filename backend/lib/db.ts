@@ -329,3 +329,16 @@ export async function getDeviceTypeSummary() {
     return [];
   }
 }
+export async function deleteAnalysis(id: number) {
+  try {
+    const result = await sql`
+      DELETE FROM analyses
+      WHERE id = ${id}
+      RETURNING id;
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Database deletion error:', error);
+    throw error;
+  }
+}

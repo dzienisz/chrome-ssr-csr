@@ -19,9 +19,10 @@ interface Analysis {
   platform?: any;
 }
 
-export function RecentAnalyses({ data }: { data: Analysis[] }) {
+export function RecentAnalyses({ data, onDelete }: { data: Analysis[]; onDelete?: (id: number) => Promise<void> }) {
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const getTypeStyle = (type: string) => {
     if (type?.includes('SSR')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -47,6 +48,22 @@ export function RecentAnalyses({ data }: { data: Analysis[] }) {
   const handleRowClick = (analysis: Analysis) => {
     setSelectedAnalysis(analysis);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation(); // Don't open modal
+    if (!onDelete) return;
+    
+    if (confirm('Are you sure you want to remove this analysis?')) {
+      try {
+        setDeletingId(id);
+        await onDelete(id);
+      } catch (err) {
+        alert('Failed to delete analysis');
+      } finally {
+        setDeletingId(null);
+      }
+    }
   };
 
   if (!data || data.length === 0) {
@@ -76,13 +93,14 @@ export function RecentAnalyses({ data }: { data: Analysis[] }) {
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Type</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Conf.</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Frameworks</th>
+                <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.slice(0, 15).map((analysis) => (
                 <tr 
                   key={analysis.id} 
-                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="hover:bg-gray-50 transition-colors cursor-pointer group"
                   onClick={() => handleRowClick(analysis)}
                 >
                   <td className="py-3 px-2 text-sm text-gray-500 whitespace-nowrap">
@@ -115,13 +133,29 @@ export function RecentAnalyses({ data }: { data: Analysis[] }) {
                         : '—'}
                     </span>
                   </td>
+                  <td className="py-3 px-2 text-right">
+                    <button
+                      onClick={(e) => handleDelete(e, analysis.id)}
+                      disabled={deletingId === analysis.id}
+                      className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                      title="Delete Analysis"
+                    >
+                      {deletingId === analysis.id ? (
+                        <span className="animate-spin inline-block">⏳</span>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <div className="mt-4 text-center">
-            <Text className="text-xs text-gray-400">Click on any row to view full details including Hydration & Tech Stack</Text>
+            <Text className="text-xs text-gray-400">Click on any row to view full details · Hover to delete</Text>
         </div>
       </Card>
 

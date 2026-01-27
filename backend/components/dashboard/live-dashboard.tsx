@@ -96,11 +96,40 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      setCountdown(REFRESH_INTERVAL);
       setError('Network error');
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [data.latestTime]);
+
+  const handleDeleteAnalysis = async (id: number) => {
+    try {
+      const res = await fetch(`/api/analyze/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete');
+      }
+
+      // Update local state immediately for snappy UI
+      setData(prev => ({
+        ...prev,
+        recent: prev.recent.filter(a => a.id !== id),
+        total: {
+          ...prev.total,
+          total_analyses: parseInt(prev.total.total_analyses) - 1
+        }
+      }));
+    } catch (err) {
+      console.error('Delete error:', err);
+      throw err;
+    }
+  };
 
   // Countdown timer - ticks every second
   useEffect(() => {
@@ -361,7 +390,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             <TopDomains data={data.domains || []} />
           </div>
           <div className="lg:col-span-2">
-            <RecentAnalyses data={data.recent || []} />
+            <RecentAnalyses data={data.recent || []} onDelete={handleDeleteAnalysis} />
           </div>
         </div>
 
