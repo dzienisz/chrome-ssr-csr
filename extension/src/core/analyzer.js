@@ -23,10 +23,15 @@ async function pageAnalyzer() {
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
 
-    // Phase 1: Collect Core Web Vitals (async)
-    const coreWebVitals = typeof window.collectCoreWebVitals === 'function' 
-      ? await window.collectCoreWebVitals() 
-      : null;
+    // Phase 1: Collect Core Web Vitals (async, with timeout to prevent blocking)
+    const coreWebVitalsPromise = typeof window.collectCoreWebVitals === 'function' 
+      ? Promise.race([
+          window.collectCoreWebVitals(),
+          new Promise(resolve => setTimeout(() => resolve(null), 500)) // 500ms max
+        ])
+      : Promise.resolve(null);
+    
+    const coreWebVitals = await coreWebVitalsPromise;
 
     // Phase 1: Detect page type (sync)
     const pageType = typeof window.detectPageType === 'function'
