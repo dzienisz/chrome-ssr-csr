@@ -376,9 +376,24 @@ function sendDataIfEnabled(url, results) {
         renderType: results.renderType,
         confidence: results.confidence,
         frameworks: results.detailedInfo?.frameworks || [],
+        
+        // Phase 1: Core Web Vitals
+        coreWebVitals: results.coreWebVitals || null,
+        
+        // Phase 1: Page Type
+        pageType: results.pageType || null,
+        
+        // Phase 1: Device & Connection Info
+        deviceInfo: results.deviceInfo || null,
+        
         performanceMetrics: {
           domReady: results.detailedInfo?.timing?.domContentLoaded,
           fcp: results.detailedInfo?.timing?.firstContentfulPaint,
+          // Content comparison metrics (v3.2.0)
+          contentRatio: results.detailedInfo?.contentComparison?.ratio,
+          rawHtmlLength: results.detailedInfo?.contentComparison?.rawLength,
+          renderedLength: results.detailedInfo?.contentComparison?.renderedLength,
+          hybridScore: results.detailedInfo?.hybridScore,
         },
         indicators: results.indicators || [],
         version: chrome.runtime.getManifest().version,
