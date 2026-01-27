@@ -68,12 +68,12 @@ export async function insertAnalysis(data: AnalysisRecord) {
   }
 }
 
-export async function getRecentAnalyses(limit: number = 100) {
+export async function getRecentAnalyses(limit: number = 20, offset: number = 0) {
   try {
     const result = await sql`
       SELECT * FROM analyses
       ORDER BY timestamp DESC
-      LIMIT ${limit};
+      LIMIT ${limit} OFFSET ${offset};
     `;
     return result.rows;
   } catch (error) {

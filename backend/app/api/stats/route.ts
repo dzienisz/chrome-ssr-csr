@@ -50,8 +50,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(timeline, { headers: cacheHeaders });
 
       case 'recent':
-        const recentLimit = parseInt(searchParams.get('limit') || '100');
-        const recent = await getRecentAnalyses(recentLimit);
+        const recentLimit = parseInt(searchParams.get('limit') || '20');
+        const offset = parseInt(searchParams.get('offset') || '0');
+        const recent = await getRecentAnalyses(recentLimit, offset);
         return NextResponse.json(recent, { headers: cacheHeaders });
 
       case 'contentComparison':

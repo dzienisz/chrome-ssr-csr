@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, Title, Text } from '@tremor/react';
 import { AnalysisDetailModal } from './analysis-detail-modal';
 
@@ -19,10 +19,45 @@ interface Analysis {
   platform?: any;
 }
 
-export function RecentAnalyses({ data, onDelete }: { data: Analysis[]; onDelete?: (id: number) => Promise<void> }) {
+export function RecentAnalyses({ 
+  data, 
+  onDelete, 
+  onLoadMore,
+  hasMore,
+  isLoadingMore
+}: { 
+  data: Analysis[]; 
+  onDelete?: (id: number) => Promise<void>;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+}) {
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, isLoadingMore, onLoadMore]);
 
   const getTypeStyle = (type: string) => {
     if (type?.includes('SSR')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -82,11 +117,13 @@ export function RecentAnalyses({ data, onDelete }: { data: Analysis[]; onDelete?
       <Card className="bg-white">
         <div className="flex items-center justify-between mb-4">
           <Title>Recent Analyses</Title>
-          <span className="text-sm text-gray-500">{data.length} entries</span>
+          <span className="text-sm text-gray-500">{data.length} loaded</span>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Fixed height container for scrollable table */}
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
               <tr className="border-b border-gray-200">
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Time</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Domain</th>
@@ -97,7 +134,7 @@ export function RecentAnalyses({ data, onDelete }: { data: Analysis[]; onDelete?
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data.slice(0, 15).map((analysis) => (
+              {data.map((analysis) => (
                 <tr 
                   key={analysis.id} 
                   className="hover:bg-gray-50 transition-colors cursor-pointer group"
@@ -153,9 +190,23 @@ export function RecentAnalyses({ data, onDelete }: { data: Analysis[]; onDelete?
               ))}
             </tbody>
           </table>
+          
+          {/* Intersection Target */}
+          <div ref={observerTarget} className="h-10 flex items-center justify-center w-full">
+            {isLoadingMore && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <span className="animate-spin text-xl">⏳</span>
+                <Text className="text-xs">Loading more...</Text>
+              </div>
+            )}
+            {!hasMore && data.length > 0 && (
+              <Text className="text-xs text-gray-400">No more analyses to load</Text>
+            )}
+          </div>
         </div>
+        
         <div className="mt-4 text-center">
-            <Text className="text-xs text-gray-400">Click on any row to view full details · Hover to delete</Text>
+            <Text className="text-xs text-gray-400">Click on any row to view full details · Hover to delete · Scroll for more</Text>
         </div>
       </Card>
 

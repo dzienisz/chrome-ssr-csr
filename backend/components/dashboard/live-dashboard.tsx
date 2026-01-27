@@ -54,6 +54,9 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
+  
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialData.recent.length >= 20);
 
   const fetchData = useCallback(async () => {
     try {
@@ -86,6 +89,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             seoStats: (phase2Data as any).seoStats || prev.seoStats,
             phase3: (phase3Data as any) || prev.phase3
           }));
+          setHasMore(newData.recent.length >= 20); // Reset hasMore on full refresh
           setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
         } else {
           console.error('Invalid data structure:', newData);
@@ -102,6 +106,29 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
       setIsRefreshing(false);
     }
   }, [data.latestTime]);
+
+  const loadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    try {
+      setIsLoadingMore(true);
+      const res = await fetch(`/api/stats?type=recent&limit=20&offset=${data.recent.length}`);
+      if (res.ok) {
+        const newRecent = await res.json();
+        if (newRecent.length < 20) {
+          setHasMore(false);
+        }
+        setData(prev => ({
+          ...prev,
+          recent: [...prev.recent, ...newRecent]
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load more:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const handleDeleteAnalysis = async (id: number) => {
     try {
@@ -390,7 +417,13 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             <TopDomains data={data.domains || []} />
           </div>
           <div className="lg:col-span-2">
-            <RecentAnalyses data={data.recent || []} onDelete={handleDeleteAnalysis} />
+            <RecentAnalyses 
+              data={data.recent || []} 
+              onDelete={handleDeleteAnalysis}
+              onLoadMore={loadMore}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+            />
           </div>
         </div>
 
