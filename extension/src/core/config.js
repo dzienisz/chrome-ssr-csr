@@ -6,7 +6,7 @@
 const CONFIG = {
   // Scoring weights for different indicators
   scoring: {
-    richContent: 35,
+    richContent: 20,           // Reduced from 35 - rendered DOM is misleading
     minimalContent: 30,
     frameworkMarkers: 30,
     serializedData: 25,
@@ -22,7 +22,13 @@ const CONFIG = {
     loadingStates: 20,
     structuredData: 15,
     highScriptRatio: 15,
-    lowScriptRatio: 10
+    lowScriptRatio: 10,
+    // New CSR detection weights
+    rawVsRenderedMismatch: 40, // Raw HTML much smaller than rendered = CSR
+    rawVsRenderedMatch: 30,    // Raw HTML similar to rendered = SSR
+    spaRootPattern: 20,        // #root/#app with data attributes = CSR
+    noscriptFallback: 15,      // "JavaScript required" message = CSR
+    fastDomSlowFcp: 25         // Fast DOMContentLoaded + slow FCP = CSR
   },
 
   // Classification thresholds
@@ -59,7 +65,15 @@ const CONFIG = {
   performance: {
     fastDOMReady: 30,
     slowDOMReady: 500,
-    fastFCP: 800
+    fastFCP: 800,
+    slowFCP: 1000           // FCP above this with fast DOM = CSR indicator
+  },
+
+  // Content comparison thresholds (raw HTML vs rendered DOM)
+  contentComparison: {
+    csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
+    ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
+    minRenderedLength: 200  // Minimum rendered content to compare
   },
 
   // Script ratio thresholds

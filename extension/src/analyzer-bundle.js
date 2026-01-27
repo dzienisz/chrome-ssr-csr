@@ -10,7 +10,7 @@ if (typeof window.__SSR_CSR_ANALYZER_LOADED__ === 'undefined') {
 const CONFIG = {
   // Scoring weights for different indicators
   scoring: {
-    richContent: 35,
+    richContent: 20,           // Reduced from 35 - rendered DOM is misleading
     minimalContent: 30,
     frameworkMarkers: 30,
     serializedData: 25,
@@ -26,7 +26,13 @@ const CONFIG = {
     loadingStates: 20,
     structuredData: 15,
     highScriptRatio: 15,
-    lowScriptRatio: 10
+    lowScriptRatio: 10,
+    // New CSR detection weights
+    rawVsRenderedMismatch: 40, // Raw HTML much smaller than rendered = CSR
+    rawVsRenderedMatch: 30,    // Raw HTML similar to rendered = SSR
+    spaRootPattern: 20,        // #root/#app with data attributes = CSR
+    noscriptFallback: 15,      // "JavaScript required" message = CSR
+    fastDomSlowFcp: 25         // Fast DOMContentLoaded + slow FCP = CSR
   },
 
   // Classification thresholds
@@ -63,7 +69,15 @@ const CONFIG = {
   performance: {
     fastDOMReady: 30,
     slowDOMReady: 500,
-    fastFCP: 800
+    fastFCP: 800,
+    slowFCP: 1000           // FCP above this with fast DOM = CSR indicator
+  },
+
+  // Content comparison thresholds (raw HTML vs rendered DOM)
+  contentComparison: {
+    csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
+    ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
+    minRenderedLength: 200  // Minimum rendered content to compare
   },
 
   // Script ratio thresholds
@@ -122,6 +136,146 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = CONFIG;
 }
+
+/**
+ * Raw HTML Comparison Module
+ * Fetches raw HTML and compares to rendered DOM to detect CSR vs SSR
+ */
+
+/**
+ * Compare initial HTML (before JS) vs rendered DOM (after JS)
+ * True SSR will have similar content in both; CSR will have minimal raw HTML
+ * @returns {Promise<Object|null>} Comparison results or null if fetch fails
+ */
+async function compareInitialVsRendered() {
+  const config = window.DETECTOR_CONFIG;
+
+  try {
+    // Fetch raw HTML (before JS execution)
+    const response = await fetch(window.location.href, {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'text/html' }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const rawHTML = await response.text();
+
+    // Parse raw HTML
+    const parser = new DOMParser();
+    const rawDoc = parser.parseFromString(rawHTML, 'text/html');
+    const rawBodyText = rawDoc.body?.innerText?.trim() || '';
+
+    // Get current rendered DOM text
+    const renderedText = document.body.innerText.trim();
+
+    // Calculate content lengths
+    const rawLength = rawBodyText.length;
+    const renderedLength = renderedText.length;
+
+    // Calculate content ratio
+    const contentRatio = rawLength / Math.max(renderedLength, 1);
+
+    // Determine if CSR or SSR based on ratio
+    const isLikelyCSR = contentRatio < config.contentComparison.csrRatio &&
+                        renderedLength > config.contentComparison.minRenderedLength;
+    const isLikelySSR = contentRatio > config.contentComparison.ssrRatio;
+
+    return {
+      rawLength,
+      renderedLength,
+      contentRatio: Math.round(contentRatio * 100) / 100,
+      isLikelyCSR,
+      isLikelySSR
+    };
+  } catch (e) {
+    // Fetch failed (CORS, network error, etc.) - can't determine
+    console.debug('CSR/SSR Detector: Raw HTML fetch failed', e.message);
+    return null;
+  }
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.compareInitialVsRendered = compareInitialVsRendered;
+}
+
+/**
+ * CSR Pattern Detector Module
+ * Detects patterns specific to client-side rendered applications
+ */
+
+/**
+ * Detect CSR-specific patterns in the page
+ * @returns {Object} Detection results with score and indicators
+ */
+function detectCSRPatterns() {
+  const config = window.DETECTOR_CONFIG;
+  const indicators = [];
+  let csrScore = 0;
+
+  // Check for typical SPA root containers
+  const root = document.getElementById('root') || document.getElementById('app');
+  if (root) {
+    // Check for React/Vue root markers
+    const hasReactRoot = root.hasAttribute('data-reactroot') ||
+                         root._reactRootContainer !== undefined;
+    const hasVueApp = root.hasAttribute('data-v-app') ||
+                      root.__vue_app__ !== undefined;
+
+    // SPA frameworks typically inject content into a single root with few initial children
+    // After hydration, the root will have content but the marker attributes indicate SPA
+    if (hasReactRoot || hasVueApp) {
+      csrScore += config.scoring.spaRootPattern;
+      indicators.push("SPA root container pattern detected (CSR)");
+    }
+  }
+
+  // Check for noscript fallback content (common in CSR/SPA apps)
+  const noscripts = document.querySelectorAll('noscript');
+  for (const noscript of noscripts) {
+    const text = noscript.textContent.toLowerCase();
+    if (text.includes('javascript') ||
+        text.includes('enable js') ||
+        text.includes('requires javascript') ||
+        text.includes('need to enable')) {
+      csrScore += config.scoring.noscriptFallback;
+      indicators.push("JavaScript required message found (CSR)");
+      break;
+    }
+  }
+
+  // Check for empty initial HTML indicators
+  // Look for common CSR patterns in the HTML structure
+  const htmlElement = document.documentElement;
+  const bodyClasses = document.body.className.toLowerCase();
+
+  // Many CSR apps add classes dynamically after load
+  if (bodyClasses.includes('js-loaded') ||
+      bodyClasses.includes('app-loaded') ||
+      bodyClasses.includes('hydrated')) {
+    csrScore += 10;
+    indicators.push("dynamic body class detected (CSR)");
+  }
+
+  return {
+    ssrScore: 0,
+    csrScore,
+    indicators,
+    details: {
+      hasRoot: !!root,
+      hasNoscriptWarning: indicators.some(i => i.includes('JavaScript required'))
+    }
+  };
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.detectCSRPatterns = detectCSRPatterns;
+}
+
 /**
  * Content Detector Module
  * Analyzes HTML content structure and text
@@ -404,6 +558,11 @@ if (typeof window !== 'undefined') {
 
 /**
  * Analyze performance metrics for SSR/CSR indicators
+ *
+ * Key insight: CSR apps have FAST DOMContentLoaded because initial HTML is minimal.
+ * The content is then loaded via JavaScript, resulting in slow FCP.
+ * SSR apps have content in the initial HTML, so FCP is fast relative to DOM ready.
+ *
  * @returns {Object} Detection results with score and indicators
  */
 function analyzePerformance() {
@@ -419,25 +578,36 @@ function analyzePerformance() {
     const navTiming = performanceEntries[0];
     const domContentLoadedTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
     const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint')[0];
+    const fcpTime = firstContentfulPaint ? firstContentfulPaint.startTime : null;
 
-    // Fast initial render suggests SSR
-    if (domContentLoadedTime < config.performance.fastDOMReady) {
-      ssrScore += config.scoring.fastDOMReady;
-      indicators.push("very fast DOM ready (SSR)");
-    } else if (domContentLoadedTime > config.performance.slowDOMReady) {
-      csrScore += config.scoring.slowDOMReady;
-      indicators.push("slow DOM ready (CSR)");
+    // Key CSR indicator: Fast DOM ready + slow FCP
+    // This means the initial HTML loaded quickly (because it's minimal),
+    // but content took a while to appear (because it was loaded via JavaScript)
+    if (domContentLoadedTime < config.performance.fastDOMReady &&
+        fcpTime && fcpTime > config.performance.slowFCP) {
+      csrScore += config.scoring.fastDomSlowFcp;
+      indicators.push("fast DOM ready but slow FCP (CSR pattern)");
     }
-
-    // FCP timing analysis
-    if (firstContentfulPaint && firstContentfulPaint.startTime < config.performance.fastFCP) {
+    // Fast FCP with reasonable DOM time suggests SSR (content was in initial HTML)
+    else if (fcpTime && fcpTime < config.performance.fastFCP) {
       ssrScore += config.scoring.fastFCP;
       indicators.push("fast first contentful paint (SSR)");
     }
 
+    // Very slow DOM ready can indicate heavy server processing (SSR) or slow network
+    // This is less reliable, so we use lower weight
+    if (domContentLoadedTime > config.performance.slowDOMReady) {
+      // Slow DOM + slow FCP = might be slow SSR or network issues
+      // Slow DOM + fast FCP = SSR (server took time, but content was ready)
+      if (fcpTime && fcpTime < config.performance.fastFCP) {
+        ssrScore += 10;
+        indicators.push("slow DOM but fast paint (SSR)");
+      }
+    }
+
     detailedInfo.timing = {
       domContentLoaded: Math.round(domContentLoadedTime),
-      firstContentfulPaint: firstContentfulPaint ? Math.round(firstContentfulPaint.startTime) : null
+      firstContentfulPaint: fcpTime ? Math.round(fcpTime) : null
     };
   }
 
@@ -518,21 +688,50 @@ if (typeof window !== 'undefined') {
 
 /**
  * Main analysis function - coordinates all detectors
- * @returns {Object} Complete analysis results
+ * Now async to support raw HTML comparison
+ * @returns {Promise<Object>} Complete analysis results
  */
-function pageAnalyzer() {
+async function pageAnalyzer() {
+  const config = window.DETECTOR_CONFIG;
+
   try {
-    // Collect results from all detector modules
+    // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
     const frameworkResults = window.detectFrameworks();
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
+    const csrPatternResults = window.detectCSRPatterns();
+
+    // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
+    const comparisonResults = await window.compareInitialVsRendered();
 
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
     const indicators = [];
     const detailedInfo = {};
+
+    // Add raw HTML comparison results (highest priority signal)
+    if (comparisonResults) {
+      if (comparisonResults.isLikelyCSR) {
+        csrScore += config.scoring.rawVsRenderedMismatch;
+        indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
+      } else if (comparisonResults.isLikelySSR) {
+        ssrScore += config.scoring.rawVsRenderedMatch;
+        indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
+      }
+      detailedInfo.contentComparison = {
+        rawLength: comparisonResults.rawLength,
+        renderedLength: comparisonResults.renderedLength,
+        ratio: comparisonResults.contentRatio
+      };
+    }
+
+    // Add CSR pattern detection results
+    ssrScore += csrPatternResults.ssrScore;
+    csrScore += csrPatternResults.csrScore;
+    indicators.push(...csrPatternResults.indicators);
+    Object.assign(detailedInfo, csrPatternResults.details);
 
     // Add content analysis results
     ssrScore += contentResults.ssrScore;

@@ -5,6 +5,11 @@
 
 /**
  * Analyze performance metrics for SSR/CSR indicators
+ *
+ * Key insight: CSR apps have FAST DOMContentLoaded because initial HTML is minimal.
+ * The content is then loaded via JavaScript, resulting in slow FCP.
+ * SSR apps have content in the initial HTML, so FCP is fast relative to DOM ready.
+ *
  * @returns {Object} Detection results with score and indicators
  */
 function analyzePerformance() {
@@ -20,25 +25,36 @@ function analyzePerformance() {
     const navTiming = performanceEntries[0];
     const domContentLoadedTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
     const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint')[0];
+    const fcpTime = firstContentfulPaint ? firstContentfulPaint.startTime : null;
 
-    // Fast initial render suggests SSR
-    if (domContentLoadedTime < config.performance.fastDOMReady) {
-      ssrScore += config.scoring.fastDOMReady;
-      indicators.push("very fast DOM ready (SSR)");
-    } else if (domContentLoadedTime > config.performance.slowDOMReady) {
-      csrScore += config.scoring.slowDOMReady;
-      indicators.push("slow DOM ready (CSR)");
+    // Key CSR indicator: Fast DOM ready + slow FCP
+    // This means the initial HTML loaded quickly (because it's minimal),
+    // but content took a while to appear (because it was loaded via JavaScript)
+    if (domContentLoadedTime < config.performance.fastDOMReady &&
+        fcpTime && fcpTime > config.performance.slowFCP) {
+      csrScore += config.scoring.fastDomSlowFcp;
+      indicators.push("fast DOM ready but slow FCP (CSR pattern)");
     }
-
-    // FCP timing analysis
-    if (firstContentfulPaint && firstContentfulPaint.startTime < config.performance.fastFCP) {
+    // Fast FCP with reasonable DOM time suggests SSR (content was in initial HTML)
+    else if (fcpTime && fcpTime < config.performance.fastFCP) {
       ssrScore += config.scoring.fastFCP;
       indicators.push("fast first contentful paint (SSR)");
     }
 
+    // Very slow DOM ready can indicate heavy server processing (SSR) or slow network
+    // This is less reliable, so we use lower weight
+    if (domContentLoadedTime > config.performance.slowDOMReady) {
+      // Slow DOM + slow FCP = might be slow SSR or network issues
+      // Slow DOM + fast FCP = SSR (server took time, but content was ready)
+      if (fcpTime && fcpTime < config.performance.fastFCP) {
+        ssrScore += 10;
+        indicators.push("slow DOM but fast paint (SSR)");
+      }
+    }
+
     detailedInfo.timing = {
       domContentLoaded: Math.round(domContentLoadedTime),
-      firstContentfulPaint: firstContentfulPaint ? Math.round(firstContentfulPaint.startTime) : null
+      firstContentfulPaint: fcpTime ? Math.round(fcpTime) : null
     };
   }
 

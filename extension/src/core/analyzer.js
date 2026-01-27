@@ -5,21 +5,50 @@
 
 /**
  * Main analysis function - coordinates all detectors
- * @returns {Object} Complete analysis results
+ * Now async to support raw HTML comparison
+ * @returns {Promise<Object>} Complete analysis results
  */
-function pageAnalyzer() {
+async function pageAnalyzer() {
+  const config = window.DETECTOR_CONFIG;
+
   try {
-    // Collect results from all detector modules
+    // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
     const frameworkResults = window.detectFrameworks();
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
+    const csrPatternResults = window.detectCSRPatterns();
+
+    // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
+    const comparisonResults = await window.compareInitialVsRendered();
 
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
     const indicators = [];
     const detailedInfo = {};
+
+    // Add raw HTML comparison results (highest priority signal)
+    if (comparisonResults) {
+      if (comparisonResults.isLikelyCSR) {
+        csrScore += config.scoring.rawVsRenderedMismatch;
+        indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
+      } else if (comparisonResults.isLikelySSR) {
+        ssrScore += config.scoring.rawVsRenderedMatch;
+        indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
+      }
+      detailedInfo.contentComparison = {
+        rawLength: comparisonResults.rawLength,
+        renderedLength: comparisonResults.renderedLength,
+        ratio: comparisonResults.contentRatio
+      };
+    }
+
+    // Add CSR pattern detection results
+    ssrScore += csrPatternResults.ssrScore;
+    csrScore += csrPatternResults.csrScore;
+    indicators.push(...csrPatternResults.indicators);
+    Object.assign(detailedInfo, csrPatternResults.details);
 
     // Add content analysis results
     ssrScore += contentResults.ssrScore;

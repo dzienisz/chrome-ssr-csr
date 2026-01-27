@@ -161,11 +161,11 @@ function analyzeCurrentPage() {
           return;
         }
 
-        // After analyzer.js is injected, run the analysis
+        // After analyzer.js is injected, run the analysis (async)
         chrome.scripting.executeScript(
           {
             target: { tabId: tab.id },
-            function: () => window.pageAnalyzer()
+            function: async () => await window.pageAnalyzer()
           },
           (results) => {
             if (chrome.runtime.lastError) {

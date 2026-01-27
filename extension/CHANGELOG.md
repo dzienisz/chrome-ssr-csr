@@ -5,6 +5,39 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-01-27
+
+### Fixed
+- **CSR Detection Algorithm**: Major fix for accurate CSR detection
+  - Previously, analyzer ran on live DOM after JavaScript executed, making CSR apps look like SSR
+  - Now fetches raw HTML and compares to rendered DOM for accurate detection
+  - Raw HTML much smaller than rendered DOM = CSR indicator (+40 points)
+  - Raw HTML matches rendered content = SSR indicator (+30 points)
+
+### Added
+- **Raw HTML Comparison**: New `compareInitialVsRendered()` async function
+  - Fetches page's raw HTML before JS execution
+  - Compares text content ratio between raw and rendered DOM
+  - Most reliable signal for CSR vs SSR detection
+
+- **CSR Pattern Detection**: New `detectCSRPatterns()` function
+  - Detects SPA root containers (#root, #app) with React/Vue markers
+  - Checks for "JavaScript required" noscript messages
+  - Detects dynamic body classes (js-loaded, app-loaded, hydrated)
+
+### Changed
+- **Performance Timing Logic**: Fixed backwards logic
+  - Before: Fast DOMContentLoaded = SSR (incorrect!)
+  - After: Fast DOMContentLoaded + slow FCP = CSR (content loaded via JS)
+  - Fast FCP only counts as SSR when DOM timing is reasonable
+
+- **Scoring Weights**: Rebalanced for accuracy
+  - Reduced `richContent` weight from 35 to 20 (rendered DOM is misleading)
+  - Added new CSR-specific weights for pattern detection
+  - Added `slowFCP` threshold (1000ms) for CSR detection
+
+- **Async Analysis**: `pageAnalyzer()` is now async to support raw HTML fetch
+
 ## [3.1.2] - 2026-01-26
 
 ### Added

@@ -7,11 +7,11 @@ chrome.action.onClicked.addListener((tab) => {
       files: ['src/analyzer-bundle.js']
     },
     () => {
-      // After analyzer.js is injected, run the analysis
+      // After analyzer.js is injected, run the analysis (async)
       chrome.scripting.executeScript(
         {
           target: { tabId: tab.id },
-          function: () => window.pageAnalyzer()
+          function: async () => await window.pageAnalyzer()
         },
         (results) => {
           if (results && results[0] && results[0].result) {
