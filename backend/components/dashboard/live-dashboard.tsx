@@ -5,6 +5,8 @@ import { FrameworkChart, RenderTypeDistribution, TimelineChart } from './charts'
 import { RecentAnalyses } from './recent-analyses';
 import { TopDomains } from './top-domains';
 import { LastUpdated } from './last-updated';
+import { PlatformBreakdown } from './platform-breakdown';
+import { HybridInsights } from './hybrid-insights';
 
 interface DashboardData {
   total: any;
@@ -322,6 +324,12 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         {/* Timeline Chart */}
         <div className="mb-6">
           <TimelineChart data={data.timeline || []} />
+        </div>
+
+        {/* New v3.2.1 Insights Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <PlatformBreakdown data={data.frameworks || []} />
+          <HybridInsights data={data.total} />
         </div>
 
         {/* Bottom Row: Top Domains + Recent Analyses */}
