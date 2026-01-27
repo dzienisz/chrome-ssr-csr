@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, Title, Text } from '@tremor/react';
+import { AnalysisDetailModal } from './analysis-detail-modal';
 
 interface Analysis {
   id: number;
@@ -9,9 +11,18 @@ interface Analysis {
   render_type: string;
   confidence: number;
   frameworks: string[];
+  // Include all other potential fields for the modal
+  tech_stack?: any;
+  core_web_vitals?: any;
+  hydration_stats?: any;
+  navigation_stats?: any;
+  platform?: any;
 }
 
 export function RecentAnalyses({ data }: { data: Analysis[] }) {
+  const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const getTypeStyle = (type: string) => {
     if (type?.includes('SSR')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     if (type?.includes('CSR')) return 'bg-rose-100 text-rose-700 border-rose-200';
@@ -33,6 +44,11 @@ export function RecentAnalyses({ data }: { data: Analysis[] }) {
     return 'text-rose-600';
   };
 
+  const handleRowClick = (analysis: Analysis) => {
+    setSelectedAnalysis(analysis);
+    setIsModalOpen(true);
+  };
+
   if (!data || data.length === 0) {
     return (
       <Card className="bg-white">
@@ -45,60 +61,75 @@ export function RecentAnalyses({ data }: { data: Analysis[] }) {
   }
 
   return (
-    <Card className="bg-white">
-      <div className="flex items-center justify-between mb-4">
-        <Title>Recent Analyses</Title>
-        <span className="text-sm text-gray-500">{data.length} entries</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Time</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Domain</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Type</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Conf.</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Frameworks</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {data.slice(0, 15).map((analysis) => (
-              <tr key={analysis.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-2 text-sm text-gray-500 whitespace-nowrap">
-                  {new Date(analysis.timestamp).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </td>
-                <td className="py-3 px-2">
-                  <span className="text-sm font-medium text-gray-900 truncate block max-w-[180px]">
-                    {analysis.domain}
-                  </span>
-                </td>
-                <td className="py-3 px-2">
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md border ${getTypeStyle(analysis.render_type)}`}>
-                    {getTypeLabel(analysis.render_type)}
-                  </span>
-                </td>
-                <td className="py-3 px-2">
-                  <span className={`text-sm font-semibold ${getConfidenceColor(analysis.confidence)}`}>
-                    {analysis.confidence}%
-                  </span>
-                </td>
-                <td className="py-3 px-2">
-                  <span className="text-sm text-gray-600 truncate block max-w-[120px]">
-                    {Array.isArray(analysis.frameworks) && analysis.frameworks.length > 0
-                      ? analysis.frameworks.join(', ')
-                      : '—'}
-                  </span>
-                </td>
+    <>
+      <Card className="bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <Title>Recent Analyses</Title>
+          <span className="text-sm text-gray-500">{data.length} entries</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Time</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Domain</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Type</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Conf.</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Frameworks</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.slice(0, 15).map((analysis) => (
+                <tr 
+                  key={analysis.id} 
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => handleRowClick(analysis)}
+                >
+                  <td className="py-3 px-2 text-sm text-gray-500 whitespace-nowrap">
+                    {new Date(analysis.timestamp).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm font-medium text-gray-900 truncate block max-w-[180px]">
+                      {analysis.domain}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md border ${getTypeStyle(analysis.render_type)}`}>
+                      {getTypeLabel(analysis.render_type)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className={`text-sm font-semibold ${getConfidenceColor(analysis.confidence)}`}>
+                      {analysis.confidence}%
+                    </span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm text-gray-600 truncate block max-w-[120px]">
+                      {Array.isArray(analysis.frameworks) && analysis.frameworks.length > 0
+                        ? analysis.frameworks.join(', ')
+                        : '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 text-center">
+            <Text className="text-xs text-gray-400">Click on any row to view full details including Hydration & Tech Stack</Text>
+        </div>
+      </Card>
+
+      <AnalysisDetailModal 
+        analysis={selectedAnalysis} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
+    </>
   );
 }
