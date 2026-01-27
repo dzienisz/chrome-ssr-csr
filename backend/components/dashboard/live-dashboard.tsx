@@ -10,6 +10,7 @@ import { HybridInsights } from './hybrid-insights';
 import { CoreWebVitalsComparison } from './core-web-vitals-comparison';
 import { TechStackTrends } from './tech-stack-trends';
 import { SEOInsights } from './seo-insights';
+import { UserJourneyAnalysis } from './user-journey-analysis';
 
 interface DashboardData {
   total: any;
@@ -35,6 +36,10 @@ interface DashboardData {
   };
   techStack?: any;
   seoStats?: any;
+  phase3?: {
+    hydration: any;
+    navigation: any;
+  };
 }
 
 interface LiveDashboardProps {
@@ -54,24 +59,31 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
       setIsRefreshing(true);
       setError(null);
       
-      const [statsRes, phase2Res] = await Promise.all([
+      const [statsRes, phase2Res, phase3Res] = await Promise.all([
         fetch('/api/stats?type=all', { headers: { 'Cache-Control': 'no-cache' } }),
-        fetch('/api/stats/phase2', { headers: { 'Cache-Control': 'no-cache' } })
+        fetch('/api/stats/phase2', { headers: { 'Cache-Control': 'no-cache' } }),
+        fetch('/api/stats/phase3', { headers: { 'Cache-Control': 'no-cache' } })
       ]);
 
       if (statsRes.ok) {
         const newData = await statsRes.json();
         let phase2Data = {};
+        let phase3Data = {};
         
         if (phase2Res.ok) {
           phase2Data = await phase2Res.json();
+        }
+
+        if (phase3Res.ok) {
+          phase3Data = await phase3Res.json();
         }
 
         if (newData && newData.total) {
           setData(prev => ({
             ...newData,
             techStack: (phase2Data as any).techStack || prev.techStack,
-            seoStats: (phase2Data as any).seoStats || prev.seoStats
+            seoStats: (phase2Data as any).seoStats || prev.seoStats,
+            phase3: (phase3Data as any) || prev.phase3
           }));
           setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
         } else {
@@ -342,6 +354,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             <CoreWebVitalsComparison data={data.phase1.coreWebVitals} />
           </div>
         )}
+
+        {/* Phase 3: User Journey Analysis */}
+        <div className="mb-6">
+          <UserJourneyAnalysis data={data.phase3 || null} />
+        </div>
 
         {/* Phase 2: Tech Stack & SEO */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
