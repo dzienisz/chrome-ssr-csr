@@ -48,7 +48,7 @@ async function sendAnalysisData(url, title, results) {
       },
       
       indicators: results.indicators || [],
-      version: '3.3.0',  // Phase 1 version
+      version: '3.3.1',  // Phase 1 patch
       timestamp: new Date().toISOString(),
     };
 
