@@ -78,8 +78,9 @@ npx vercel --prod  # Deploy to production
    - Handles notifications and history storage
 
 2. **src/analyzer-bundle.js** (Injected Content Script)
-   - Exposes `window.pageAnalyzer()` function
-   - Modular detectors: content, framework, meta, performance
+   - Exposes `window.pageAnalyzer()` async function
+   - Modular detectors: content, framework, meta, performance, comparison, csr-patterns
+   - Fetches raw HTML to compare with rendered DOM
    - Returns: `{renderType, confidence, indicators, detailedInfo}`
 
 3. **popup.js** (Popup UI)
@@ -89,10 +90,17 @@ npx vercel --prod  # Deploy to production
 
 ### Detection Algorithm
 
+**Primary Method (v3.2.0+):** Fetches raw HTML and compares to rendered DOM.
+- Raw HTML much smaller than rendered = CSR (JS loaded content)
+- Raw HTML matches rendered = SSR (content in initial HTML)
+
 Weighted scoring system analyzing:
-- HTML content structure (35 points for rich content)
+- **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
 - Framework hydration markers (30 points)
 - Serialized data patterns (25 points)
+- Fast DOM + slow FCP pattern (25 points CSR)
+- SPA root containers with React/Vue markers (20 points CSR)
+- HTML content structure (20 points for rich content)
 - Meta tags and structured data (15-20 points)
 - Performance timing metrics (15-25 points)
 

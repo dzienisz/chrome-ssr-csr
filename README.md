@@ -37,7 +37,7 @@ npm run dev
 
 ## Features
 
-- **Accurate Detection** - Analyzes 15+ indicators (DOM, frameworks, performance, meta tags)
+- **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators
 - **Framework Recognition** - Detects Next.js, Nuxt, Gatsby, React, Vue, Angular, and more
 - **Badge on Icon** - Shows SSR/CSR/MIX result directly on extension icon
 - **Export Results** - Download as JSON, CSV, or Markdown

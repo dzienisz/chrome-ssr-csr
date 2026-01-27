@@ -1,7 +1,7 @@
 # CSR vs SSR Detector - Chrome Extension
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
-[![Version](https://img.shields.io/badge/version-3.1.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)](./CHANGELOG.md)
 
 A Chrome extension that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
 
@@ -52,13 +52,18 @@ The extension uses a weighted scoring system analyzing:
 
 | Indicator | SSR Points | CSR Points |
 |-----------|------------|------------|
-| Rich initial content | +35 | - |
+| **Raw HTML vs Rendered mismatch** | - | +40 |
+| Raw HTML matches rendered | +30 | - |
 | Framework hydration markers | +30 | - |
 | Serialized data (`__NEXT_DATA__`) | +25 | - |
+| Fast DOM + slow FCP pattern | - | +25 |
+| SPA root container (#root/#app) | - | +20 |
+| Rich initial content | +20 | - |
 | Minimal text content | - | +30 |
 | CSR framework scripts | - | +25 |
-| Fast DOM ready (<30ms) | +25 | - |
-| Slow DOM ready (>500ms) | - | +20 |
+| Noscript JS warning | - | +15 |
+
+**Key Detection Method (v3.2.0+):** The extension fetches the page's raw HTML and compares it to the rendered DOM. If raw HTML is much smaller than rendered content, it's likely CSR (JavaScript loaded the content).
 
 **Classification:**
 - ≥75% SSR score → "Server-Side Rendered (SSR)"
@@ -85,7 +90,9 @@ extension/
 │   │   ├── content-detector.js     # DOM/content analysis
 │   │   ├── framework-detector.js   # Framework detection
 │   │   ├── meta-detector.js        # Meta tags analysis
-│   │   └── performance-detector.js # Timing metrics
+│   │   ├── performance-detector.js # Timing metrics
+│   │   ├── comparison-detector.js  # Raw HTML vs rendered DOM
+│   │   └── csr-pattern-detector.js # SPA/CSR patterns
 │   └── ui/
 │       └── results-renderer.js     # Results HTML generation
 ├── icon*.png            # Extension icons
