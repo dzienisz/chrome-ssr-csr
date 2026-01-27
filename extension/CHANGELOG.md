@@ -5,6 +5,40 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-01-27
+
+### Added - Phase 2: Tech Stack & SEO Intelligence 🧠
+
+- **Tech Stack Detection**: New `tech-stack-detector.js` module
+  - **CSS Frameworks**: Detects Tailwind, Bootstrap (v4/v5), Material UI, Chakra UI, Bulma, Ant Design, Foundation
+  - **State Management**: Detects Redux, MobX, Recoil, XState, Apollo Client
+  - **Build Tools**: Detects Vite, Webpack, Next.js, Parcel
+  - **Hosting & Cloud**: Detects Vercel, Netlify, AWS Amplify, Cloudflare, Heroku, GitHub Pages
+  - **Legacy Libs**: Detects jQuery, AngularJS, Backbone, Zepto
+
+- **SEO & Accessibility Audit**: New `seo-detector.js` module
+  - **SEO Health Checks**:
+    - Meta tags presence (description, robots, viewport)
+    - Social tags (Open Graph, Twitter Cards)
+    - Canonical URL verification
+    - Structured Data (JSON-LD) detection
+  - **Accessibility (A11y) Checks**:
+    - Image Alt Text coverage percentage
+    - ARIA label usage detection
+    - Semantic HTML landmarks (nav, main, footer)
+    - "Skip to content" link detection
+    - Empty button detection
+
+- **Backend Intelligence**:
+  - New `tech_stack` and `seo_accessibility` JSONB columns in database
+  - Dashboard updated with "Tech Stack Trends" and "SEO Insights" components
+  - Performance optimized for rich telemetry data
+
+### Changed
+- **Dashboard**: Added visual charts for most popular CSS frameworks and build tools
+- **Telemetry**: Extended payload to include deep technical architecture data
+- **Database**: optimized indexing for JSONB queries on tech stack fields
+
 ## [3.3.1] - 2026-01-27
 - Fix: Critical telemetry bug where Phase 1 data (Core Web Vitals, Page Type) was collected but not sent to backend
 - Fix: Analysis timeout issues by optimizing collection thresholds

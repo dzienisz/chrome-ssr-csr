@@ -39,6 +39,8 @@ npm run dev
 
 - **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators
 - **Framework Recognition** - Detects Next.js, Nuxt, Gatsby, React, Vue, Angular, and more
+- **Tech Stack Intelligence** - Identifies CSS frameworks (Tailwind, Bootstrap), Build Tools (Vite), and Hosting (Vercel, Netlify)
+- **SEO & Accessibility Audit** - Checks meta tags, social preview tags, alt text coverage, and ARIA labels
 - **Badge on Icon** - Shows SSR/CSR/MIX result directly on extension icon
 - **Export Results** - Download as JSON, CSV, or Markdown
 - **Dark Mode** - Beautiful dark theme
