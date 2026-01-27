@@ -1,6 +1,6 @@
 {
   "name": "ssr-csr-detector-extension",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "description": "Chrome extension to detect SSR vs CSR rendering",
   "scripts": {
     "build": "node scripts/build-bundle.js",

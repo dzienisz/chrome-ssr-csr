@@ -26,7 +26,7 @@ chrome.action.onClicked.addListener((tab) => {
             // Show error notification
             chrome.notifications.create({
               type: 'basic',
-              iconUrl: 'icon.webp',
+              iconUrl: 'icon48.png',
               title: 'Analysis Failed',
               message: 'Unable to analyze the current page. Please try again.',
               priority: 1
@@ -45,7 +45,7 @@ function showNotification(results, url) {
   // Create notification
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'icon.webp',
+    iconUrl: 'icon48.png',
     title: `${renderType} (${confidence}% confidence)`,
     message: `Key indicators: ${indicators.slice(0, 2).join(', ')}${indicators.length > 2 ? '...' : ''}`,
     priority: 1

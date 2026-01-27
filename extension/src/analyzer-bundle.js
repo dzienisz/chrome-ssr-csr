@@ -1883,6 +1883,125 @@ if (typeof module !== 'undefined' && module.exports) {
 
 
 /**
+ * src/detectors/hydration-detector.js
+ */
+
+/**
+ * Hydration Detector
+ * Detects React/Vue hydration mismatch errors extracted by the probe
+ */
+
+const HydrationDetector = {
+  detect: function() {
+    const probeData = this.getProbeData();
+    
+    if (!probeData) {
+      return {
+        errorCount: 0,
+        errors: [],
+        score: 100
+      };
+    }
+
+    const errorCount = probeData.hydrationErrors.length;
+    
+    // Calculate health score (100 = perfect, 0 = severe issues)
+    // -5 points per error, minimum 0
+    const score = Math.max(0, 100 - (errorCount * 5));
+
+    return {
+      errorCount,
+      errors: probeData.hydrationErrors.slice(0, 5), // Top 5 errors
+      score
+    };
+  },
+
+  getProbeData: function() {
+    // Try to trigger data refresh from probe
+    try {
+      window.dispatchEvent(new CustomEvent('ssr-detector-request-data'));
+    } catch (e) {}
+
+    const dataElement = document.getElementById('ssr-detector-probe-data');
+    if (!dataElement) return null;
+
+    try {
+      return JSON.parse(dataElement.textContent);
+    } catch (e) {
+      return null;
+    }
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.HydrationDetector = HydrationDetector;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = HydrationDetector;
+}
+
+
+/**
+ * src/detectors/navigation-detector.js
+ */
+
+/**
+ * Navigation Detector
+ * Analyzes client-side navigation behavior (SPA transitions)
+ */
+
+const NavigationDetector = {
+  detect: function() {
+    const probeData = window.HydrationDetector ? window.HydrationDetector.getProbeData() : null;
+
+    if (!probeData) {
+      // Fallback detection if probe isn't ready
+      return {
+        isSPA: this.detectSPA(),
+        clientRoutes: 0,
+        avgLatency: null
+      };
+    }
+
+    const navigations = probeData.navigations || [];
+    const clientRoutes = navigations.length;
+
+    // Estimate latency if possible (difference between repeated nav events)
+    // This is rough without PerformanceObserver integration for Soft Navigations
+    const avgLatency = null; 
+
+    return {
+      isSPA: clientRoutes > 0 || this.detectSPA(),
+      clientRoutes,
+      avgLatency,
+      routes: navigations.slice(-5) // Last 5 routes
+    };
+  },
+
+  // Fallback static analysis if no history events yet
+  detectSPA: function() {
+    // Check for common routers
+    if (window.next && window.next.router) return true;
+    if (document.querySelector('[data-reactroot], #root, #app')) {
+        // If we found React/Vue roots AND we have high CSR score, likely SPA
+        // But let's look for specific Router globals
+        // React Router v6 doesn't expose global
+    }
+    return false;
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.NavigationDetector = NavigationDetector;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = NavigationDetector;
+}
+
+
+/**
  * src/core/scoring.js
  */
 
@@ -2015,6 +2134,15 @@ async function pageAnalyzer() {
       ? window.SEODetector.detect()
       : null;
 
+    // Phase 3: Hydration & Navigation (sync)
+    const hydrationData = typeof window.HydrationDetector === 'object'
+      ? window.HydrationDetector.detect()
+      : null;
+
+    const navigationData = typeof window.NavigationDetector === 'object'
+      ? window.NavigationDetector.detect()
+      : null;
+
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
@@ -2088,6 +2216,10 @@ async function pageAnalyzer() {
       // Phase 2 results
       techStack,
       seoAccessibility,
+
+      // Phase 3 results
+      hydrationData,
+      navigationData,
 
       // Metadata
       timestamp: new Date().toISOString(),
