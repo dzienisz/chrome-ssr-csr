@@ -1,5 +1,7 @@
 'use client';
 
+import { Card, Title, Text, Grid, Col, Badge, Flex } from '@tremor/react';
+
 interface CoreWebVitalsData {
   render_category: string;
   sample_count: number;
@@ -21,14 +23,12 @@ interface Props {
 export function CoreWebVitalsComparison({ data }: Props) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-          Core Web Vitals by Render Type
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-          No Core Web Vitals data available yet. Data will appear once extension v3.3.0 users submit analyses.
-        </p>
-      </div>
+      <Card>
+        <Title>Core Web Vitals by Render Type</Title>
+        <div className="flex items-center justify-center h-20">
+          <Text color="gray">No Core Web Vitals data available yet.</Text>
+        </div>
+      </Card>
     );
   }
 
@@ -38,117 +38,105 @@ export function CoreWebVitalsComparison({ data }: Props) {
     
     switch (metric) {
       case 'lcp':
-        return value < 2500 ? 'text-green-600' : value < 4000 ? 'text-yellow-600' : 'text-red-600';
+        return value < 2500 ? 'text-emerald-600' : value < 4000 ? 'text-amber-600' : 'text-rose-600';
       case 'cls':
-        return value < 0.1 ? 'text-green-600' : value < 0.25 ? 'text-yellow-600' : 'text-red-600';
+        return value < 0.1 ? 'text-emerald-600' : value < 0.25 ? 'text-amber-600' : 'text-rose-600';
       case 'fid':
-        return value < 100 ? 'text-green-600' : value < 300 ? 'text-yellow-600' : 'text-red-600';
+        return value < 100 ? 'text-emerald-600' : value < 300 ? 'text-amber-600' : 'text-rose-600';
       case 'ttfb':
-        return value < 800 ? 'text-green-600' : value < 1800 ? 'text-yellow-600' : 'text-red-600';
+        return value < 800 ? 'text-emerald-600' : value < 1800 ? 'text-amber-600' : 'text-rose-600';
       default:
         return 'text-gray-600';
     }
   };
 
   const getPassRateColor = (rate: number) => {
-    if (rate >= 75) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    if (rate >= 50) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    if (rate >= 75) return 'emerald';
+    if (rate >= 50) return 'yellow';
+    return 'rose';
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-        Core Web Vitals by Render Type
-      </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-        Performance metrics comparison across different rendering strategies
-      </p>
+    <Card>
+      <Title>Core Web Vitals by Render Type ⚡</Title>
+      <Text className="mb-6">Performance metrics comparison across different rendering strategies</Text>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <Grid numItems={1} numItemsMd={2} numItemsLg={3} className="gap-6">
         {data.map((item) => (
-          <div
-            key={item.render_category}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {item.render_category}
-              </h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPassRateColor(item.pass_rate)}`}>
+          <Card key={item.render_category} className="bg-gray-50/50 dark:bg-gray-900/20 shadow-none border border-gray-200 dark:border-gray-800 p-4">
+            <Flex justifyContent="between" alignItems="center" className="mb-2">
+              <Title className="text-lg">{item.render_category}</Title>
+              <Badge color={getPassRateColor(item.pass_rate)}>
                 {item.pass_rate}% pass
-              </span>
-            </div>
+              </Badge>
+            </Flex>
 
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              {item.sample_count.toLocaleString()} samples
-            </div>
+            <Text className="text-xs mb-4">{item.sample_count.toLocaleString()} samples</Text>
 
             <div className="space-y-3">
               {/* LCP */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">LCP</span>
+                <Flex justifyContent="between" alignItems="center" className="mb-1">
+                  <Text className="text-sm">LCP</Text>
                   <span className={`text-sm font-medium ${getStatusColor('lcp', item.avg_lcp)}`}>
                     {item.avg_lcp ? `${item.avg_lcp}ms` : 'N/A'}
                   </span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {item.lcp_good}/{item.sample_count} good (\u003c2.5s)
-                </div>
+                </Flex>
+                <Text className="text-xs text-gray-400 dark:text-gray-500">
+                  {item.lcp_good}/{item.sample_count} good (&lt;2.5s)
+                </Text>
               </div>
 
               {/* CLS */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">CLS</span>
+                <Flex justifyContent="between" alignItems="center" className="mb-1">
+                  <Text className="text-sm">CLS</Text>
                   <span className={`text-sm font-medium ${getStatusColor('cls', item.avg_cls)}`}>
                     {item.avg_cls !== null ? Number(item.avg_cls).toFixed(3) : 'N/A'}
                   </span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {item.cls_good}/{item.sample_count} good (\u003c0.1)
-                </div>
+                </Flex>
+                <Text className="text-xs text-gray-400 dark:text-gray-500">
+                  {item.cls_good}/{item.sample_count} good (&lt;0.1)
+                </Text>
               </div>
 
               {/* TTFB */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">TTFB</span>
+                <Flex justifyContent="between" alignItems="center" className="mb-1">
+                  <Text className="text-sm">TTFB</Text>
                   <span className={`text-sm font-medium ${getStatusColor('ttfb', item.avg_ttfb)}`}>
                     {item.avg_ttfb ? `${item.avg_ttfb}ms` : 'N/A'}
                   </span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {item.ttfb_good}/{item.sample_count} good (\u003c800ms)
-                </div>
+                </Flex>
+                <Text className="text-xs text-gray-400 dark:text-gray-500">
+                  {item.ttfb_good}/{item.sample_count} good (&lt;800ms)
+                </Text>
               </div>
 
               {/* FID (if available) */}
               {item.avg_fid !== null && (
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">FID</span>
+                  <Flex justifyContent="between" alignItems="center" className="mb-1">
+                    <Text className="text-sm">FID</Text>
                     <span className={`text-sm font-medium ${getStatusColor('fid', item.avg_fid)}`}>
                       {item.avg_fid}ms
                     </span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {item.fid_good}/{item.sample_count} good (\u003c100ms)
-                  </div>
+                  </Flex>
+                  <Text className="text-xs text-gray-400 dark:text-gray-500">
+                    {item.fid_good}/{item.sample_count} good (&lt;100ms)
+                  </Text>
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         ))}
-      </div>
+      </Grid>
 
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Core Web Vitals:</strong> LCP (Largest Contentful Paint), CLS (Cumulative Layout Shift), 
-          FID (First Input Delay), TTFB (Time to First Byte). Green = Good, Yellow = Needs Improvement, Red = Poor.
-        </p>
+      <div className="mt-6 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+        <Text className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Core Web Vitals:</strong> LCP (Loading), CLS (Stability), FID (Interactivity), TTFB (Server Speed).
+        </Text>
       </div>
-    </div>
+    </Card>
   );
 }

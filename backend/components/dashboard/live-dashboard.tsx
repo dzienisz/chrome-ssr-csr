@@ -11,6 +11,7 @@ import { CoreWebVitalsComparison } from './core-web-vitals-comparison';
 import { TechStackTrends } from './tech-stack-trends';
 import { SEOInsights } from './seo-insights';
 import { UserJourneyAnalysis } from './user-journey-analysis';
+import { StatsCard } from './stats-card';
 
 interface DashboardData {
   total: any;
@@ -155,65 +156,36 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <span className="text-2xl">🔍</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Analyses</p>
-                <p className="text-2xl font-bold text-gray-900">{totalAnalyses.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <span className="text-2xl">🖥️</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">SSR Detected</p>
-                <p className="text-2xl font-bold text-emerald-600">{ssrCount.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-rose-100 rounded-lg">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">CSR Detected</p>
-                <p className="text-2xl font-bold text-rose-600">{csrCount.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <span className="text-2xl">🔀</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Hybrid</p>
-                <p className="text-2xl font-bold text-amber-600">{hybridCount.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <span className="text-2xl">🎯</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Avg Confidence</p>
-                <p className="text-2xl font-bold text-purple-600">{avgConfidence.toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Analyses"
+            metric={totalAnalyses.toLocaleString()}
+            icon="🔍"
+            color="blue"
+          />
+          <StatsCard
+            title="SSR Detected"
+            metric={ssrCount.toLocaleString()}
+            icon="🖥️"
+            color="emerald"
+          />
+          <StatsCard
+            title="CSR Detected"
+            metric={csrCount.toLocaleString()}
+            icon="⚡"
+            color="rose"
+          />
+          <StatsCard
+            title="Hybrid"
+            metric={hybridCount.toLocaleString()}
+            icon="🔀"
+            color="amber"
+          />
+          <StatsCard
+            title="Avg Confidence"
+            metric={`${avgConfidence.toFixed(1)}%`}
+            icon="🎯"
+            color="purple"
+          />
         </div>
 
         {/* Content Comparison Stats (v3.2.0+ metrics) */}
