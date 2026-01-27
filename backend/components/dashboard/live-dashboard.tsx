@@ -7,6 +7,7 @@ import { TopDomains } from './top-domains';
 import { LastUpdated } from './last-updated';
 import { PlatformBreakdown } from './platform-breakdown';
 import { HybridInsights } from './hybrid-insights';
+import { CoreWebVitalsComparison } from './core-web-vitals-comparison';
 
 interface DashboardData {
   total: any;
@@ -23,6 +24,12 @@ interface DashboardData {
     mid_ratio_count: number;
     hybrid_detected_count: number;
     total_with_metrics: number;
+  };
+  phase1?: {
+    coreWebVitals: any[];
+    pageTypes: any[];
+    devicePerformance: any[];
+    deviceSummary: any[];
   };
 }
 
@@ -312,6 +319,13 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Phase 1: Core Web Vitals Comparison */}
+        {data.phase1?.coreWebVitals && data.phase1.coreWebVitals.length > 0 && (
+          <div className="mb-6">
+            <CoreWebVitalsComparison data={data.phase1.coreWebVitals} />
           </div>
         )}
 

@@ -8,6 +8,10 @@ import {
   getRecentAnalyses,
   getLatestAnalysisTime,
   getContentComparisonStats,
+  getCoreWebVitalsByRenderType,
+  getPageTypeDistribution,
+  getDevicePerformance,
+  getDeviceTypeSummary,
 } from '@/lib/db';
 
 // Mark as dynamic to prevent static optimization errors
@@ -56,7 +60,7 @@ export async function GET(request: NextRequest) {
 
       case 'all':
       default:
-        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime, contentComparison] = await Promise.all([
+        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime, contentComparison, coreWebVitals, pageTypes, devicePerformance, deviceSummary] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
           getTopDomains(10),
@@ -64,6 +68,10 @@ export async function GET(request: NextRequest) {
           getRecentAnalyses(20),
           getLatestAnalysisTime(),
           getContentComparisonStats(),
+          getCoreWebVitalsByRenderType(),
+          getPageTypeDistribution(),
+          getDevicePerformance(),
+          getDeviceTypeSummary(),
         ]);
 
         return NextResponse.json({
@@ -74,6 +82,12 @@ export async function GET(request: NextRequest) {
           recent: recentAnalyses,
           latestTime,
           contentComparison,
+          phase1: {
+            coreWebVitals,
+            pageTypes,
+            devicePerformance,
+            deviceSummary,
+          },
         }, { headers: cacheHeaders });
     }
   } catch (error) {

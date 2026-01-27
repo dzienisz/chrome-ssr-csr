@@ -197,3 +197,123 @@ export async function getContentComparisonStats() {
     };
   }
 }
+
+// Phase 1: Core Web Vitals by Render Type
+export async function getCoreWebVitalsByRenderType() {
+  try {
+    const result = await sql`
+      SELECT
+        CASE
+          WHEN render_type ILIKE '%SSR%' THEN 'SSR'
+          WHEN render_type ILIKE '%CSR%' THEN 'CSR'
+          WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 'Hybrid'
+          ELSE 'Other'
+        END as render_category,
+        COUNT(*) as sample_count,
+        -- LCP (Largest Contentful Paint)
+        ROUND(AVG((core_web_vitals->>'lcp')::numeric)) as avg_lcp,
+        COUNT(CASE WHEN (core_web_vitals->>'lcp')::numeric < 2500 THEN 1 END) as lcp_good,
+        -- CLS (Cumulative Layout Shift)
+        ROUND(AVG((core_web_vitals->>'cls')::numeric), 3) as avg_cls,
+        COUNT(CASE WHEN (core_web_vitals->>'cls')::numeric < 0.1 THEN 1 END) as cls_good,
+        -- FID (First Input Delay)
+        ROUND(AVG((core_web_vitals->>'fid')::numeric)) as avg_fid,
+        COUNT(CASE WHEN (core_web_vitals->>'fid')::numeric < 100 THEN 1 END) as fid_good,
+        -- TTFB (Time to First Byte)
+        ROUND(AVG((core_web_vitals->>'ttfb')::numeric)) as avg_ttfb,
+        COUNT(CASE WHEN (core_web_vitals->>'ttfb')::numeric < 800 THEN 1 END) as ttfb_good,
+        -- Overall pass rate
+        ROUND(
+          (COUNT(CASE WHEN 
+            (core_web_vitals->>'lcp')::numeric < 2500 AND
+            (core_web_vitals->>'cls')::numeric < 0.1
+          THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        ) as pass_rate
+      FROM analyses
+      WHERE core_web_vitals IS NOT NULL
+      GROUP BY render_category
+      ORDER BY sample_count DESC;
+    `;
+    return result.rows;
+  } catch (error) {
+    console.error('getCoreWebVitalsByRenderType error:', error);
+    return [];
+  }
+}
+
+// Phase 1: Page Type Distribution
+export async function getPageTypeDistribution() {
+  try {
+    const result = await sql`
+      SELECT
+        page_type,
+        COUNT(*) as total_count,
+        COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END) as ssr_count,
+        COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END) as csr_count,
+        COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END) as hybrid_count,
+        ROUND((COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as ssr_percentage,
+        ROUND((COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as csr_percentage,
+        ROUND((COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as hybrid_percentage
+      FROM analyses
+      WHERE page_type IS NOT NULL
+      GROUP BY page_type
+      ORDER BY total_count DESC
+      LIMIT 10;
+    `;
+    return result.rows;
+  } catch (error) {
+    console.error('getPageTypeDistribution error:', error);
+    return [];
+  }
+}
+
+// Phase 1: Device Performance
+export async function getDevicePerformance() {
+  try {
+    const result = await sql`
+      SELECT
+        device_info->>'deviceType' as device_type,
+        device_info->'connection'->>'effectiveType' as connection_type,
+        COUNT(*) as sample_count,
+        ROUND(AVG((core_web_vitals->>'lcp')::numeric)) as avg_lcp,
+        ROUND(AVG((core_web_vitals->>'cls')::numeric), 3) as avg_cls,
+        ROUND(AVG((core_web_vitals->>'ttfb')::numeric)) as avg_ttfb,
+        ROUND(
+          (COUNT(CASE WHEN 
+            (core_web_vitals->>'lcp')::numeric < 2500 AND
+            (core_web_vitals->>'cls')::numeric < 0.1
+          THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        ) as pass_rate
+      FROM analyses
+      WHERE device_info IS NOT NULL AND core_web_vitals IS NOT NULL
+      GROUP BY device_type, connection_type
+      HAVING COUNT(*) >= 5
+      ORDER BY sample_count DESC
+      LIMIT 20;
+    `;
+    return result.rows;
+  } catch (error) {
+    console.error('getDevicePerformance error:', error);
+    return [];
+  }
+}
+
+// Phase 1: Device Type Summary
+export async function getDeviceTypeSummary() {
+  try {
+    const result = await sql`
+      SELECT
+        device_info->>'deviceType' as device_type,
+        COUNT(*) as count,
+        ROUND((COUNT(*)::numeric / (SELECT COUNT(*) FROM analyses WHERE device_info IS NOT NULL)) * 100) as percentage
+      FROM analyses
+      WHERE device_info IS NOT NULL
+      GROUP BY device_type
+      ORDER BY count DESC;
+    `;
+    return result.rows;
+  } catch (error) {
+    console.error('getDeviceTypeSummary error:', error);
+    return [];
+  }
+}
