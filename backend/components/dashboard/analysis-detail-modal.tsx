@@ -52,7 +52,14 @@ export function AnalysisDetailModal({ analysis, isOpen, onClose }: Props) {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <Text className="text-xs uppercase text-gray-500">Domain</Text>
-                      <Metric className="text-lg truncate">{analysis.domain}</Metric>
+                      <a 
+                        href={`https://${analysis.domain}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-lg truncate block text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        {analysis.domain} ↗
+                      </a>
                     </div>
                     <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <Text className="text-xs uppercase text-gray-500">Timestamp</Text>
