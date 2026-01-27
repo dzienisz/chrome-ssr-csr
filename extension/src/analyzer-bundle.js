@@ -808,11 +808,11 @@ function getLargestContentfulPaint() {
       });
       observer.observe({ type: 'largest-contentful-paint', buffered: true });
       
-      // Timeout after 10 seconds
+      // Timeout after 2 seconds (quick analysis)
       setTimeout(() => {
         observer.disconnect();
         resolve(null);
-      }, 10000);
+      }, 2000);
     } catch (error) {
       console.error('[Performance] LCP error:', error);
       resolve(null);
@@ -837,11 +837,11 @@ function getCumulativeLayoutShift() {
       });
       observer.observe({ type: 'layout-shift', buffered: true });
       
-      // Collect for 5 seconds
+      // Collect for 1 second (quick analysis)
       setTimeout(() => {
         observer.disconnect();
         resolve(clsValue);
-      }, 5000);
+      }, 1000);
     } catch (error) {
       console.error('[Performance] CLS error:', error);
       resolve(null);
@@ -863,11 +863,11 @@ function getFirstInputDelay() {
       });
       observer.observe({ type: 'first-input', buffered: true });
       
-      // Timeout after 10 seconds (user might not interact)
+      // Timeout after 2 seconds (user might not interact)
       setTimeout(() => {
         observer.disconnect();
         resolve(null);
-      }, 10000);
+      }, 2000);
     } catch (error) {
       console.error('[Performance] FID error:', error);
       resolve(null);
@@ -926,11 +926,11 @@ function getTotalBlockingTime() {
       });
       observer.observe({ type: 'longtask', buffered: true });
       
-      // Collect for 5 seconds
+      // Collect for 1 second (quick analysis)
       setTimeout(() => {
         observer.disconnect();
         resolve(tbt);
-      }, 5000);
+      }, 1000);
     } catch (error) {
       console.error('[Performance] TBT error:', error);
       resolve(null);
