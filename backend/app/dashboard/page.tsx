@@ -15,7 +15,7 @@ export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    const [total, frameworks, domains, timeline, recent, latestTime, contentComparison] = await Promise.all([
+    const [total, frameworks, domains, timeline, recent, latestTime, contentComparison, techStack, seoStats] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
       getTopDomains(10),
@@ -23,6 +23,9 @@ async function getDashboardData() {
       getRecentAnalyses(20),
       getLatestAnalysisTime(),
       getContentComparisonStats(),
+      // Phase 2 fetches
+      import('@/lib/db-phase2').then(m => m.getTechStackStats()),
+      import('@/lib/db-phase2').then(m => m.getSEOStats()),
     ]);
 
     return {
@@ -33,6 +36,8 @@ async function getDashboardData() {
       recent,
       latestTime,
       contentComparison,
+      techStack,
+      seoStats,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

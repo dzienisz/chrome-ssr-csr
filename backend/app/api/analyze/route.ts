@@ -60,7 +60,19 @@ export async function POST(request: NextRequest) {
       core_web_vitals: data.coreWebVitals || null,
       page_type: data.pageType || null,
       device_info: data.deviceInfo || null,
+      // Phase 2 fields (v3.4.0+)
+      tech_stack: data.techStack || null,
+      seo_accessibility: data.seoAccessibility || null,
     };
+
+    // Debug: Log Phase 1 & 2 data
+    console.log('[Analysis Debug]', {
+      version: data.version,
+      hasPhase1: !!(data.coreWebVitals || data.pageType || data.deviceInfo),
+      hasPhase2: !!(data.techStack || data.seoAccessibility),
+      techStack: data.techStack ? 'present' : 'missing',
+      seo: data.seoAccessibility ? 'present' : 'missing'
+    });
 
     // Insert into database
     const result = await insertAnalysis(analysisRecord);

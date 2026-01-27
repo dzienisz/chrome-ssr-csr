@@ -386,6 +386,12 @@ function sendDataIfEnabled(url, results) {
         // Phase 1: Device & Connection Info
         deviceInfo: results.deviceInfo || null,
         
+        // Phase 2: Tech Stack
+        techStack: results.techStack || null,
+        
+        // Phase 2: SEO & Accessibility
+        seoAccessibility: results.seoAccessibility || null,
+        
         performanceMetrics: {
           domReady: results.detailedInfo?.timing?.domContentLoaded,
           fcp: results.detailedInfo?.timing?.firstContentfulPaint,

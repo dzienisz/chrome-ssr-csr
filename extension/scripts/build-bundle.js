@@ -18,10 +18,12 @@ const sourceFiles = [
   'src/detectors/framework-detector.js',
   'src/detectors/meta-detector.js',
   'src/detectors/performance-detector.js',
-  // NEW Phase 1 detectors
   'src/detectors/performance-collector.js',
   'src/detectors/page-type-detector.js',
   'src/detectors/device-detector.js',
+  // NEW Phase 2 detectors
+  'src/detectors/tech-stack-detector.js',
+  'src/detectors/seo-detector.js',
   // Core analyzer (must be last)
   'src/core/scoring.js',
   'src/core/analyzer.js',

@@ -8,6 +8,8 @@ import { LastUpdated } from './last-updated';
 import { PlatformBreakdown } from './platform-breakdown';
 import { HybridInsights } from './hybrid-insights';
 import { CoreWebVitalsComparison } from './core-web-vitals-comparison';
+import { TechStackTrends } from './tech-stack-trends';
+import { SEOInsights } from './seo-insights';
 
 interface DashboardData {
   total: any;
@@ -31,6 +33,8 @@ interface DashboardData {
     devicePerformance: any[];
     deviceSummary: any[];
   };
+  techStack?: any;
+  seoStats?: any;
 }
 
 interface LiveDashboardProps {
@@ -49,23 +53,33 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     try {
       setIsRefreshing(true);
       setError(null);
-      const response = await fetch('/api/stats?type=all', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      });
-      if (response.ok) {
-        const newData = await response.json();
+      
+      const [statsRes, phase2Res] = await Promise.all([
+        fetch('/api/stats?type=all', { headers: { 'Cache-Control': 'no-cache' } }),
+        fetch('/api/stats/phase2', { headers: { 'Cache-Control': 'no-cache' } })
+      ]);
+
+      if (statsRes.ok) {
+        const newData = await statsRes.json();
+        let phase2Data = {};
+        
+        if (phase2Res.ok) {
+          phase2Data = await phase2Res.json();
+        }
+
         if (newData && newData.total) {
-          setData(newData);
+          setData(prev => ({
+            ...newData,
+            techStack: (phase2Data as any).techStack || prev.techStack,
+            seoStats: (phase2Data as any).seoStats || prev.seoStats
+          }));
           setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
         } else {
           console.error('Invalid data structure:', newData);
           setError('Invalid data');
         }
       } else {
-        setError(`HTTP ${response.status}`);
+        setError(`HTTP ${statsRes.status}`);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -328,6 +342,12 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             <CoreWebVitalsComparison data={data.phase1.coreWebVitals} />
           </div>
         )}
+
+        {/* Phase 2: Tech Stack & SEO */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TechStackTrends data={data.techStack} />
+          <SEOInsights data={data.seoStats} />
+        </div>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

@@ -43,6 +43,16 @@ async function pageAnalyzer() {
       ? window.getDeviceInfoForTelemetry()
       : null;
 
+    // Phase 2: Tech Stack (sync)
+    const techStack = typeof window.TechStackDetector === 'object'
+      ? window.TechStackDetector.detect()
+      : null;
+
+    // Phase 2: SEO & Accessibility (sync)
+    const seoAccessibility = typeof window.SEODetector === 'object'
+      ? window.SEODetector.detect()
+      : null;
+
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
@@ -108,10 +118,17 @@ async function pageAnalyzer() {
       confidence: classification.confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
       
-      // Phase 1: Add new data fields
+      // Phase 1 results
       coreWebVitals,
       pageType,
       deviceInfo,
+
+      // Phase 2 results
+      techStack,
+      seoAccessibility,
+
+      // Metadata
+      timestamp: new Date().toISOString(),
       
       detailedInfo: {
         ssrScore,
