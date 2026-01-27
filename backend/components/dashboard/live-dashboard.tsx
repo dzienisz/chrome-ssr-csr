@@ -13,6 +13,15 @@ interface DashboardData {
   timeline: any[];
   recent: any[];
   latestTime: string | null;
+  contentComparison?: {
+    avg_content_ratio: number | null;
+    avg_hybrid_score: number | null;
+    low_ratio_count: number;
+    high_ratio_count: number;
+    mid_ratio_count: number;
+    hybrid_detected_count: number;
+    total_with_metrics: number;
+  };
 }
 
 interface LiveDashboardProps {
@@ -171,6 +180,48 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             </div>
           </div>
         </div>
+
+        {/* Content Comparison Stats (v3.2.0+ metrics) */}
+        {data.contentComparison && data.contentComparison.total_with_metrics > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span>📄</span> Content Comparison Analysis
+              <span className="text-xs font-normal text-gray-400">(v3.2.0+ data)</span>
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">Avg Content Ratio</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {data.contentComparison.avg_content_ratio
+                    ? `${(data.contentComparison.avg_content_ratio * 100).toFixed(1)}%`
+                    : 'N/A'}
+                </p>
+                <p className="text-xs text-gray-400">Raw HTML / Rendered</p>
+              </div>
+              <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                <p className="text-sm text-gray-500">High Ratio (SSR)</p>
+                <p className="text-xl font-bold text-emerald-600">
+                  {data.contentComparison.high_ratio_count}
+                </p>
+                <p className="text-xs text-gray-400">&gt;70% content in HTML</p>
+              </div>
+              <div className="text-center p-4 bg-rose-50 rounded-lg">
+                <p className="text-sm text-gray-500">Low Ratio (CSR)</p>
+                <p className="text-xl font-bold text-rose-600">
+                  {data.contentComparison.low_ratio_count}
+                </p>
+                <p className="text-xs text-gray-400">&lt;20% content in HTML</p>
+              </div>
+              <div className="text-center p-4 bg-amber-50 rounded-lg">
+                <p className="text-sm text-gray-500">Hybrid Detected</p>
+                <p className="text-xl font-bold text-amber-600">
+                  {data.contentComparison.hybrid_detected_count}
+                </p>
+                <p className="text-xs text-gray-400">Islands/partial hydration</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

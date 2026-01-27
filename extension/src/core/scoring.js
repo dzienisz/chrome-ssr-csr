@@ -7,10 +7,11 @@
  * Calculate final classification based on scores
  * @param {number} ssrScore - Total SSR score
  * @param {number} csrScore - Total CSR score
+ * @param {number} hybridScore - Total hybrid score (islands, partial hydration)
  * @param {Array} indicators - All indicators found
  * @returns {Object} Classification with confidence
  */
-function calculateClassification(ssrScore, csrScore, indicators) {
+function calculateClassification(ssrScore, csrScore, hybridScore, indicators) {
   const config = window.DETECTOR_CONFIG;
 
   const totalScore = ssrScore + csrScore;
@@ -26,8 +27,16 @@ function calculateClassification(ssrScore, csrScore, indicators) {
     config.confidence.maxIndicatorBonus
   );
 
+  // Check for strong hybrid signals first (islands architecture, partial hydration)
+  const isStrongHybrid = hybridScore >= 30;
+  const hasBothSignals = ssrScore >= 20 && csrScore >= 20;
+
   // Determine render type and confidence based on thresholds
-  if (ssrPercentage >= config.thresholds.ssr) {
+  if (isStrongHybrid || (hasBothSignals && ssrPercentage >= 35 && ssrPercentage <= 65)) {
+    // Strong hybrid indicators or balanced scores with both SSR and CSR signals
+    renderType = "Hybrid/Islands Architecture";
+    confidence = Math.min(50 + hybridScore + indicatorBonus, config.confidence.maxConfidenceHybrid + 10);
+  } else if (ssrPercentage >= config.thresholds.ssr) {
     renderType = "Server-Side Rendered (SSR)";
     confidence = Math.min(baseConfidence + indicatorBonus, config.confidence.maxConfidenceSsr);
   } else if (ssrPercentage <= config.thresholds.csr) {
@@ -41,13 +50,14 @@ function calculateClassification(ssrScore, csrScore, indicators) {
     confidence = Math.min(baseConfidence + indicatorBonus, config.confidence.maxConfidenceLikely);
   } else {
     renderType = "Hybrid/Mixed Rendering";
-    confidence = Math.min(baseConfidence + 10, config.confidence.maxConfidenceHybrid);
+    confidence = Math.min(baseConfidence + 10 + (hybridScore / 2), config.confidence.maxConfidenceHybrid);
   }
 
   return {
     renderType,
     confidence: Math.max(confidence, config.confidence.minConfidence),
     ssrPercentage,
+    hybridScore,
     indicatorCount
   };
 }

@@ -6,6 +6,7 @@ import {
   getAnalysesByDate,
   getRecentAnalyses,
   getLatestAnalysisTime,
+  getContentComparisonStats,
 } from '@/lib/db';
 
 // Mark as dynamic - dashboard needs fresh data
@@ -14,13 +15,14 @@ export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    const [total, frameworks, domains, timeline, recent, latestTime] = await Promise.all([
+    const [total, frameworks, domains, timeline, recent, latestTime, contentComparison] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
       getTopDomains(10),
       getAnalysesByDate(30),
       getRecentAnalyses(20),
       getLatestAnalysisTime(),
+      getContentComparisonStats(),
     ]);
 
     return {
@@ -30,6 +32,7 @@ async function getDashboardData() {
       timeline,
       recent,
       latestTime,
+      contentComparison,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

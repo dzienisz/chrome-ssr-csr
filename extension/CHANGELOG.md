@@ -5,6 +5,33 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-01-27
+
+### Added
+- **More Framework Detection**: Added support for 15+ new frameworks and platforms:
+  - Frameworks: Angular, Vue (standalone), Svelte, Preact, Lit, HTMX, Alpine.js
+  - CMS: WordPress, Shopify, Webflow, Wix, Squarespace
+  - Static Generators: Docusaurus, VuePress, MkDocs, GitBook, Pelican
+
+- **Hybrid/Islands Detection**: New `detectHybridPatterns()` function
+  - Detects Astro islands architecture
+  - Detects partial hydration patterns
+  - Detects React Server Components
+  - Detects Qwik resumability
+  - Detects streaming SSR with Suspense boundaries
+
+- **Visual Content Comparison**: New UI showing raw vs rendered content ratio
+  - Visual bar chart showing the ratio percentage
+  - Clear indicator (✓ SSR / ✗ CSR / ~ Hybrid)
+  - Displays raw HTML and rendered character counts
+
+- **Hybrid Score Display**: Shows hybrid detection score when detected
+
+### Changed
+- **Improved Classification**: Now detects "Hybrid/Islands Architecture" for strong hybrid signals
+- **Backend Dashboard**: Added Content Comparison Analysis section with new metrics
+- **Telemetry**: Now sends contentRatio, hybridScore to backend for analytics
+
 ## [3.2.0] - 2026-01-27
 
 ### Fixed

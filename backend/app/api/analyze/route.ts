@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
       performance_metrics: {
         domReady: data.performanceMetrics?.domReady,
         fcp: data.performanceMetrics?.fcp,
+        // Content comparison metrics (v3.2.0+)
+        contentRatio: data.performanceMetrics?.contentRatio,
+        rawHtmlLength: data.performanceMetrics?.rawHtmlLength,
+        renderedLength: data.performanceMetrics?.renderedLength,
+        hybridScore: data.performanceMetrics?.hybridScore,
       },
       indicators: Array.isArray(data.indicators) ? data.indicators.slice(0, 20) : [],
       extension_version: data.version || 'unknown',

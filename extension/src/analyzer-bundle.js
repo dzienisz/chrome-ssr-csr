@@ -88,15 +88,34 @@ const CONFIG = {
 
   // Framework markers for detection
   frameworks: {
+    // React ecosystem
     react: '[data-reactroot], [data-reactid], [data-react-checksum]',
     nextjs: '#__next, #__NEXT_DATA__',
-    nuxt: '#__nuxt, #__NUXT__',
     gatsby: '#___gatsby',
-    sveltekit: '#svelte',
-    astro: '[data-astro-island]',
     remix: '[data-remix-run]',
+    // Vue ecosystem
+    vue: '[data-v-app], [data-v]',
+    nuxt: '#__nuxt, #__NUXT__',
+    // Svelte ecosystem
+    svelte: '[class*="svelte-"]',
+    sveltekit: '#svelte',
+    // Angular
+    angular: '[ng-version], [_nghost], [_ngcontent]',
+    // Other frameworks
+    astro: '[data-astro-cid], [data-astro-island]',
     qwik: '[q\\:container]',
-    solidjs: '[data-solid]'
+    solidjs: '[data-solid], [data-hk]',
+    preact: '[data-preact]',
+    lit: '[data-lit]',
+    // Lightweight/AJAX libraries
+    htmx: '[hx-get], [hx-post], [hx-trigger]',
+    alpinejs: '[x-data], [x-init]',
+    // CMS platforms
+    wordpress: 'link[href*="wp-content"], script[src*="wp-includes"]',
+    shopify: 'script[src*="cdn.shopify.com"], link[href*="cdn.shopify.com"]',
+    webflow: 'html[data-wf-site], script[src*="webflow"]',
+    wix: 'meta[name="generator"][content*="Wix"]',
+    squarespace: 'script[src*="squarespace"]'
   },
 
   // Static site generator detection
@@ -104,7 +123,12 @@ const CONFIG = {
     jekyll: 'meta[name="generator"][content*="Jekyll"]',
     hugo: 'meta[name="generator"][content*="Hugo"]',
     eleventy: 'meta[name="generator"][content*="Eleventy"]',
-    hexo: 'meta[name="generator"][content*="Hexo"]'
+    hexo: 'meta[name="generator"][content*="Hexo"]',
+    pelican: 'meta[name="generator"][content*="Pelican"]',
+    docusaurus: 'meta[name="generator"][content*="Docusaurus"]',
+    vuepress: 'meta[name="generator"][content*="VuePress"]',
+    mkdocs: 'meta[name="generator"][content*="MkDocs"]',
+    gitbook: 'meta[name="generator"][content*="GitBook"]'
   },
 
   // Client-side routing selectors
@@ -274,6 +298,99 @@ function detectCSRPatterns() {
 // Export for use in other modules
 if (typeof window !== 'undefined') {
   window.detectCSRPatterns = detectCSRPatterns;
+}
+
+/**
+ * Hybrid Pattern Detector Module
+ * Detects patterns specific to hybrid/islands architecture
+ */
+
+/**
+ * Detect hybrid rendering patterns (islands, partial hydration, RSC)
+ * @returns {Object} Detection results with hybrid indicators
+ */
+function detectHybridPatterns() {
+  const indicators = [];
+  let hybridScore = 0;
+  const details = {};
+
+  // Detect Astro islands architecture
+  const astroIslands = document.querySelectorAll('[data-astro-island], astro-island');
+  if (astroIslands.length > 0) {
+    hybridScore += 30;
+    indicators.push(`Astro islands architecture (${astroIslands.length} islands)`);
+    details.astroIslands = astroIslands.length;
+  }
+
+  // Detect multiple hydration targets (common in partial hydration)
+  const hydrationTargets = document.querySelectorAll(
+    '[data-hydrate], [data-island], [data-client], [client\\:load], [client\\:idle], [client\\:visible]'
+  );
+  if (hydrationTargets.length > 1) {
+    hybridScore += 25;
+    indicators.push(`Partial hydration pattern (${hydrationTargets.length} targets)`);
+    details.hydrationTargets = hydrationTargets.length;
+  }
+
+  // Detect React Server Components patterns
+  const rscPayload = document.querySelector('script#__NEXT_DATA__[type="application/json"]');
+  const hasServerComponents = document.querySelector('[data-rsc], [data-server-component]') !== null;
+  if (hasServerComponents) {
+    hybridScore += 20;
+    indicators.push("React Server Components detected");
+    details.hasRSC = true;
+  }
+
+  // Detect streaming markers (Suspense boundaries)
+  const suspenseBoundaries = document.querySelectorAll('template[data-suspense], [data-suspense-boundary]');
+  const streamingComments = document.body.innerHTML.includes('<!--$-->') ||
+                            document.body.innerHTML.includes('<!--/$-->');
+  if (suspenseBoundaries.length > 0 || streamingComments) {
+    hybridScore += 15;
+    indicators.push("Streaming SSR with Suspense boundaries");
+    details.hasStreaming = true;
+  }
+
+  // Detect progressive enhancement patterns
+  const enhancementMarkers = document.querySelectorAll(
+    '[data-enhance], [data-progressive], [data-turbo], [data-turbolinks]'
+  );
+  if (enhancementMarkers.length > 0) {
+    hybridScore += 15;
+    indicators.push("Progressive enhancement pattern");
+    details.progressiveEnhancement = true;
+  }
+
+  // Detect Qwik's resumability (hybrid by design)
+  const qwikContainer = document.querySelector('[q\\:container]');
+  if (qwikContainer) {
+    hybridScore += 25;
+    indicators.push("Qwik resumability (hybrid architecture)");
+    details.qwikResumability = true;
+  }
+
+  // Check for mixed content patterns (rich SSR content + client interactivity)
+  const hasRichContent = document.querySelectorAll('article, main, [role="main"]').length > 0 &&
+                         document.body.innerText.trim().length > 500;
+  const hasClientInteractivity = document.querySelectorAll(
+    '[onclick], [onchange], button[type="submit"], form[action], [data-action]'
+  ).length > 3;
+
+  if (hasRichContent && hasClientInteractivity) {
+    hybridScore += 10;
+    indicators.push("Mixed SSR content with client interactivity");
+  }
+
+  return {
+    hybridScore,
+    indicators,
+    details
+  };
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.detectHybridPatterns = detectHybridPatterns;
 }
 
 /**
@@ -632,10 +749,11 @@ if (typeof window !== 'undefined') {
  * Calculate final classification based on scores
  * @param {number} ssrScore - Total SSR score
  * @param {number} csrScore - Total CSR score
+ * @param {number} hybridScore - Total hybrid score (islands, partial hydration)
  * @param {Array} indicators - All indicators found
  * @returns {Object} Classification with confidence
  */
-function calculateClassification(ssrScore, csrScore, indicators) {
+function calculateClassification(ssrScore, csrScore, hybridScore, indicators) {
   const config = window.DETECTOR_CONFIG;
 
   const totalScore = ssrScore + csrScore;
@@ -651,8 +769,16 @@ function calculateClassification(ssrScore, csrScore, indicators) {
     config.confidence.maxIndicatorBonus
   );
 
+  // Check for strong hybrid signals first (islands architecture, partial hydration)
+  const isStrongHybrid = hybridScore >= 30;
+  const hasBothSignals = ssrScore >= 20 && csrScore >= 20;
+
   // Determine render type and confidence based on thresholds
-  if (ssrPercentage >= config.thresholds.ssr) {
+  if (isStrongHybrid || (hasBothSignals && ssrPercentage >= 35 && ssrPercentage <= 65)) {
+    // Strong hybrid indicators or balanced scores with both SSR and CSR signals
+    renderType = "Hybrid/Islands Architecture";
+    confidence = Math.min(50 + hybridScore + indicatorBonus, config.confidence.maxConfidenceHybrid + 10);
+  } else if (ssrPercentage >= config.thresholds.ssr) {
     renderType = "Server-Side Rendered (SSR)";
     confidence = Math.min(baseConfidence + indicatorBonus, config.confidence.maxConfidenceSsr);
   } else if (ssrPercentage <= config.thresholds.csr) {
@@ -666,13 +792,14 @@ function calculateClassification(ssrScore, csrScore, indicators) {
     confidence = Math.min(baseConfidence + indicatorBonus, config.confidence.maxConfidenceLikely);
   } else {
     renderType = "Hybrid/Mixed Rendering";
-    confidence = Math.min(baseConfidence + 10, config.confidence.maxConfidenceHybrid);
+    confidence = Math.min(baseConfidence + 10 + (hybridScore / 2), config.confidence.maxConfidenceHybrid);
   }
 
   return {
     renderType,
     confidence: Math.max(confidence, config.confidence.minConfidence),
     ssrPercentage,
+    hybridScore,
     indicatorCount
   };
 }
@@ -701,6 +828,7 @@ async function pageAnalyzer() {
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
+    const hybridResults = window.detectHybridPatterns();
 
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
@@ -708,8 +836,13 @@ async function pageAnalyzer() {
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
+    let hybridScore = hybridResults.hybridScore;
     const indicators = [];
     const detailedInfo = {};
+
+    // Add hybrid detection results
+    indicators.push(...hybridResults.indicators);
+    Object.assign(detailedInfo, { hybrid: hybridResults.details });
 
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
@@ -758,7 +891,7 @@ async function pageAnalyzer() {
     Object.assign(detailedInfo, performanceResults.details);
 
     // Calculate final classification
-    const classification = window.calculateClassification(ssrScore, csrScore, indicators);
+    const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
 
     return {
       renderType: classification.renderType,
@@ -768,6 +901,7 @@ async function pageAnalyzer() {
         ssrScore,
         csrScore,
         ssrPercentage: classification.ssrPercentage,
+        hybridScore: classification.hybridScore,
         totalIndicators: classification.indicatorCount,
         ...detailedInfo
       }
@@ -892,6 +1026,43 @@ function createResultsHTML(results) {
       <div style="margin-bottom: 8px;">
         <strong style="color: ${accentColor};">Static Site Generator:</strong>
         <span style="font-weight:700;">${detailedInfo.generators.join(', ').toUpperCase()}</span>
+      </div>
+    `;
+  }
+
+  // Add content comparison visual (raw vs rendered)
+  if (detailedInfo.contentComparison) {
+    const { rawLength, renderedLength, ratio } = detailedInfo.contentComparison;
+    const ratioPercent = Math.min(ratio * 100, 100);
+    const ratioColor = ratio > 0.7 ? '#059669' : ratio < 0.2 ? '#dc2626' : '#d97706';
+    const barBg = isDark ? '#374151' : '#f1f5f9';
+
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: ${accentColor};">Content Comparison:</strong>
+        <div style="font-size: 12px; color: ${textSecondary}; margin-top: 2px;">
+          Raw HTML: ${rawLength.toLocaleString()} chars | Rendered: ${renderedLength.toLocaleString()} chars
+        </div>
+        <div style="display: flex; align-items: center; margin-top: 4px;">
+          <div style="flex: 1; background: ${barBg}; border-radius: 4px; height: 8px; overflow: hidden; position: relative;">
+            <div style="background: ${ratioColor}; height: 100%; width: ${ratioPercent}%; border-radius: 4px; transition: width 0.3s ease;"></div>
+          </div>
+          <span style="margin-left: 8px; font-size: 11px; font-weight: 600; color: ${ratioColor};">${(ratio * 100).toFixed(0)}%</span>
+        </div>
+        <div style="font-size: 10px; color: ${textSecondary}; margin-top: 2px;">
+          ${ratio > 0.7 ? '✓ Raw HTML has most content (SSR)' : ratio < 0.2 ? '✗ Content loaded via JS (CSR)' : '~ Partial server content (Hybrid)'}
+        </div>
+      </div>
+    `;
+  }
+
+  // Add hybrid score if significant
+  if (detailedInfo.hybridScore && detailedInfo.hybridScore > 0) {
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: ${accentColor};">Hybrid Score:</strong>
+        <span style="font-weight: 600; color: #d97706;">${detailedInfo.hybridScore}</span>
+        <span style="font-size: 11px; color: ${textSecondary};"> (islands/partial hydration)</span>
       </div>
     `;
   }

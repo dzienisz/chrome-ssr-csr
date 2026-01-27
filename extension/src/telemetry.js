@@ -29,9 +29,14 @@ async function sendAnalysisData(url, title, results) {
       performanceMetrics: {
         domReady: results.detailedInfo?.timing?.domContentLoaded,
         fcp: results.detailedInfo?.timing?.firstContentfulPaint,
+        // New metrics for content comparison
+        contentRatio: results.detailedInfo?.contentComparison?.ratio,
+        rawHtmlLength: results.detailedInfo?.contentComparison?.rawLength,
+        renderedLength: results.detailedInfo?.contentComparison?.renderedLength,
+        hybridScore: results.detailedInfo?.hybridScore,
       },
       indicators: results.indicators || [],
-      version: '3.0.5',  // Hardcoded since chrome.runtime not available in page context
+      version: '3.2.1',  // Updated version
       timestamp: new Date().toISOString(),
     };
 

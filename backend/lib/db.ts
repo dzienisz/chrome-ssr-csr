@@ -11,6 +11,11 @@ export interface AnalysisRecord {
   performance_metrics: {
     domReady?: number;
     fcp?: number;
+    // Content comparison metrics (v3.2.0+)
+    contentRatio?: number;
+    rawHtmlLength?: number;
+    renderedLength?: number;
+    hybridScore?: number;
   };
   indicators: string[];
   extension_version: string;
@@ -152,5 +157,35 @@ export async function getAnalysesByDate(days: number = 30) {
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
+  }
+}
+
+export async function getContentComparisonStats() {
+  try {
+    const result = await sql`
+      SELECT
+        AVG((performance_metrics::jsonb->>'contentRatio')::numeric) as avg_content_ratio,
+        AVG((performance_metrics::jsonb->>'hybridScore')::numeric) as avg_hybrid_score,
+        COUNT(CASE WHEN (performance_metrics::jsonb->>'contentRatio')::numeric < 0.2 THEN 1 END) as low_ratio_count,
+        COUNT(CASE WHEN (performance_metrics::jsonb->>'contentRatio')::numeric > 0.7 THEN 1 END) as high_ratio_count,
+        COUNT(CASE WHEN (performance_metrics::jsonb->>'contentRatio')::numeric BETWEEN 0.2 AND 0.7 THEN 1 END) as mid_ratio_count,
+        COUNT(CASE WHEN (performance_metrics::jsonb->>'hybridScore')::numeric > 0 THEN 1 END) as hybrid_detected_count,
+        COUNT(*) as total_with_metrics
+      FROM analyses
+      WHERE performance_metrics::jsonb->>'contentRatio' IS NOT NULL;
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Database query error:', error);
+    // Return empty stats if query fails (e.g., no data with new metrics yet)
+    return {
+      avg_content_ratio: null,
+      avg_hybrid_score: null,
+      low_ratio_count: 0,
+      high_ratio_count: 0,
+      mid_ratio_count: 0,
+      hybrid_detected_count: 0,
+      total_with_metrics: 0
+    };
   }
 }

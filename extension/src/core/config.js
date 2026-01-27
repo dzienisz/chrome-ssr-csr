@@ -84,15 +84,34 @@ const CONFIG = {
 
   // Framework markers for detection
   frameworks: {
+    // React ecosystem
     react: '[data-reactroot], [data-reactid], [data-react-checksum]',
     nextjs: '#__next, #__NEXT_DATA__',
-    nuxt: '#__nuxt, #__NUXT__',
     gatsby: '#___gatsby',
-    sveltekit: '#svelte',
-    astro: '[data-astro-island]',
     remix: '[data-remix-run]',
+    // Vue ecosystem
+    vue: '[data-v-app], [data-v]',
+    nuxt: '#__nuxt, #__NUXT__',
+    // Svelte ecosystem
+    svelte: '[class*="svelte-"]',
+    sveltekit: '#svelte',
+    // Angular
+    angular: '[ng-version], [_nghost], [_ngcontent]',
+    // Other frameworks
+    astro: '[data-astro-cid], [data-astro-island]',
     qwik: '[q\\:container]',
-    solidjs: '[data-solid]'
+    solidjs: '[data-solid], [data-hk]',
+    preact: '[data-preact]',
+    lit: '[data-lit]',
+    // Lightweight/AJAX libraries
+    htmx: '[hx-get], [hx-post], [hx-trigger]',
+    alpinejs: '[x-data], [x-init]',
+    // CMS platforms
+    wordpress: 'link[href*="wp-content"], script[src*="wp-includes"]',
+    shopify: 'script[src*="cdn.shopify.com"], link[href*="cdn.shopify.com"]',
+    webflow: 'html[data-wf-site], script[src*="webflow"]',
+    wix: 'meta[name="generator"][content*="Wix"]',
+    squarespace: 'script[src*="squarespace"]'
   },
 
   // Static site generator detection
@@ -100,7 +119,12 @@ const CONFIG = {
     jekyll: 'meta[name="generator"][content*="Jekyll"]',
     hugo: 'meta[name="generator"][content*="Hugo"]',
     eleventy: 'meta[name="generator"][content*="Eleventy"]',
-    hexo: 'meta[name="generator"][content*="Hexo"]'
+    hexo: 'meta[name="generator"][content*="Hexo"]',
+    pelican: 'meta[name="generator"][content*="Pelican"]',
+    docusaurus: 'meta[name="generator"][content*="Docusaurus"]',
+    vuepress: 'meta[name="generator"][content*="VuePress"]',
+    mkdocs: 'meta[name="generator"][content*="MkDocs"]',
+    gitbook: 'meta[name="generator"][content*="GitBook"]'
   },
 
   // Client-side routing selectors

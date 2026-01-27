@@ -2,6 +2,22 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.1.0] - 2026-01-27
+
+### Added
+- **Content Comparison Analytics**: New dashboard section showing v3.2.0+ metrics
+  - Average content ratio (raw HTML / rendered)
+  - High ratio count (SSR indicator)
+  - Low ratio count (CSR indicator)
+  - Hybrid detection count
+
+- **New API Endpoint**: `GET /api/stats?type=contentComparison`
+- **Extended Metrics Storage**: Now stores contentRatio, hybridScore, rawHtmlLength, renderedLength
+
+### Changed
+- Dashboard interface updated with content comparison card
+- API now returns contentComparison stats in `?type=all` response
+
 ## [1.0.0] - 2026-01-26
 
 ### Added

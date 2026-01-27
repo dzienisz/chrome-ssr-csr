@@ -101,6 +101,43 @@ function createResultsHTML(results) {
     `;
   }
 
+  // Add content comparison visual (raw vs rendered)
+  if (detailedInfo.contentComparison) {
+    const { rawLength, renderedLength, ratio } = detailedInfo.contentComparison;
+    const ratioPercent = Math.min(ratio * 100, 100);
+    const ratioColor = ratio > 0.7 ? '#059669' : ratio < 0.2 ? '#dc2626' : '#d97706';
+    const barBg = isDark ? '#374151' : '#f1f5f9';
+
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: ${accentColor};">Content Comparison:</strong>
+        <div style="font-size: 12px; color: ${textSecondary}; margin-top: 2px;">
+          Raw HTML: ${rawLength.toLocaleString()} chars | Rendered: ${renderedLength.toLocaleString()} chars
+        </div>
+        <div style="display: flex; align-items: center; margin-top: 4px;">
+          <div style="flex: 1; background: ${barBg}; border-radius: 4px; height: 8px; overflow: hidden; position: relative;">
+            <div style="background: ${ratioColor}; height: 100%; width: ${ratioPercent}%; border-radius: 4px; transition: width 0.3s ease;"></div>
+          </div>
+          <span style="margin-left: 8px; font-size: 11px; font-weight: 600; color: ${ratioColor};">${(ratio * 100).toFixed(0)}%</span>
+        </div>
+        <div style="font-size: 10px; color: ${textSecondary}; margin-top: 2px;">
+          ${ratio > 0.7 ? '✓ Raw HTML has most content (SSR)' : ratio < 0.2 ? '✗ Content loaded via JS (CSR)' : '~ Partial server content (Hybrid)'}
+        </div>
+      </div>
+    `;
+  }
+
+  // Add hybrid score if significant
+  if (detailedInfo.hybridScore && detailedInfo.hybridScore > 0) {
+    resultHTML += `
+      <div style="margin-bottom: 8px;">
+        <strong style="color: ${accentColor};">Hybrid Score:</strong>
+        <span style="font-weight: 600; color: #d97706;">${detailedInfo.hybridScore}</span>
+        <span style="font-size: 11px; color: ${textSecondary};"> (islands/partial hydration)</span>
+      </div>
+    `;
+  }
+
   // Add timing information if available
   if (detailedInfo.timing) {
     resultHTML += `

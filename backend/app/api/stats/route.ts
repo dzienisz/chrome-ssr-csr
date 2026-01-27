@@ -7,6 +7,7 @@ import {
   getAnalysesByDate,
   getRecentAnalyses,
   getLatestAnalysisTime,
+  getContentComparisonStats,
 } from '@/lib/db';
 
 // Mark as dynamic to prevent static optimization errors
@@ -49,15 +50,20 @@ export async function GET(request: NextRequest) {
         const recent = await getRecentAnalyses(recentLimit);
         return NextResponse.json(recent, { headers: cacheHeaders });
 
+      case 'contentComparison':
+        const contentStats = await getContentComparisonStats();
+        return NextResponse.json(contentStats, { headers: cacheHeaders });
+
       case 'all':
       default:
-        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime] = await Promise.all([
+        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime, contentComparison] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
           getTopDomains(10),
           getAnalysesByDate(30),
           getRecentAnalyses(20),
           getLatestAnalysisTime(),
+          getContentComparisonStats(),
         ]);
 
         return NextResponse.json({
@@ -67,6 +73,7 @@ export async function GET(request: NextRequest) {
           timeline: timelineData,
           recent: recentAnalyses,
           latestTime,
+          contentComparison,
         }, { headers: cacheHeaders });
     }
   } catch (error) {

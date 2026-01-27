@@ -18,6 +18,7 @@ async function pageAnalyzer() {
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
+    const hybridResults = window.detectHybridPatterns();
 
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
@@ -25,8 +26,13 @@ async function pageAnalyzer() {
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
+    let hybridScore = hybridResults.hybridScore;
     const indicators = [];
     const detailedInfo = {};
+
+    // Add hybrid detection results
+    indicators.push(...hybridResults.indicators);
+    Object.assign(detailedInfo, { hybrid: hybridResults.details });
 
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
@@ -75,7 +81,7 @@ async function pageAnalyzer() {
     Object.assign(detailedInfo, performanceResults.details);
 
     // Calculate final classification
-    const classification = window.calculateClassification(ssrScore, csrScore, indicators);
+    const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
 
     return {
       renderType: classification.renderType,
@@ -85,6 +91,7 @@ async function pageAnalyzer() {
         ssrScore,
         csrScore,
         ssrPercentage: classification.ssrPercentage,
+        hybridScore: classification.hybridScore,
         totalIndicators: classification.indicatorCount,
         ...detailedInfo
       }
@@ -99,6 +106,7 @@ async function pageAnalyzer() {
         ssrScore: 0,
         csrScore: 0,
         ssrPercentage: 50,
+        hybridScore: 0,
         totalIndicators: 0,
         error: error.message
       }
