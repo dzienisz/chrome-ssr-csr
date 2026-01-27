@@ -5,6 +5,57 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-01-27
+
+### Added - Phase 1: Enhanced Data Collection 🚀
+
+- **Core Web Vitals Collection**: New `performance-collector.js` module
+  - Collects LCP (Largest Contentful Paint)
+  - Collects CLS (Cumulative Layout Shift)
+  - Collects FID (First Input Delay)
+  - Collects TTFB (Time to First Byte)
+  - Collects TTI (Time to Interactive)
+  - Collects TBT (Total Blocking Time)
+  - Resource metrics and cache hit rate
+  - Evaluates if site passes Core Web Vitals thresholds
+
+- **Page Type Detection**: New `page-type-detector.js` module
+  - Detects: e-commerce, auth, blog, docs, app, homepage
+  - Identifies analytics tools (GA, GTM, Mixpanel, Hotjar, Segment, Amplitude)
+  - Checks for PWA support (service worker + manifest)
+  - Additional page characteristics (video, images, forms)
+
+- **Device & Connection Info**: New `device-detector.js` module
+  - Device type detection (mobile/tablet/desktop)
+  - Browser and engine detection (Chrome, Firefox, Safari, etc.)
+  - Connection type (WiFi, 4G, 3G, slow-2G)
+  - Network quality metrics (downlink, RTT)
+  - User preferences (dark mode, reduced motion)
+  - Hardware info (CPU cores, memory)
+
+- **Build System**: Professional build tooling
+  - New `scripts/build-bundle.js` for automated bundling
+  - `npm run build` command to generate analyzer bundle
+  - Proper dependency ordering
+  - Build documentation in `BUILD.md`
+
+### Changed
+- **Telemetry**: Updated payload to include Phase 1 data
+  - `coreWebVitals` object with all metrics
+  - `pageType` field for page classification
+  - `deviceInfo` object with device/connection data
+- **Analyzer**: Now collects Phase 1 data during analysis
+  - Async collection of Core Web Vitals
+  - Sync detection of page type and device info
+- **Version**: Bumped to 3.3.0 across all files
+
+### Technical
+- Modular detector architecture in `src/detectors/`
+- Build script concatenates 13 modules into single bundle
+- Bundle size: 50.54 KB (from 49.93 KB)
+- Total lines: 1,788 (from 1,767)
+- Privacy-first: No PII collected, all data anonymized
+
 ## [3.2.1] - 2026-01-27
 
 ### Added

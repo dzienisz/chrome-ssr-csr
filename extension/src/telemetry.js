@@ -26,17 +26,29 @@ async function sendAnalysisData(url, title, results) {
       renderType: results.renderType,
       confidence: results.confidence,
       frameworks: results.detailedInfo?.frameworks || [],
+      
+      // Phase 1: Core Web Vitals
+      coreWebVitals: results.coreWebVitals || null,
+      
+      // Phase 1: Page Type
+      pageType: results.pageType || 'other',
+      
+      // Phase 1: Device & Connection Info
+      deviceInfo: results.deviceInfo || null,
+      
+      // Existing performance metrics
       performanceMetrics: {
         domReady: results.detailedInfo?.timing?.domContentLoaded,
         fcp: results.detailedInfo?.timing?.firstContentfulPaint,
-        // New metrics for content comparison
+        // Content comparison metrics (v3.2.0)
         contentRatio: results.detailedInfo?.contentComparison?.ratio,
         rawHtmlLength: results.detailedInfo?.contentComparison?.rawLength,
         renderedLength: results.detailedInfo?.contentComparison?.renderedLength,
         hybridScore: results.detailedInfo?.hybridScore,
       },
+      
       indicators: results.indicators || [],
-      version: '3.2.1',  // Updated version
+      version: '3.3.0',  // Phase 1 version
       timestamp: new Date().toISOString(),
     };
 

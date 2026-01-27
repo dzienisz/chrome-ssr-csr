@@ -3,6 +3,10 @@ if (typeof window.__SSR_CSR_ANALYZER_LOADED__ === 'undefined') {
   window.__SSR_CSR_ANALYZER_LOADED__ = true;
 
 /**
+ * src/core/config.js
+ */
+
+/**
  * Configuration for SSR/CSR Detection
  * All scoring weights and thresholds in one place
  */
@@ -161,6 +165,11 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = CONFIG;
 }
 
+
+/**
+ * src/detectors/comparison-detector.js
+ */
+
 /**
  * Raw HTML Comparison Module
  * Fetches raw HTML and compares to rendered DOM to detect CSR vs SSR
@@ -225,6 +234,11 @@ async function compareInitialVsRendered() {
 if (typeof window !== 'undefined') {
   window.compareInitialVsRendered = compareInitialVsRendered;
 }
+
+
+/**
+ * src/detectors/csr-pattern-detector.js
+ */
 
 /**
  * CSR Pattern Detector Module
@@ -299,6 +313,11 @@ function detectCSRPatterns() {
 if (typeof window !== 'undefined') {
   window.detectCSRPatterns = detectCSRPatterns;
 }
+
+
+/**
+ * src/detectors/hybrid-detector.js
+ */
 
 /**
  * Hybrid Pattern Detector Module
@@ -393,6 +412,11 @@ if (typeof window !== 'undefined') {
   window.detectHybridPatterns = detectHybridPatterns;
 }
 
+
+/**
+ * src/detectors/content-detector.js
+ */
+
 /**
  * Content Detector Module
  * Analyzes HTML content structure and text
@@ -467,6 +491,12 @@ function analyzeContent() {
 if (typeof window !== 'undefined') {
   window.analyzeContent = analyzeContent;
 }
+
+
+/**
+ * src/detectors/framework-detector.js
+ */
+
 /**
  * Framework Detector Module
  * Detects JavaScript frameworks and their hydration patterns
@@ -600,6 +630,12 @@ function detectFrameworks() {
 if (typeof window !== 'undefined') {
   window.detectFrameworks = detectFrameworks;
 }
+
+
+/**
+ * src/detectors/meta-detector.js
+ */
+
 /**
  * Meta Tags Detector Module
  * Analyzes meta tags and SEO indicators
@@ -668,6 +704,12 @@ function analyzeMeta() {
 if (typeof window !== 'undefined') {
   window.analyzeMeta = analyzeMeta;
 }
+
+
+/**
+ * src/detectors/performance-detector.js
+ */
+
 /**
  * Performance Detector Module
  * Analyzes performance timing metrics
@@ -740,6 +782,790 @@ function analyzePerformance() {
 if (typeof window !== 'undefined') {
   window.analyzePerformance = analyzePerformance;
 }
+
+
+/**
+ * src/detectors/performance-collector.js
+ */
+
+/**
+ * Performance Collector
+ * Collects Core Web Vitals and performance metrics
+ */
+
+/**
+ * Get Largest Contentful Paint (LCP)
+ * Target: < 2.5s (Good), < 4.0s (Needs Improvement), >= 4.0s (Poor)
+ */
+function getLargestContentfulPaint() {
+  return new Promise((resolve) => {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        observer.disconnect();
+        resolve(lastEntry.renderTime || lastEntry.loadTime);
+      });
+      observer.observe({ type: 'largest-contentful-paint', buffered: true });
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(null);
+      }, 10000);
+    } catch (error) {
+      console.error('[Performance] LCP error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get Cumulative Layout Shift (CLS)
+ * Target: < 0.1 (Good), < 0.25 (Needs Improvement), >= 0.25 (Poor)
+ */
+function getCumulativeLayoutShift() {
+  return new Promise((resolve) => {
+    try {
+      let clsValue = 0;
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) {
+            clsValue += entry.value;
+          }
+        }
+      });
+      observer.observe({ type: 'layout-shift', buffered: true });
+      
+      // Collect for 5 seconds
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(clsValue);
+      }, 5000);
+    } catch (error) {
+      console.error('[Performance] CLS error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get First Input Delay (FID)
+ * Target: < 100ms (Good), < 300ms (Needs Improvement), >= 300ms (Poor)
+ */
+function getFirstInputDelay() {
+  return new Promise((resolve) => {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        const firstInput = list.getEntries()[0];
+        observer.disconnect();
+        resolve(firstInput.processingStart - firstInput.startTime);
+      });
+      observer.observe({ type: 'first-input', buffered: true });
+      
+      // Timeout after 10 seconds (user might not interact)
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(null);
+      }, 10000);
+    } catch (error) {
+      console.error('[Performance] FID error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get Time to First Byte (TTFB)
+ * Target: < 800ms (Good), < 1800ms (Needs Improvement), >= 1800ms (Poor)
+ */
+function getTimeToFirstByte() {
+  try {
+    const navTiming = performance.getEntriesByType('navigation')[0];
+    if (navTiming) {
+      return navTiming.responseStart - navTiming.requestStart;
+    }
+    return null;
+  } catch (error) {
+    console.error('[Performance] TTFB error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get Time to Interactive (TTI)
+ * Approximation using load event
+ */
+function getTimeToInteractive() {
+  try {
+    const navTiming = performance.getEntriesByType('navigation')[0];
+    if (navTiming) {
+      return navTiming.domInteractive - navTiming.fetchStart;
+    }
+    return null;
+  } catch (error) {
+    console.error('[Performance] TTI error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get Total Blocking Time (TBT)
+ * Sum of blocking time from long tasks
+ */
+function getTotalBlockingTime() {
+  return new Promise((resolve) => {
+    try {
+      let tbt = 0;
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.duration > 50) {
+            tbt += entry.duration - 50;
+          }
+        }
+      });
+      observer.observe({ type: 'longtask', buffered: true });
+      
+      // Collect for 5 seconds
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(tbt);
+      }, 5000);
+    } catch (error) {
+      console.error('[Performance] TBT error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get page load time
+ */
+function getPageLoadTime() {
+  try {
+    const navTiming = performance.getEntriesByType('navigation')[0];
+    if (navTiming) {
+      return navTiming.loadEventEnd - navTiming.fetchStart;
+    }
+    return null;
+  } catch (error) {
+    console.error('[Performance] Load time error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get resource count and transfer size
+ */
+function getResourceMetrics() {
+  try {
+    const resources = performance.getEntriesByType('resource');
+    const totalSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+    
+    return {
+      resourceCount: resources.length,
+      totalTransferSize: totalSize,
+      cachedResources: resources.filter(r => r.transferSize === 0).length
+    };
+  } catch (error) {
+    console.error('[Performance] Resource metrics error:', error);
+    return {
+      resourceCount: null,
+      totalTransferSize: null,
+      cachedResources: null
+    };
+  }
+}
+
+/**
+ * Collect all Core Web Vitals
+ * This is the main function to call
+ */
+async function collectCoreWebVitals() {
+  console.log('[Performance] Collecting Core Web Vitals...');
+  
+  const [lcp, cls, fid, tbt] = await Promise.all([
+    getLargestContentfulPaint(),
+    getCumulativeLayoutShift(),
+    getFirstInputDelay(),
+    getTotalBlockingTime()
+  ]);
+  
+  const ttfb = getTimeToFirstByte();
+  const tti = getTimeToInteractive();
+  const pageLoadTime = getPageLoadTime();
+  const resourceMetrics = getResourceMetrics();
+  
+  const metrics = {
+    lcp: lcp ? Math.round(lcp) : null,
+    cls: cls ? Math.round(cls * 1000) / 1000 : null,
+    fid: fid ? Math.round(fid) : null,
+    ttfb: ttfb ? Math.round(ttfb) : null,
+    tti: tti ? Math.round(tti) : null,
+    tbt: tbt ? Math.round(tbt) : null,
+    pageLoadTime: pageLoadTime ? Math.round(pageLoadTime) : null,
+    resourceCount: resourceMetrics.resourceCount,
+    totalTransferSize: resourceMetrics.totalTransferSize,
+    cachedResources: resourceMetrics.cachedResources,
+    cacheHitRate: resourceMetrics.resourceCount > 0 
+      ? Math.round((resourceMetrics.cachedResources / resourceMetrics.resourceCount) * 100) 
+      : null
+  };
+  
+  console.log('[Performance] Core Web Vitals collected:', metrics);
+  return metrics;
+}
+
+/**
+ * Determine if metrics pass Core Web Vitals thresholds
+ */
+function evaluateCoreWebVitals(metrics) {
+  const passes = {
+    lcp: metrics.lcp && metrics.lcp < 2500,
+    cls: metrics.cls && metrics.cls < 0.1,
+    fid: metrics.fid && metrics.fid < 100
+  };
+  
+  const passCount = Object.values(passes).filter(Boolean).length;
+  const totalCount = Object.values(passes).filter(v => v !== null).length;
+  
+  return {
+    passes,
+    passRate: totalCount > 0 ? Math.round((passCount / totalCount) * 100) : null,
+    allPass: passCount === 3
+  };
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.collectCoreWebVitals = collectCoreWebVitals;
+  window.evaluateCoreWebVitals = evaluateCoreWebVitals;
+}
+
+
+/**
+ * src/detectors/page-type-detector.js
+ */
+
+/**
+ * Page Type Detector
+ * Detects the type of page being analyzed
+ */
+
+/**
+ * Detect if page is an e-commerce/shopping page
+ */
+function isEcommercePage() {
+  // Check for common e-commerce indicators
+  const ecommerceSelectors = [
+    '[class*="cart"]',
+    '[id*="cart"]',
+    '[class*="checkout"]',
+    '[id*="checkout"]',
+    '[class*="product"]',
+    '[id*="product"]',
+    '[class*="shop"]',
+    '[itemtype*="Product"]',
+    'button[class*="add-to-cart"]',
+    'button[class*="buy"]',
+    '.price',
+    '[class*="price"]'
+  ];
+  
+  for (const selector of ecommerceSelectors) {
+    if (document.querySelector(selector)) {
+      return true;
+    }
+  }
+  
+  // Check URL patterns
+  const url = window.location.href.toLowerCase();
+  const ecommercePatterns = ['/shop', '/store', '/product', '/cart', '/checkout', '/buy'];
+  return ecommercePatterns.some(pattern => url.includes(pattern));
+}
+
+/**
+ * Detect if page has authentication (login/signup)
+ */
+function isAuthPage() {
+  // Check for login/signup forms
+  const authSelectors = [
+    'form[action*="login"]',
+    'form[action*="signin"]',
+    'form[action*="signup"]',
+    'form[action*="register"]',
+    'input[type="password"]',
+    '[class*="login"]',
+    '[class*="signin"]',
+    '[class*="signup"]',
+    '[id*="login"]',
+    '[id*="signin"]'
+  ];
+  
+  for (const selector of authSelectors) {
+    if (document.querySelector(selector)) {
+      return true;
+    }
+  }
+  
+  // Check URL patterns
+  const url = window.location.href.toLowerCase();
+  const authPatterns = ['/login', '/signin', '/signup', '/register', '/auth'];
+  return authPatterns.some(pattern => url.includes(pattern));
+}
+
+/**
+ * Detect if page is a blog/article
+ */
+function isBlogPage() {
+  // Check for blog/article indicators
+  const blogSelectors = [
+    'article',
+    '[itemtype*="Article"]',
+    '[itemtype*="BlogPosting"]',
+    '.post',
+    '.article',
+    '[class*="blog"]',
+    '[class*="post"]',
+    'time[datetime]',
+    '.author',
+    '[rel="author"]'
+  ];
+  
+  let blogIndicators = 0;
+  for (const selector of blogSelectors) {
+    if (document.querySelector(selector)) {
+      blogIndicators++;
+    }
+  }
+  
+  // Check URL patterns
+  const url = window.location.href.toLowerCase();
+  const blogPatterns = ['/blog', '/post', '/article', '/news', '/story'];
+  const hasUrlPattern = blogPatterns.some(pattern => url.includes(pattern));
+  
+  // Require at least 2 indicators or URL pattern
+  return blogIndicators >= 2 || hasUrlPattern;
+}
+
+/**
+ * Detect if page is documentation
+ */
+function isDocsPage() {
+  // Check for docs indicators
+  const docsSelectors = [
+    '[class*="docs"]',
+    '[id*="docs"]',
+    '[class*="documentation"]',
+    'nav[class*="sidebar"]',
+    '.toc',
+    '[class*="table-of-contents"]',
+    'code',
+    'pre'
+  ];
+  
+  let docsIndicators = 0;
+  for (const selector of docsSelectors) {
+    if (document.querySelector(selector)) {
+      docsIndicators++;
+    }
+  }
+  
+  // Check URL patterns
+  const url = window.location.href.toLowerCase();
+  const docsPatterns = ['/docs', '/documentation', '/api', '/guide', '/tutorial', '/reference'];
+  const hasUrlPattern = docsPatterns.some(pattern => url.includes(pattern));
+  
+  // Require at least 3 indicators or URL pattern
+  return docsIndicators >= 3 || hasUrlPattern;
+}
+
+/**
+ * Detect if page is a homepage
+ */
+function isHomepage() {
+  const url = window.location.href;
+  const urlObj = new URL(url);
+  
+  // Check if URL is root or just domain
+  const isRoot = urlObj.pathname === '/' || urlObj.pathname === '';
+  
+  // Check for common homepage indicators
+  const hasHero = document.querySelector('[class*="hero"], [id*="hero"], .jumbotron');
+  const hasCTA = document.querySelector('[class*="cta"], button[class*="get-started"]');
+  
+  return isRoot && (hasHero || hasCTA);
+}
+
+/**
+ * Detect if page is a dashboard/app
+ */
+function isAppPage() {
+  // Check for app/dashboard indicators
+  const appSelectors = [
+    '[class*="dashboard"]',
+    '[id*="dashboard"]',
+    '[class*="app"]',
+    '[role="application"]',
+    'nav[class*="sidebar"]',
+    '[class*="sidebar"]',
+    '.app-container',
+    '[data-testid*="app"]'
+  ];
+  
+  let appIndicators = 0;
+  for (const selector of appSelectors) {
+    if (document.querySelector(selector)) {
+      appIndicators++;
+    }
+  }
+  
+  // Check URL patterns
+  const url = window.location.href.toLowerCase();
+  const appPatterns = ['/app', '/dashboard', '/admin', '/console', '/panel'];
+  const hasUrlPattern = appPatterns.some(pattern => url.includes(pattern));
+  
+  // Check for many interactive elements (typical of apps)
+  const buttonCount = document.querySelectorAll('button').length;
+  const inputCount = document.querySelectorAll('input').length;
+  const isInteractive = buttonCount > 10 || inputCount > 5;
+  
+  return appIndicators >= 2 || hasUrlPattern || isInteractive;
+}
+
+/**
+ * Detect page type
+ * Returns the most specific type found
+ */
+function detectPageType() {
+  console.log('[PageType] Detecting page type...');
+  
+  // Check in order of specificity
+  if (isEcommercePage()) {
+    console.log('[PageType] Detected: ecommerce');
+    return 'ecommerce';
+  }
+  
+  if (isAuthPage()) {
+    console.log('[PageType] Detected: auth');
+    return 'auth';
+  }
+  
+  if (isBlogPage()) {
+    console.log('[PageType] Detected: blog');
+    return 'blog';
+  }
+  
+  if (isDocsPage()) {
+    console.log('[PageType] Detected: docs');
+    return 'docs';
+  }
+  
+  if (isAppPage()) {
+    console.log('[PageType] Detected: app');
+    return 'app';
+  }
+  
+  if (isHomepage()) {
+    console.log('[PageType] Detected: homepage');
+    return 'homepage';
+  }
+  
+  console.log('[PageType] Detected: other');
+  return 'other';
+}
+
+/**
+ * Get additional page characteristics
+ */
+function getPageCharacteristics() {
+  return {
+    hasVideo: document.querySelector('video') !== null,
+    imageCount: document.querySelectorAll('img').length,
+    hasForm: document.querySelector('form') !== null,
+    formCount: document.querySelectorAll('form').length,
+    hasAnalytics: detectAnalytics(),
+    languageCode: document.documentElement.lang || 'unknown',
+    isResponsive: document.querySelector('meta[name="viewport"]') !== null,
+    hasPWA: 'serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') !== null
+  };
+}
+
+/**
+ * Detect analytics tools
+ */
+function detectAnalytics() {
+  const analytics = [];
+  
+  // Google Analytics
+  if (window.ga || window.gtag || window.dataLayer) {
+    analytics.push('GA');
+  }
+  
+  // Google Tag Manager
+  if (window.google_tag_manager) {
+    analytics.push('GTM');
+  }
+  
+  // Mixpanel
+  if (window.mixpanel) {
+    analytics.push('Mixpanel');
+  }
+  
+  // Hotjar
+  if (window.hj) {
+    analytics.push('Hotjar');
+  }
+  
+  // Segment
+  if (window.analytics && window.analytics.track) {
+    analytics.push('Segment');
+  }
+  
+  // Amplitude
+  if (window.amplitude) {
+    analytics.push('Amplitude');
+  }
+  
+  return analytics;
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.detectPageType = detectPageType;
+  window.getPageCharacteristics = getPageCharacteristics;
+}
+
+
+/**
+ * src/detectors/device-detector.js
+ */
+
+/**
+ * Device & Context Detector
+ * Collects device, browser, and connection information
+ */
+
+/**
+ * Detect device type based on screen width
+ */
+function getDeviceType() {
+  const width = window.innerWidth;
+  
+  if (width < 768) {
+    return 'mobile';
+  } else if (width < 1024) {
+    return 'tablet';
+  } else {
+    return 'desktop';
+  }
+}
+
+/**
+ * Get screen information
+ */
+function getScreenInfo() {
+  return {
+    width: window.screen.width,
+    height: window.screen.height,
+    availWidth: window.screen.availWidth,
+    availHeight: window.screen.availHeight,
+    devicePixelRatio: window.devicePixelRatio || 1,
+    colorDepth: window.screen.colorDepth,
+    orientation: window.screen.orientation?.type || 'unknown'
+  };
+}
+
+/**
+ * Detect if device has touch capability
+ */
+function isTouchDevice() {
+  return (
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+  );
+}
+
+/**
+ * Get browser information
+ */
+function getBrowserInfo() {
+  const ua = navigator.userAgent;
+  let browserName = 'Unknown';
+  let browserVersion = 'Unknown';
+  let engineName = 'Unknown';
+  
+  // Detect browser
+  if (ua.includes('Firefox/')) {
+    browserName = 'Firefox';
+    browserVersion = ua.match(/Firefox\/(\d+\.\d+)/)?.[1] || 'Unknown';
+    engineName = 'Gecko';
+  } else if (ua.includes('Edg/')) {
+    browserName = 'Edge';
+    browserVersion = ua.match(/Edg\/(\d+\.\d+)/)?.[1] || 'Unknown';
+    engineName = 'Blink';
+  } else if (ua.includes('Chrome/')) {
+    browserName = 'Chrome';
+    browserVersion = ua.match(/Chrome\/(\d+\.\d+)/)?.[1] || 'Unknown';
+    engineName = 'Blink';
+  } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+    browserName = 'Safari';
+    browserVersion = ua.match(/Version\/(\d+\.\d+)/)?.[1] || 'Unknown';
+    engineName = 'WebKit';
+  } else if (ua.includes('Opera/') || ua.includes('OPR/')) {
+    browserName = 'Opera';
+    browserVersion = ua.match(/(?:Opera|OPR)\/(\d+\.\d+)/)?.[1] || 'Unknown';
+    engineName = 'Blink';
+  }
+  
+  return {
+    name: browserName,
+    version: browserVersion,
+    engine: engineName,
+    userAgent: ua
+  };
+}
+
+/**
+ * Get connection information
+ * Uses Network Information API if available
+ */
+function getConnectionInfo() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  
+  if (!connection) {
+    return {
+      type: 'unknown',
+      effectiveType: 'unknown',
+      downlink: null,
+      rtt: null,
+      saveData: false
+    };
+  }
+  
+  return {
+    type: connection.type || 'unknown',
+    effectiveType: connection.effectiveType || 'unknown',
+    downlink: connection.downlink || null, // Mbps
+    rtt: connection.rtt || null, // milliseconds
+    saveData: connection.saveData || false
+  };
+}
+
+/**
+ * Get timezone and language
+ */
+function getLocaleInfo() {
+  return {
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language || 'unknown',
+    languages: navigator.languages || []
+  };
+}
+
+/**
+ * Detect if user has reduced motion preference
+ */
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * Detect if user prefers dark mode
+ */
+function prefersDarkMode() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/**
+ * Get memory information (if available)
+ */
+function getMemoryInfo() {
+  if (performance.memory) {
+    return {
+      jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+      totalJSHeapSize: performance.memory.totalJSHeapSize,
+      usedJSHeapSize: performance.memory.usedJSHeapSize
+    };
+  }
+  return null;
+}
+
+/**
+ * Get hardware concurrency (CPU cores)
+ */
+function getHardwareConcurrency() {
+  return navigator.hardwareConcurrency || null;
+}
+
+/**
+ * Collect all device and context information
+ */
+function collectDeviceInfo() {
+  console.log('[Device] Collecting device information...');
+  
+  const deviceInfo = {
+    deviceType: getDeviceType(),
+    screen: getScreenInfo(),
+    isTouchDevice: isTouchDevice(),
+    browser: getBrowserInfo(),
+    connection: getConnectionInfo(),
+    locale: getLocaleInfo(),
+    preferences: {
+      reducedMotion: prefersReducedMotion(),
+      darkMode: prefersDarkMode()
+    },
+    hardware: {
+      cpuCores: getHardwareConcurrency(),
+      memory: getMemoryInfo()
+    }
+  };
+  
+  console.log('[Device] Device info collected:', deviceInfo);
+  return deviceInfo;
+}
+
+/**
+ * Get simplified device info for telemetry
+ * (removes sensitive/detailed information)
+ */
+function getDeviceInfoForTelemetry() {
+  const fullInfo = collectDeviceInfo();
+  
+  return {
+    deviceType: fullInfo.deviceType,
+    screenWidth: fullInfo.screen.width,
+    screenHeight: fullInfo.screen.height,
+    devicePixelRatio: fullInfo.screen.devicePixelRatio,
+    isTouchDevice: fullInfo.isTouchDevice,
+    browserName: fullInfo.browser.name,
+    browserVersion: fullInfo.browser.version,
+    engineName: fullInfo.browser.engine,
+    connectionType: fullInfo.connection.type,
+    effectiveType: fullInfo.connection.effectiveType,
+    downlink: fullInfo.connection.downlink,
+    rtt: fullInfo.connection.rtt,
+    saveData: fullInfo.connection.saveData,
+    timezone: fullInfo.locale.timezone,
+    language: fullInfo.locale.language,
+    prefersReducedMotion: fullInfo.preferences.reducedMotion,
+    prefersDarkMode: fullInfo.preferences.darkMode,
+    cpuCores: fullInfo.hardware.cpuCores
+  };
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.collectDeviceInfo = collectDeviceInfo;
+  window.getDeviceInfoForTelemetry = getDeviceInfoForTelemetry;
+}
+
+
+/**
+ * src/core/scoring.js
+ */
+
 /**
  * Scoring Module
  * Calculates final scores and classification
@@ -808,6 +1634,12 @@ function calculateClassification(ssrScore, csrScore, hybridScore, indicators) {
 if (typeof window !== 'undefined') {
   window.calculateClassification = calculateClassification;
 }
+
+
+/**
+ * src/core/analyzer.js
+ */
+
 /**
  * Main Analyzer Module
  * Orchestrates all detection modules and produces final results
@@ -832,6 +1664,21 @@ async function pageAnalyzer() {
 
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
+
+    // Phase 1: Collect Core Web Vitals (async)
+    const coreWebVitals = typeof window.collectCoreWebVitals === 'function' 
+      ? await window.collectCoreWebVitals() 
+      : null;
+
+    // Phase 1: Detect page type (sync)
+    const pageType = typeof window.detectPageType === 'function'
+      ? window.detectPageType()
+      : 'other';
+
+    // Phase 1: Collect device info (sync)
+    const deviceInfo = typeof window.getDeviceInfoForTelemetry === 'function'
+      ? window.getDeviceInfoForTelemetry()
+      : null;
 
     // Combine all scores
     let ssrScore = 0;
@@ -897,6 +1744,12 @@ async function pageAnalyzer() {
       renderType: classification.renderType,
       confidence: classification.confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
+      
+      // Phase 1: Add new data fields
+      coreWebVitals,
+      pageType,
+      deviceInfo,
+      
       detailedInfo: {
         ssrScore,
         csrScore,
@@ -916,6 +1769,7 @@ async function pageAnalyzer() {
         ssrScore: 0,
         csrScore: 0,
         ssrPercentage: 50,
+        hybridScore: 0,
         totalIndicators: 0,
         error: error.message
       }
@@ -927,168 +1781,7 @@ async function pageAnalyzer() {
 if (typeof window !== 'undefined') {
   window.pageAnalyzer = pageAnalyzer;
 }
-/**
- * Results Renderer Module
- * UI components for displaying analysis results
- */
 
-/**
- * Get color based on render type
- * @param {string} renderType - The render type classification
- * @returns {string} Hex color code
- */
-function getTypeColor(renderType) {
-  if (renderType.includes('SSR')) return '#059669';
-  if (renderType.includes('CSR')) return '#dc2626';
-  if (renderType.includes('Hybrid')) return '#d97706';
-  return '#6b7280';
-}
 
-/**
- * Create confidence bar HTML
- * @param {number} confidence - Confidence percentage
- * @returns {string} HTML string for confidence bar
- */
-function getConfidenceBar(confidence) {
-  const width = Math.max(confidence, 10);
-  const color = confidence >= 70 ? '#059669' : confidence >= 50 ? '#d97706' : '#dc2626';
 
-  // Detect dark mode for background
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const barBg = isDark ? '#374151' : '#f1f5f9';
-
-  return `
-    <div style="background: ${barBg}; border-radius: 4px; height: 6px; width: 100%; margin-top: 4px; overflow: hidden;">
-      <div style="background: ${color}; height: 100%; width: ${width}%; border-radius: 4px; transition: width 0.3s ease;"></div>
-    </div>
-  `;
-}
-
-/**
- * Create complete results HTML
- * @param {Object} results - Analysis results object
- * @returns {string} HTML string for displaying results
- */
-function createResultsHTML(results) {
-  const { renderType, confidence, indicators, detailedInfo } = results;
-
-  // Detect dark mode
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const borderColor = isDark ? '#374151' : '#ddd';
-  const accentColor = isDark ? '#3b82f6' : '#2563eb';
-  const textSecondary = isDark ? '#9ca3af' : '#666';
-  const badgeBg = isDark ? '#374151' : '#f1f5f9';
-  const badgeText = isDark ? '#f9fafb' : '#1f2937';
-
-  let resultHTML = `
-    <div style="border: 1px solid ${borderColor}; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Render Type:</strong>
-        <br>
-        <span style="font-weight: 600; color: ${getTypeColor(renderType)}">${renderType}</span>
-      </div>
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Confidence:</strong>
-        <span style="font-weight: 600;">${confidence}%</span>
-        ${getConfidenceBar(confidence)}
-      </div>
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Analysis Score:</strong>
-        <br>
-        <span style="font-size: 12px; color: ${textSecondary};">
-          SSR: ${detailedInfo.ssrScore} | CSR: ${detailedInfo.csrScore}
-          (${detailedInfo.ssrPercentage}% SSR)
-        </span>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 10px;">
-      <strong style="color: ${accentColor};">Key Indicators (${detailedInfo.totalIndicators}):</strong>
-      <div style="margin-top: 4px; font-size: 13px; line-height: 1.4;">
-        ${indicators.map(indicator => `<span style="display: inline-block; background: ${badgeBg}; color: ${badgeText}; padding: 2px 6px; margin: 2px 2px; border-radius: 5px; font-size: 11px;">${indicator}</span>`).join('')}
-      </div>
-    </div>
-  `;
-
-  // Add framework detection if available
-  if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
-    resultHTML += `
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Detected Frameworks:</strong>
-        <span style="font-weight:700;">${detailedInfo.frameworks.join(', ').toUpperCase()}</span>
-      </div>
-    `;
-  }
-
-  // Add static generator information if available
-  if (detailedInfo.generators && detailedInfo.generators.length > 0) {
-    resultHTML += `
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Static Site Generator:</strong>
-        <span style="font-weight:700;">${detailedInfo.generators.join(', ').toUpperCase()}</span>
-      </div>
-    `;
-  }
-
-  // Add content comparison visual (raw vs rendered)
-  if (detailedInfo.contentComparison) {
-    const { rawLength, renderedLength, ratio } = detailedInfo.contentComparison;
-    const ratioPercent = Math.min(ratio * 100, 100);
-    const ratioColor = ratio > 0.7 ? '#059669' : ratio < 0.2 ? '#dc2626' : '#d97706';
-    const barBg = isDark ? '#374151' : '#f1f5f9';
-
-    resultHTML += `
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Content Comparison:</strong>
-        <div style="font-size: 12px; color: ${textSecondary}; margin-top: 2px;">
-          Raw HTML: ${rawLength.toLocaleString()} chars | Rendered: ${renderedLength.toLocaleString()} chars
-        </div>
-        <div style="display: flex; align-items: center; margin-top: 4px;">
-          <div style="flex: 1; background: ${barBg}; border-radius: 4px; height: 8px; overflow: hidden; position: relative;">
-            <div style="background: ${ratioColor}; height: 100%; width: ${ratioPercent}%; border-radius: 4px; transition: width 0.3s ease;"></div>
-          </div>
-          <span style="margin-left: 8px; font-size: 11px; font-weight: 600; color: ${ratioColor};">${(ratio * 100).toFixed(0)}%</span>
-        </div>
-        <div style="font-size: 10px; color: ${textSecondary}; margin-top: 2px;">
-          ${ratio > 0.7 ? '✓ Raw HTML has most content (SSR)' : ratio < 0.2 ? '✗ Content loaded via JS (CSR)' : '~ Partial server content (Hybrid)'}
-        </div>
-      </div>
-    `;
-  }
-
-  // Add hybrid score if significant
-  if (detailedInfo.hybridScore && detailedInfo.hybridScore > 0) {
-    resultHTML += `
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Hybrid Score:</strong>
-        <span style="font-weight: 600; color: #d97706;">${detailedInfo.hybridScore}</span>
-        <span style="font-size: 11px; color: ${textSecondary};"> (islands/partial hydration)</span>
-      </div>
-    `;
-  }
-
-  // Add timing information if available
-  if (detailedInfo.timing) {
-    resultHTML += `
-      <div style="margin-bottom: 8px;">
-        <strong style="color: ${accentColor};">Performance:</strong>
-        <div style="font-size: 12px; color: ${textSecondary}; margin-top: 2px;">
-          DOM Ready: ${detailedInfo.timing.domContentLoaded}ms
-          ${detailedInfo.timing.firstContentfulPaint ?
-            ` | FCP: ${detailedInfo.timing.firstContentfulPaint}ms` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  return resultHTML;
-}
-
-// Export functions for use in other files
-if (typeof window !== 'undefined') {
-  window.getTypeColor = getTypeColor;
-  window.getConfidenceBar = getConfidenceBar;
-  window.createResultsHTML = createResultsHTML;
-}
-
-} // End injection guard
+} // End of injection guard

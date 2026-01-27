@@ -23,6 +23,21 @@ async function pageAnalyzer() {
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
 
+    // Phase 1: Collect Core Web Vitals (async)
+    const coreWebVitals = typeof window.collectCoreWebVitals === 'function' 
+      ? await window.collectCoreWebVitals() 
+      : null;
+
+    // Phase 1: Detect page type (sync)
+    const pageType = typeof window.detectPageType === 'function'
+      ? window.detectPageType()
+      : 'other';
+
+    // Phase 1: Collect device info (sync)
+    const deviceInfo = typeof window.getDeviceInfoForTelemetry === 'function'
+      ? window.getDeviceInfoForTelemetry()
+      : null;
+
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
@@ -87,6 +102,12 @@ async function pageAnalyzer() {
       renderType: classification.renderType,
       confidence: classification.confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
+      
+      // Phase 1: Add new data fields
+      coreWebVitals,
+      pageType,
+      deviceInfo,
+      
       detailedInfo: {
         ssrScore,
         csrScore,

@@ -1,0 +1,23 @@
+{
+  "name": "ssr-csr-detector-extension",
+  "version": "3.3.0",
+  "description": "Chrome extension to detect SSR vs CSR rendering",
+  "scripts": {
+    "build": "node scripts/build-bundle.js",
+    "build:watch": "nodemon --watch src --exec 'npm run build'",
+    "lint": "echo 'Linting not configured yet'",
+    "test": "echo 'Tests not configured yet'"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "chrome-extension",
+    "ssr",
+    "csr",
+    "performance",
+    "web-vitals"
+  ],
+  "author": "Kamil Dzieniszewski",
+  "license": "MIT"
+}
