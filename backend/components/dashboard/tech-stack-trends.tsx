@@ -1,5 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 
 interface TechStackTrendsProps {
   data?: {
@@ -34,15 +32,17 @@ export function TechStackTrends({ data }: TechStackTrendsProps) {
   };
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="rounded-lg border bg-slate-900/50 border-slate-800 text-slate-100 shadow-sm">
+      <div className="flex flex-col space-y-1.5 p-6">
+        <h3 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2">
           🛠️ Tech Stack Trends
-          <Badge variant="outline" className="ml-auto bg-blue-500/10 text-blue-400 border-blue-500/20">Phase 2</Badge>
-        </CardTitle>
-        <CardDescription>Most popular technologies detected across analyzed sites</CardDescription>
-      </CardHeader>
-      <CardContent>
+          <span className="ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-blue-500/20 bg-blue-500/10 text-blue-400">
+            Phase 2
+          </span>
+        </h3>
+        <p className="text-sm text-slate-400">Most popular technologies detected across analyzed sites</p>
+      </div>
+      <div className="p-6 pt-0">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* CSS Frameworks */}
           <div>
@@ -74,7 +74,7 @@ export function TechStackTrends({ data }: TechStackTrendsProps) {
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
