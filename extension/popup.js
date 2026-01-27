@@ -391,6 +391,10 @@ function sendDataIfEnabled(url, results) {
         
         // Phase 2: SEO & Accessibility
         seoAccessibility: results.seoAccessibility || null,
+
+        // Phase 3: User Journey
+        hydrationData: results.hydrationData || null,
+        navigationData: results.navigationData || null,
         
         performanceMetrics: {
           domReady: results.detailedInfo?.timing?.domContentLoaded,

@@ -32,8 +32,9 @@ export function CoreWebVitalsComparison({ data }: Props) {
     );
   }
 
-  const getStatusColor = (metric: string, value: number | null) => {
-    if (value === null) return 'text-gray-400';
+  const getStatusColor = (metric: string, rawValue: number | null) => {
+    if (rawValue === null) return 'text-gray-400';
+    const value = Number(rawValue);
     
     switch (metric) {
       case 'lcp':
@@ -102,7 +103,7 @@ export function CoreWebVitalsComparison({ data }: Props) {
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-600 dark:text-gray-400">CLS</span>
                   <span className={`text-sm font-medium ${getStatusColor('cls', item.avg_cls)}`}>
-                    {item.avg_cls !== null ? item.avg_cls.toFixed(3) : 'N/A'}
+                    {item.avg_cls !== null ? Number(item.avg_cls).toFixed(3) : 'N/A'}
                   </span>
                 </div>
                 <div className="text-xs text-gray-500">

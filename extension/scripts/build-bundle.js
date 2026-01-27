@@ -24,6 +24,9 @@ const sourceFiles = [
   // NEW Phase 2 detectors
   'src/detectors/tech-stack-detector.js',
   'src/detectors/seo-detector.js',
+  // NEW Phase 3 detectors (User Journey)
+  'src/detectors/hydration-detector.js',
+  'src/detectors/navigation-detector.js',
   // Core analyzer (must be last)
   'src/core/scoring.js',
   'src/core/analyzer.js',

@@ -27,6 +27,9 @@ export interface AnalysisRecord {
   // Phase 2 fields (v3.4.0+)
   tech_stack?: any;
   seo_accessibility?: any;
+  // Phase 3 fields (v3.5.0+)
+  hydration_stats?: any;
+  navigation_stats?: any;
 }
 
 export async function insertAnalysis(data: AnalysisRecord) {
@@ -35,7 +38,8 @@ export async function insertAnalysis(data: AnalysisRecord) {
       INSERT INTO analyses (
         url, domain, render_type, confidence, frameworks,
         performance_metrics, indicators, extension_version, user_agent,
-        core_web_vitals, page_type, device_info, tech_stack, seo_accessibility
+        core_web_vitals, page_type, device_info, tech_stack, seo_accessibility,
+        hydration_stats, navigation_stats
       ) VALUES (
         ${data.url},
         ${data.domain},
@@ -50,7 +54,9 @@ export async function insertAnalysis(data: AnalysisRecord) {
         ${data.page_type || null},
         ${JSON.stringify(data.device_info) || null},
         ${JSON.stringify(data.tech_stack) || null},
-        ${JSON.stringify(data.seo_accessibility) || null}
+        ${JSON.stringify(data.seo_accessibility) || null},
+        ${JSON.stringify(data.hydration_stats) || null},
+        ${JSON.stringify(data.navigation_stats) || null}
       )
       RETURNING id;
     `;

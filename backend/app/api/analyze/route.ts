@@ -63,6 +63,9 @@ export async function POST(request: NextRequest) {
       // Phase 2 fields (v3.4.0+)
       tech_stack: data.techStack || null,
       seo_accessibility: data.seoAccessibility || null,
+      // Phase 3 fields (v3.5.0+)
+      hydration_stats: data.hydrationData || null,
+      navigation_stats: data.navigationData || null,
     };
 
     // Debug: Log Phase 1 & 2 data

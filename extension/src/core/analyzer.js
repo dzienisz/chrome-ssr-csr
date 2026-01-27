@@ -53,6 +53,15 @@ async function pageAnalyzer() {
       ? window.SEODetector.detect()
       : null;
 
+    // Phase 3: Hydration & Navigation (sync)
+    const hydrationData = typeof window.HydrationDetector === 'object'
+      ? window.HydrationDetector.detect()
+      : null;
+
+    const navigationData = typeof window.NavigationDetector === 'object'
+      ? window.NavigationDetector.detect()
+      : null;
+
     // Combine all scores
     let ssrScore = 0;
     let csrScore = 0;
@@ -126,6 +135,10 @@ async function pageAnalyzer() {
       // Phase 2 results
       techStack,
       seoAccessibility,
+
+      // Phase 3 results
+      hydrationData,
+      navigationData,
 
       // Metadata
       timestamp: new Date().toISOString(),
