@@ -24,7 +24,9 @@ const sourceFiles = [
   'src/detectors/device-detector.js',
   // Core analyzer (must be last)
   'src/core/scoring.js',
-  'src/core/analyzer.js'
+  'src/core/analyzer.js',
+  // UI components
+  'src/ui/components/results-renderer.js'
 ];
 
 const outputFile = 'src/analyzer-bundle.js';
