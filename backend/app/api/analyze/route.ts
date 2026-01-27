@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
       indicators: Array.isArray(data.indicators) ? data.indicators.slice(0, 20) : [],
       extension_version: data.version || 'unknown',
       user_agent: request.headers.get('user-agent') || undefined,
+      // Phase 1 fields (v3.3.0+)
+      core_web_vitals: data.coreWebVitals || null,
+      page_type: data.pageType || null,
+      device_info: data.deviceInfo || null,
     };
 
     // Insert into database

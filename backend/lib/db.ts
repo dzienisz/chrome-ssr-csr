@@ -20,6 +20,10 @@ export interface AnalysisRecord {
   indicators: string[];
   extension_version: string;
   user_agent?: string;
+  // Phase 1 fields (v3.3.0+)
+  core_web_vitals?: any;
+  page_type?: string;
+  device_info?: any;
 }
 
 export async function insertAnalysis(data: AnalysisRecord) {
@@ -27,7 +31,8 @@ export async function insertAnalysis(data: AnalysisRecord) {
     const result = await sql`
       INSERT INTO analyses (
         url, domain, render_type, confidence, frameworks,
-        performance_metrics, indicators, extension_version, user_agent
+        performance_metrics, indicators, extension_version, user_agent,
+        core_web_vitals, page_type, device_info
       ) VALUES (
         ${data.url},
         ${data.domain},
@@ -37,7 +42,10 @@ export async function insertAnalysis(data: AnalysisRecord) {
         ${JSON.stringify(data.performance_metrics)},
         ${JSON.stringify(data.indicators)},
         ${data.extension_version},
-        ${data.user_agent || null}
+        ${data.user_agent || null},
+        ${data.core_web_vitals ? JSON.stringify(data.core_web_vitals) : null},
+        ${data.page_type || null},
+        ${data.device_info ? JSON.stringify(data.device_info) : null}
       )
       RETURNING id;
     `;
