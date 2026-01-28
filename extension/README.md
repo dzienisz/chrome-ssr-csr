@@ -1,7 +1,7 @@
 # CSR vs SSR Detector - Chrome Extension
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
-[![Version](https://img.shields.io/badge/version-3.2.1-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](./CHANGELOG.md)
 
 A Chrome extension that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
 

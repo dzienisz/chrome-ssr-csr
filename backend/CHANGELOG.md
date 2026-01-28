@@ -2,6 +2,23 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.2.0] - 2026-01-28
+
+### Added - Phase 2 & 3 Analytics
+- **Core Web Vitals**: LCP, CLS, FID, TTFB, TTI tracking and analytics
+- **Page Type Detection**: E-commerce, blog, docs, app, homepage classification
+- **Device Analytics**: Mobile/tablet/desktop and browser tracking
+- **Tech Stack Detection**: CSS frameworks, state management, build tools, hosting
+- **SEO & Accessibility**: Meta tags, social tags, alt text coverage, ARIA labels
+- **Hydration Analytics**: Framework-specific hydration state tracking
+- **Navigation Analytics**: BFCache, SPA transitions, INP precursors
+
+### Changed
+- **Infinite Scroll**: Seamlessly browse historical analyses
+- **Standardized UI**: Full migration to customized Tremor design system
+- **Record Management**: Added ability to delete stale or unwanted analysis records
+- Extended database schema with Phase 1-3 fields
+
 ## [1.1.0] - 2026-01-27
 
 ### Added
@@ -49,4 +66,6 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ## Version History
 
+- **v1.2.0**: Phase 2 & 3 analytics (Core Web Vitals, Tech Stack, SEO, Hydration)
+- **v1.1.0**: Content comparison analytics
 - **v1.0.0**: Initial release with live dashboard, charts, and API

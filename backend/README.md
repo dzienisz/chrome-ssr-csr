@@ -1,6 +1,6 @@
 # SSR/CSR Analytics Dashboard
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](./CHANGELOG.md)
 [![Live Dashboard](https://img.shields.io/badge/dashboard-live-brightgreen)](https://backend-mauve-beta-88.vercel.app/dashboard)
 
 Real-time analytics dashboard for the [CSR vs SSR Detector](../extension) Chrome extension.
@@ -159,7 +159,7 @@ Submit analysis data from the extension.
     "fcp": 650
   },
   "indicators": ["Rich initial content", "Hydration markers"],
-  "version": "3.0.5"
+  "version": "3.5.0"
 }
 ```
 

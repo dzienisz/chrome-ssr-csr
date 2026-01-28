@@ -54,7 +54,7 @@ async function sendAnalysisData(url, title, results) {
       },
       
       indicators: results.indicators || [],
-      version: '3.3.1',  // Phase 1 patch
+      version: '3.5.0',  // Phase 3: User Journey & Hydration Analytics
       timestamp: new Date().toISOString(),
     };
 
