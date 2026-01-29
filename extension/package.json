@@ -6,10 +6,13 @@
     "build": "node scripts/build-bundle.js",
     "build:watch": "nodemon --watch src --exec 'npm run build'",
     "lint": "echo 'Linting not configured yet'",
-    "test": "echo 'Tests not configured yet'"
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "jsdom": "^27.4.0",
+    "nodemon": "^3.0.2",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "chrome-extension",
