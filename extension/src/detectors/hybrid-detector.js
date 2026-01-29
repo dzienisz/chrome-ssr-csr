@@ -31,7 +31,6 @@ function detectHybridPatterns() {
   }
 
   // Detect React Server Components patterns
-  const rscPayload = document.querySelector('script#__NEXT_DATA__[type="application/json"]');
   const hasServerComponents = document.querySelector('[data-rsc], [data-server-component]') !== null;
   if (hasServerComponents) {
     hybridScore += 20;

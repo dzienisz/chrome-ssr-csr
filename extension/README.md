@@ -20,10 +20,32 @@ A Chrome extension that detects whether a webpage uses Server-Side Rendering (SS
 
 ## Features
 
+### Core Detection
 - **🎯 Accurate Detection**: Analyzes 15+ indicators including DOM structure, framework markers, performance metrics
 - **🚀 Framework Recognition**: Detects Next.js, Nuxt, Gatsby, Remix, SvelteKit, Astro, React, Vue, Angular
 - **🏷️ Badge on Icon**: Shows SSR/CSR/MIX result directly on extension icon (green/red/amber)
 - **📊 Detailed Analysis**: Confidence score, performance metrics, detection indicators
+
+### Performance Insights (v3.3.0+)
+- **📈 Core Web Vitals**: LCP, CLS, FID, TTFB measurements
+- **📱 Device Context**: Device type, screen size, connection quality
+- **📄 Page Classification**: Auto-detect page type (blog, ecommerce, docs, app, etc.)
+
+### Tech Stack Analysis (v3.4.0+)
+- **🎨 CSS Framework Detection**: Tailwind, Bootstrap, MUI, Chakra UI
+- **⚡ State Management**: Redux, MobX, Recoil, Apollo
+- **🔧 Build Tools**: Webpack, Vite, Parcel
+- **🌐 Hosting Detection**: Vercel, Netlify, GitHub Pages, Cloudflare
+
+### SEO & Quality Audits (v3.4.0+)
+- **🔍 SEO Analysis**: Meta tags, Open Graph, heading structure
+- **♿ Accessibility Score**: Alt text coverage, ARIA landmarks
+
+### Advanced Analytics (v3.5.0+)
+- **💧 Hydration Tracking**: Hydration errors and timing
+- **🧭 Navigation Analysis**: SPA vs MPA detection, route tracking
+
+### User Experience
 - **🌙 Dark Mode**: Beautiful dark theme with system preference detection
 - **📤 Export Results**: Download as JSON, CSV, or Markdown
 - **📜 History**: Stores recent analyses with configurable limit
@@ -82,17 +104,26 @@ extension/
 ├── background.js        # Service worker
 ├── src/
 │   ├── analyzer-bundle.js   # Bundled analysis code (injected into pages)
+│   ├── telemetry.js         # Telemetry handling
 │   ├── core/
 │   │   ├── config.js        # Scoring weights configuration
 │   │   ├── analyzer.js      # Main analysis orchestration
 │   │   └── scoring.js       # Classification logic
 │   ├── detectors/
-│   │   ├── content-detector.js     # DOM/content analysis
-│   │   ├── framework-detector.js   # Framework detection
-│   │   ├── meta-detector.js        # Meta tags analysis
-│   │   ├── performance-detector.js # Timing metrics
-│   │   ├── comparison-detector.js  # Raw HTML vs rendered DOM
-│   │   └── csr-pattern-detector.js # SPA/CSR patterns
+│   │   ├── content-detector.js       # DOM/content analysis
+│   │   ├── framework-detector.js     # Framework detection
+│   │   ├── meta-detector.js          # Meta tags analysis
+│   │   ├── performance-detector.js   # Timing metrics
+│   │   ├── comparison-detector.js    # Raw HTML vs rendered DOM
+│   │   ├── csr-pattern-detector.js   # SPA/CSR patterns
+│   │   ├── hybrid-detector.js        # Islands/partial hydration
+│   │   ├── performance-collector.js  # Core Web Vitals (v3.3.0+)
+│   │   ├── page-type-detector.js     # Page classification (v3.3.0+)
+│   │   ├── device-detector.js        # Device info (v3.3.0+)
+│   │   ├── tech-stack-detector.js    # CSS/state/build tools (v3.4.0+)
+│   │   ├── seo-detector.js           # SEO & accessibility (v3.4.0+)
+│   │   ├── hydration-detector.js     # Hydration tracking (v3.5.0+)
+│   │   └── navigation-detector.js    # SPA navigation (v3.5.0+)
 │   └── ui/
 │       └── results-renderer.js     # Results HTML generation
 ├── icon*.png            # Extension icons

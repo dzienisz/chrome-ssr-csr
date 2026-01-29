@@ -192,8 +192,6 @@ function getResourceMetrics() {
  * This is the main function to call
  */
 async function collectCoreWebVitals() {
-  console.log('[Performance] Collecting Core Web Vitals...');
-  
   const [lcp, cls, fid, tbt] = await Promise.all([
     getLargestContentfulPaint(),
     getCumulativeLayoutShift(),
@@ -221,8 +219,7 @@ async function collectCoreWebVitals() {
       ? Math.round((resourceMetrics.cachedResources / resourceMetrics.resourceCount) * 100) 
       : null
   };
-  
-  console.log('[Performance] Core Web Vitals collected:', metrics);
+
   return metrics;
 }
 

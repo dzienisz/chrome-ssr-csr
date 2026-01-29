@@ -11,7 +11,6 @@ const TechStackDetector = {
       buildTool: this.detectBuildTool(),
       hosting: this.detectHosting(),
       cdn: this.detectCDN(),
-      typescript: this.detectTypeScript(),
       globalVariables: this.detectGlobalVariables()
     };
 
@@ -144,14 +143,6 @@ const TechStackDetector = {
     if (domains.some(d => d.includes('bunnycdn'))) return 'BunnyCDN';
     
     return null;
-  },
-  
-  detectTypeScript: function() {
-    // Check source maps or specific variable patterns
-    const scripts = Array.from(document.scripts);
-    // Rough heuristic: checking for source maps usually indicates TS/modern toolchain
-    // Real TS detection is hard in production bundles
-    return false; // Placeholder
   },
   
   detectGlobalVariables: function() {

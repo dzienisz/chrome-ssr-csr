@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { insertAnalysis } from '@/lib/db';
 import { verifyApiKey } from '@/lib/auth';
+import { getCorsHeaders, corsOptionsResponse } from '@/lib/cors';
 
-// CORS headers for all responses
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-};
+const corsHeaders = getCorsHeaders(['POST', 'OPTIONS']);
 
 export async function POST(request: NextRequest) {
   // Verify API key
   if (!verifyApiKey(request)) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
+      { success: false, error: 'Unauthorized' },
       { status: 401, headers: corsHeaders }
     );
   }
@@ -24,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!data.url || !data.domain || !data.renderType || !data.confidence) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { success: false, error: 'Missing required fields' },
         { status: 400, headers: corsHeaders }
       );
     }
@@ -32,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Validate data types
     if (typeof data.confidence !== 'number' || data.confidence < 0 || data.confidence > 100) {
       return NextResponse.json(
-        { error: 'Invalid confidence value' },
+        { success: false, error: 'Invalid confidence value' },
         { status: 400, headers: corsHeaders }
       );
     }
@@ -68,15 +64,6 @@ export async function POST(request: NextRequest) {
       navigation_stats: data.navigationData || null,
     };
 
-    // Debug: Log Phase 1 & 2 data
-    console.log('[Analysis Debug]', {
-      version: data.version,
-      hasPhase1: !!(data.coreWebVitals || data.pageType || data.deviceInfo),
-      hasPhase2: !!(data.techStack || data.seoAccessibility),
-      techStack: data.techStack ? 'present' : 'missing',
-      seo: data.seoAccessibility ? 'present' : 'missing'
-    });
-
     // Insert into database
     const result = await insertAnalysis(analysisRecord);
 
@@ -87,20 +74,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Analysis submission error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500, headers: corsHeaders }
     );
   }
 }
 
 // Handle OPTIONS for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-    },
-  });
+export async function OPTIONS() {
+  return corsOptionsResponse(['POST', 'OPTIONS']);
 }

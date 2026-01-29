@@ -342,19 +342,12 @@ function downloadFile(content, filename, mimeType) {
 
 // Send data if sharing is enabled
 function sendDataIfEnabled(url, results) {
-  console.log('[Telemetry] sendDataIfEnabled called');
-
   chrome.storage.sync.get({ shareData: true }, async (settings) => {
-    console.log('[Telemetry] shareData setting:', settings.shareData);
-
     if (!settings.shareData) {
-      console.log('[Telemetry] Data sharing is disabled - skipping');
       return;
     }
 
     try {
-      console.log('[Telemetry] Sending analysis data to backend...');
-
       // Backend configuration
       const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
 
@@ -365,8 +358,8 @@ function sendDataIfEnabled(url, results) {
         const urlObj = new URL(url);
         domain = urlObj.hostname;
         anonymizedUrl = urlObj.origin;
-      } catch (e) {
-        console.error('[Telemetry] URL parse error:', e);
+      } catch {
+        // Use defaults if URL parsing fails
       }
 
       // Prepare payload
@@ -376,26 +369,26 @@ function sendDataIfEnabled(url, results) {
         renderType: results.renderType,
         confidence: results.confidence,
         frameworks: results.detailedInfo?.frameworks || [],
-        
+
         // Phase 1: Core Web Vitals
         coreWebVitals: results.coreWebVitals || null,
-        
+
         // Phase 1: Page Type
         pageType: results.pageType || null,
-        
+
         // Phase 1: Device & Connection Info
         deviceInfo: results.deviceInfo || null,
-        
+
         // Phase 2: Tech Stack
         techStack: results.techStack || null,
-        
+
         // Phase 2: SEO & Accessibility
         seoAccessibility: results.seoAccessibility || null,
 
         // Phase 3: User Journey
         hydrationData: results.hydrationData || null,
         navigationData: results.navigationData || null,
-        
+
         performanceMetrics: {
           domReady: results.detailedInfo?.timing?.domContentLoaded,
           fcp: results.detailedInfo?.timing?.firstContentfulPaint,
@@ -410,8 +403,6 @@ function sendDataIfEnabled(url, results) {
         timestamp: new Date().toISOString(),
       };
 
-      console.log('[Telemetry] Payload:', payload);
-
       // Send to backend
       const response = await fetch(`${BACKEND_URL}/api/analyze`, {
         method: 'POST',
@@ -421,16 +412,10 @@ function sendDataIfEnabled(url, results) {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('[Telemetry] Failed:', response.status, error);
-        return;
+      if (response.ok) {
+        await response.json();
       }
-
-      const result = await response.json();
-      console.log('[Telemetry] Success:', result);
-    } catch (error) {
-      console.error('[Telemetry] Error:', error);
+    } catch {
       // Fail silently - don't disrupt user experience
     }
   });
@@ -581,6 +566,7 @@ function toggleHistory() {
 }
 
 // Helper function to get color based on render type
+// Note: This is duplicated from results-renderer.js because popup runs in a separate context
 function getTypeColor(renderType) {
   if (renderType.includes('SSR')) return '#059669';
   if (renderType.includes('CSR')) return '#dc2626';

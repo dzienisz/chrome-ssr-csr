@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getHydrationStats, getNavigationStats } from '@/lib/db-phase3';
+import { getCorsHeaders, corsOptionsResponse } from '@/lib/cors';
 
 export const dynamic = 'force-dynamic';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const corsHeaders = getCorsHeaders(['GET', 'OPTIONS']);
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return corsOptionsResponse(['GET', 'OPTIONS']);
 }
 
 export async function GET() {
@@ -27,7 +24,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching Phase 3 stats:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch Phase 3 statistics' },
+      { success: false, error: 'Failed to fetch Phase 3 statistics' },
       { status: 500, headers: corsHeaders }
     );
   }

@@ -15,8 +15,8 @@ interface NavigationStats {
 
 interface Props {
   data: {
-    hydration: HydrationStats;
-    navigation: NavigationStats;
+    hydration?: HydrationStats;
+    navigation?: NavigationStats;
   } | null;
 }
 

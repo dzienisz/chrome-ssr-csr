@@ -1,11 +1,36 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Badge, Text, Metric } from '@tremor/react';
 
+interface AnalysisData {
+  id: number;
+  domain: string;
+  url?: string;
+  render_type: string;
+  confidence: number;
+  timestamp: string;
+  frameworks?: string[];
+  core_web_vitals?: {
+    lcp?: number | null;
+    cls?: number | null;
+    fid?: number | null;
+    ttfb?: number | null;
+  };
+  tech_stack?: Record<string, string | string[] | null>;
+  hydration_stats?: {
+    score?: number;
+    errorCount?: number;
+  };
+  navigation_stats?: {
+    isSPA?: boolean;
+    clientRoutes?: number;
+  };
+}
+
 interface Props {
-  analysis: any;
+  analysis: AnalysisData | null;
   isOpen: boolean;
   onClose: () => void;
 }

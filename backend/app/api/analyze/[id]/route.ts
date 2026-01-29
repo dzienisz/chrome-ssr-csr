@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteAnalysis } from '@/lib/db';
 import { verifyApiKey } from '@/lib/auth';
+import { getCorsHeaders, corsOptionsResponse } from '@/lib/cors';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-};
+const corsHeaders = getCorsHeaders(['DELETE', 'OPTIONS']);
 
 export async function DELETE(
   request: NextRequest,
@@ -19,7 +16,7 @@ export async function DELETE(
   // Verify API key if not same origin
   if (!isSameOrigin && !verifyApiKey(request)) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
+      { success: false, error: 'Unauthorized' },
       { status: 401, headers: corsHeaders }
     );
   }
@@ -27,7 +24,7 @@ export async function DELETE(
   const id = parseInt(params.id);
   if (isNaN(id)) {
     return NextResponse.json(
-      { error: 'Invalid ID' },
+      { success: false, error: 'Invalid ID' },
       { status: 400, headers: corsHeaders }
     );
   }
@@ -36,7 +33,7 @@ export async function DELETE(
     const deleted = await deleteAnalysis(id);
     if (!deleted) {
       return NextResponse.json(
-        { error: 'Analysis not found' },
+        { success: false, error: 'Analysis not found' },
         { status: 404, headers: corsHeaders }
       );
     }
@@ -45,15 +42,12 @@ export async function DELETE(
   } catch (error) {
     console.error('Analysis deletion error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500, headers: corsHeaders }
     );
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsHeaders,
-  });
+  return corsOptionsResponse(['DELETE', 'OPTIONS']);
 }

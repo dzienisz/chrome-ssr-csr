@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Title, BarChart, DonutChart, AreaChart, Text } from '@tremor/react';
+import { Card, Title, BarChart, AreaChart, Text } from '@tremor/react';
 
 interface Framework {
   framework: string;

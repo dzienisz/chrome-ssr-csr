@@ -5,15 +5,15 @@ import { Card, Title, Text, Grid, Col, Badge, Flex } from '@tremor/react';
 interface CoreWebVitalsData {
   render_category: string;
   sample_count: number;
-  avg_lcp: number;
+  avg_lcp: number | null;
   lcp_good: number;
-  avg_cls: number;
+  avg_cls: number | null;
   cls_good: number;
   avg_fid: number | null;
   fid_good: number;
-  avg_ttfb: number;
+  avg_ttfb: number | null;
   ttfb_good: number;
-  pass_rate: number;
+  pass_rate: number | null;
 }
 
 interface Props {
@@ -50,7 +50,8 @@ export function CoreWebVitalsComparison({ data }: Props) {
     }
   };
 
-  const getPassRateColor = (rate: number) => {
+  const getPassRateColor = (rate: number | null) => {
+    if (rate === null) return 'gray';
     if (rate >= 75) return 'emerald';
     if (rate >= 50) return 'yellow';
     return 'rose';
@@ -67,7 +68,7 @@ export function CoreWebVitalsComparison({ data }: Props) {
             <Flex justifyContent="between" alignItems="center" className="mb-2">
               <Title className="text-lg">{item.render_category}</Title>
               <Badge color={getPassRateColor(item.pass_rate)}>
-                {item.pass_rate}% pass
+                {item.pass_rate ?? 'N/A'}% pass
               </Badge>
             </Flex>
 

@@ -160,8 +160,6 @@ function getHardwareConcurrency() {
  * Collect all device and context information
  */
 function collectDeviceInfo() {
-  console.log('[Device] Collecting device information...');
-  
   const deviceInfo = {
     deviceType: getDeviceType(),
     screen: getScreenInfo(),
@@ -178,8 +176,7 @@ function collectDeviceInfo() {
       memory: getMemoryInfo()
     }
   };
-  
-  console.log('[Device] Device info collected:', deviceInfo);
+
   return deviceInfo;
 }
 

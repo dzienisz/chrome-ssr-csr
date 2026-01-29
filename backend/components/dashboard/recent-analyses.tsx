@@ -7,16 +7,27 @@ import { AnalysisDetailModal } from './analysis-detail-modal';
 interface Analysis {
   id: number;
   timestamp: string;
+  url?: string;
   domain: string;
   render_type: string;
   confidence: number;
   frameworks: string[];
   // Include all other potential fields for the modal
-  tech_stack?: any;
-  core_web_vitals?: any;
-  hydration_stats?: any;
-  navigation_stats?: any;
-  platform?: any;
+  tech_stack?: Record<string, string | string[] | null>;
+  core_web_vitals?: {
+    lcp?: number | null;
+    cls?: number | null;
+    fid?: number | null;
+    ttfb?: number | null;
+  };
+  hydration_stats?: {
+    score?: number;
+    errorCount?: number;
+  };
+  navigation_stats?: {
+    isSPA?: boolean;
+    clientRoutes?: number;
+  };
 }
 
 export function RecentAnalyses({ 

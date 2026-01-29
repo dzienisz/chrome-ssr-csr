@@ -189,40 +189,13 @@ function isAppPage() {
  * Returns the most specific type found
  */
 function detectPageType() {
-  console.log('[PageType] Detecting page type...');
-  
   // Check in order of specificity
-  if (isEcommercePage()) {
-    console.log('[PageType] Detected: ecommerce');
-    return 'ecommerce';
-  }
-  
-  if (isAuthPage()) {
-    console.log('[PageType] Detected: auth');
-    return 'auth';
-  }
-  
-  if (isBlogPage()) {
-    console.log('[PageType] Detected: blog');
-    return 'blog';
-  }
-  
-  if (isDocsPage()) {
-    console.log('[PageType] Detected: docs');
-    return 'docs';
-  }
-  
-  if (isAppPage()) {
-    console.log('[PageType] Detected: app');
-    return 'app';
-  }
-  
-  if (isHomepage()) {
-    console.log('[PageType] Detected: homepage');
-    return 'homepage';
-  }
-  
-  console.log('[PageType] Detected: other');
+  if (isEcommercePage()) return 'ecommerce';
+  if (isAuthPage()) return 'auth';
+  if (isBlogPage()) return 'blog';
+  if (isDocsPage()) return 'docs';
+  if (isAppPage()) return 'app';
+  if (isHomepage()) return 'homepage';
   return 'other';
 }
 

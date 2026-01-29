@@ -17,8 +17,6 @@ async function sendAnalysisData(url, title, results) {
     // Note: shareData check is done in popup.js before calling this function
     // chrome.storage is not available in page context where this runs
 
-    console.log('[Telemetry] Sending analysis data to backend...');
-
     // Prepare data payload
     const payload = {
       url: anonymizeUrl(url),
@@ -68,15 +66,11 @@ async function sendAnalysisData(url, title, results) {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('[Telemetry] Failed to send data:', response.status, error);
       return;
     }
 
-    const result = await response.json();
-    console.log('[Telemetry] Data sent successfully:', result);
-  } catch (error) {
-    console.error('[Telemetry] Error sending data:', error);
+    await response.json();
+  } catch {
     // Fail silently - don't disrupt user experience
   }
 }

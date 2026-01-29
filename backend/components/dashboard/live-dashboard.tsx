@@ -13,12 +13,103 @@ import { SEOInsights } from './seo-insights';
 import { UserJourneyAnalysis } from './user-journey-analysis';
 import { StatsCard } from './stats-card';
 
+interface TotalStats {
+  total_analyses: string | number;
+  ssr_count: string | number;
+  csr_count: string | number;
+  hybrid_count: string | number;
+  avg_confidence: string | number;
+}
+
+interface FrameworkData {
+  framework: string;
+  count: number;
+}
+
+interface DomainData {
+  domain: string;
+  count: number;
+  avg_confidence: number;
+  most_common_type: string;
+}
+
+interface TimelineData {
+  date: string;
+  count: number;
+  ssr_count: number;
+  csr_count: number;
+  hybrid_count: number;
+}
+
+interface RecentAnalysis {
+  id: number;
+  domain: string;
+  render_type: string;
+  confidence: number;
+  timestamp: string;
+  frameworks: string[];
+  core_web_vitals?: Record<string, number | null>;
+  tech_stack?: Record<string, string | string[] | null>;
+  hydration_stats?: { score?: number; errorCount?: number };
+  navigation_stats?: { isSPA?: boolean; clientRoutes?: number };
+}
+
+interface CoreWebVitalsStats {
+  render_category: string;
+  sample_count: number;
+  avg_lcp: number | null;
+  lcp_good: number;
+  avg_cls: number | null;
+  cls_good: number;
+  avg_fid: number | null;
+  fid_good: number;
+  avg_ttfb: number | null;
+  ttfb_good: number;
+  pass_rate: number | null;
+}
+
+interface TechStackStats {
+  cssFrameworks: Record<string, number>;
+  buildTools: Record<string, number>;
+  hosting: Record<string, number>;
+}
+
+interface SEOStats {
+  metaTags: {
+    hasDescription: number;
+    hasOGTags: number;
+    hasTwitterCard: number;
+  };
+  accessibility: {
+    hasAltText: number;
+    hasAriaLabels: number;
+    hasLandmarks: number;
+  };
+  totalAnalyzed: number;
+}
+
+interface HydrationStats {
+  avg_score: number;
+  sites_with_errors: number;
+  total_errors: number;
+}
+
+interface NavigationStats {
+  spa_count: number;
+  total_client_routes: number;
+}
+
+interface Phase3Data {
+  hydration?: HydrationStats;
+  navigation?: NavigationStats;
+}
+
 interface DashboardData {
-  total: any;
-  frameworks: any[];
-  domains: any[];
-  timeline: any[];
-  recent: any[];
+  total: TotalStats;
+  frameworks: FrameworkData[];
+  domains: DomainData[];
+  timeline: TimelineData[];
+  recent: RecentAnalysis[];
   latestTime: string | null;
   contentComparison?: {
     avg_content_ratio: number | null;
@@ -30,17 +121,14 @@ interface DashboardData {
     total_with_metrics: number;
   };
   phase1?: {
-    coreWebVitals: any[];
-    pageTypes: any[];
-    devicePerformance: any[];
-    deviceSummary: any[];
+    coreWebVitals: CoreWebVitalsStats[];
+    pageTypes: { page_type: string; total_count: number; ssr_percentage: number }[];
+    devicePerformance: Record<string, unknown>[];
+    deviceSummary: { device_type: string; count: number; percentage: number }[];
   };
-  techStack?: any;
-  seoStats?: any;
-  phase3?: {
-    hydration: any;
-    navigation: any;
-  };
+  techStack?: TechStackStats;
+  seoStats?: SEOStats;
+  phase3?: Phase3Data;
 }
 
 interface LiveDashboardProps {
@@ -83,11 +171,13 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         }
 
         if (newData && newData.total) {
+          const phase2 = phase2Data as { techStack?: TechStackStats; seoStats?: SEOStats };
+          const phase3 = phase3Data as Phase3Data;
           setData(prev => ({
             ...newData,
-            techStack: (phase2Data as any).techStack || prev.techStack,
-            seoStats: (phase2Data as any).seoStats || prev.seoStats,
-            phase3: (phase3Data as any) || prev.phase3
+            techStack: phase2.techStack || prev.techStack,
+            seoStats: phase2.seoStats || prev.seoStats,
+            phase3: phase3 || prev.phase3
           }));
           setHasMore(newData.recent.length >= 20); // Reset hasMore on full refresh
           setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
@@ -149,7 +239,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         recent: prev.recent.filter(a => a.id !== id),
         total: {
           ...prev.total,
-          total_analyses: parseInt(prev.total.total_analyses) - 1
+          total_analyses: parseInt(String(prev.total.total_analyses)) - 1
         }
       }));
     } catch (err) {
@@ -173,11 +263,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  const totalAnalyses = parseInt(data.total?.total_analyses) || 0;
-  const ssrCount = parseInt(data.total?.ssr_count) || 0;
-  const csrCount = parseInt(data.total?.csr_count) || 0;
-  const hybridCount = parseInt(data.total?.hybrid_count) || 0;
-  const avgConfidence = parseFloat(data.total?.avg_confidence) || 0;
+  const totalAnalyses = parseInt(String(data.total?.total_analyses ?? 0)) || 0;
+  const ssrCount = parseInt(String(data.total?.ssr_count ?? 0)) || 0;
+  const csrCount = parseInt(String(data.total?.csr_count ?? 0)) || 0;
+  const hybridCount = parseInt(String(data.total?.hybrid_count ?? 0)) || 0;
+  const avgConfidence = parseFloat(String(data.total?.avg_confidence ?? 0)) || 0;
 
   return (
     <>

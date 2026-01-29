@@ -1,5 +1,79 @@
 import { sql } from '@vercel/postgres';
 
+export interface CoreWebVitals {
+  lcp?: number | null;
+  cls?: number | null;
+  fid?: number | null;
+  ttfb?: number | null;
+  tti?: number | null;
+  tbt?: number | null;
+  pageLoadTime?: number | null;
+  resourceCount?: number | null;
+  totalTransferSize?: number | null;
+  cachedResources?: number | null;
+  cacheHitRate?: number | null;
+}
+
+export interface DeviceInfo {
+  deviceType?: string;
+  screenWidth?: number;
+  screenHeight?: number;
+  devicePixelRatio?: number;
+  isTouchDevice?: boolean;
+  browserName?: string;
+  browserVersion?: string;
+  engineName?: string;
+  connectionType?: string;
+  effectiveType?: string;
+  downlink?: number | null;
+  rtt?: number | null;
+  saveData?: boolean;
+  timezone?: string;
+  language?: string;
+  prefersReducedMotion?: boolean;
+  prefersDarkMode?: boolean;
+  cpuCores?: number | null;
+  connection?: {
+    effectiveType?: string;
+  };
+}
+
+export interface TechStack {
+  cssFramework?: string | null;
+  stateManagement?: string[];
+  buildTool?: string | null;
+  hosting?: string | null;
+  cdn?: string | null;
+  globalVariables?: string[];
+}
+
+export interface SEOAccessibility {
+  title?: string | null;
+  metaDescription?: boolean;
+  hasCanonical?: boolean;
+  hasOG?: boolean;
+  headingStructure?: {
+    h1Count?: number;
+    hasProperHierarchy?: boolean;
+  };
+  imageAltCoverage?: number;
+  hasAriaLandmarks?: boolean;
+  score?: number;
+}
+
+export interface HydrationStats {
+  score?: number;
+  errorCount?: number;
+  hydrationTime?: number | null;
+  hasHydrationErrors?: boolean;
+}
+
+export interface NavigationStats {
+  isSPA?: boolean;
+  clientRoutes?: number;
+  routes?: string[];
+}
+
 export interface AnalysisRecord {
   id?: number;
   timestamp?: Date;
@@ -11,7 +85,6 @@ export interface AnalysisRecord {
   performance_metrics: {
     domReady?: number;
     fcp?: number;
-    // Content comparison metrics (v3.2.0+)
     contentRatio?: number;
     rawHtmlLength?: number;
     renderedLength?: number;
@@ -20,16 +93,13 @@ export interface AnalysisRecord {
   indicators: string[];
   extension_version: string;
   user_agent?: string;
-  // Phase 1 fields (v3.3.0+)
-  core_web_vitals?: any;
+  core_web_vitals?: CoreWebVitals | null;
   page_type?: string;
-  device_info?: any;
-  // Phase 2 fields (v3.4.0+)
-  tech_stack?: any;
-  seo_accessibility?: any;
-  // Phase 3 fields (v3.5.0+)
-  hydration_stats?: any;
-  navigation_stats?: any;
+  device_info?: DeviceInfo | null;
+  tech_stack?: TechStack | null;
+  seo_accessibility?: SEOAccessibility | null;
+  hydration_stats?: HydrationStats | null;
+  navigation_stats?: NavigationStats | null;
 }
 
 export async function insertAnalysis(data: AnalysisRecord) {
@@ -93,7 +163,6 @@ export async function getTotalStats() {
         COALESCE(AVG(confidence), 0) as avg_confidence
       FROM analyses;
     `;
-    console.log('getTotalStats result:', result.rows[0]);
     return result.rows[0];
   } catch (error) {
     console.error('Database query error:', error);

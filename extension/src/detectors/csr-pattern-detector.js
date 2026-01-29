@@ -45,7 +45,6 @@ function detectCSRPatterns() {
 
   // Check for empty initial HTML indicators
   // Look for common CSR patterns in the HTML structure
-  const htmlElement = document.documentElement;
   const bodyClasses = document.body.className.toLowerCase();
 
   // Many CSR apps add classes dynamically after load

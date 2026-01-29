@@ -19,6 +19,27 @@ If you opt-in to "Share anonymous data" in settings, the extension sends anonymi
 - Confidence score
 - Detected frameworks (e.g., "Next.js", "React")
 - Performance metrics (DOM ready time, First Contentful Paint)
+- Core Web Vitals (LCP, CLS, FID, TTFB - performance metrics)
+- Page type classification (e.g., "blog", "ecommerce", "docs")
+- Device information:
+  - Device type (mobile/tablet/desktop)
+  - Screen dimensions
+  - Browser name and version
+  - Connection type (e.g., "4g", "wifi")
+  - Timezone and language
+- Tech stack information:
+  - CSS framework detected (e.g., "Tailwind", "Bootstrap")
+  - State management library (e.g., "Redux", "MobX")
+  - Build tool detected (e.g., "Webpack", "Vite")
+  - Hosting provider (if detectable)
+- SEO metrics:
+  - Presence of meta description and Open Graph tags
+  - Heading structure analysis
+  - Image alt text coverage
+- Hydration metrics:
+  - Hydration error count
+  - Hydration timing
+- Navigation type (SPA vs MPA)
 - Extension version
 - Timestamp
 
@@ -68,4 +89,4 @@ You can clear all stored data by clearing your browser's extension storage or by
 ## Contact
 For questions about this privacy policy, please open an issue on the GitHub repository.
 
-Last updated: 2026-01-26
+Last updated: 2026-01-28
