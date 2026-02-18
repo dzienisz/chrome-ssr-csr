@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
       // Phase 1 fields (v3.3.0+)
       core_web_vitals: data.coreWebVitals || null,
       page_type: data.pageType || null,
-      device_info: data.deviceInfo || null,
+      device_info: data.deviceInfo
+        ? { ...data.deviceInfo, country: request.geo?.country || request.headers.get('x-vercel-ip-country') || null }
+        : null,
       // Phase 2 fields (v3.4.0+)
       tech_stack: data.techStack || null,
       seo_accessibility: data.seoAccessibility || null,

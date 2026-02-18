@@ -7,10 +7,8 @@ import { TopDomains } from './top-domains';
 import { LastUpdated } from './last-updated';
 import { PlatformBreakdown } from './platform-breakdown';
 import { HybridInsights } from './hybrid-insights';
-import { CoreWebVitalsComparison } from './core-web-vitals-comparison';
 import { TechStackTrends } from './tech-stack-trends';
 import { SEOInsights } from './seo-insights';
-import { UserJourneyAnalysis } from './user-journey-analysis';
 import { StatsCard } from './stats-card';
 
 interface TotalStats {
@@ -54,20 +52,6 @@ interface RecentAnalysis {
   navigation_stats?: { isSPA?: boolean; clientRoutes?: number };
 }
 
-interface CoreWebVitalsStats {
-  render_category: string;
-  sample_count: number;
-  avg_lcp: number | null;
-  lcp_good: number;
-  avg_cls: number | null;
-  cls_good: number;
-  avg_fid: number | null;
-  fid_good: number;
-  avg_ttfb: number | null;
-  ttfb_good: number;
-  pass_rate: number | null;
-}
-
 interface TechStackStats {
   cssFrameworks: Record<string, number>;
   buildTools: Record<string, number>;
@@ -88,22 +72,6 @@ interface SEOStats {
   totalAnalyzed: number;
 }
 
-interface HydrationStats {
-  avg_score: number;
-  sites_with_errors: number;
-  total_errors: number;
-}
-
-interface NavigationStats {
-  spa_count: number;
-  total_client_routes: number;
-}
-
-interface Phase3Data {
-  hydration?: HydrationStats;
-  navigation?: NavigationStats;
-}
-
 export interface DashboardData {
   total: TotalStats;
   frameworks: FrameworkData[];
@@ -120,15 +88,8 @@ export interface DashboardData {
     hybrid_detected_count: number;
     total_with_metrics: number;
   };
-  phase1?: {
-    coreWebVitals: CoreWebVitalsStats[];
-    pageTypes: { page_type: string; total_count: number; ssr_percentage: number }[];
-    devicePerformance: Record<string, unknown>[];
-    deviceSummary: { device_type: string; count: number; percentage: number }[];
-  };
   techStack?: TechStackStats;
   seoStats?: SEOStats;
-  phase3?: Phase3Data;
 }
 
 interface LiveDashboardProps {
@@ -158,10 +119,8 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         if (newData && newData.total) {
           setData(prev => ({
             ...newData,
-            // Preserve phase data if the new response omits it (shouldn't happen, but safe)
             techStack: newData.techStack || prev.techStack,
             seoStats: newData.seoStats || prev.seoStats,
-            phase3: newData.phase3 || prev.phase3,
           }));
           setHasMore(newData.recent.length >= 20);
           setCountdown(REFRESH_INTERVAL);
@@ -318,156 +277,6 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
           />
         </div>
 
-        {/* Content Comparison Stats (v3.2.0+ metrics) */}
-        {data.contentComparison && data.contentComparison.total_with_metrics > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <span>📄</span> Content Comparison Analysis
-                <span className="text-xs font-normal text-gray-400">(v3.2.0+ data)</span>
-              </h3>
-              <div className="text-sm text-gray-500">
-                <span className="font-medium text-gray-900">{data.contentComparison.total_with_metrics}</span> samples
-              </div>
-            </div>
-
-            {/* Key Metrics Row */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                <p className="text-sm text-gray-600 mb-1">Avg Content Ratio</p>
-                <p className="text-2xl font-bold text-blue-700">
-                  {data.contentComparison.avg_content_ratio
-                    ? `${(data.contentComparison.avg_content_ratio * 100).toFixed(1)}%`
-                    : 'N/A'}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Raw / Rendered</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-                <p className="text-sm text-gray-600 mb-1">Avg Hybrid Score</p>
-                <p className="text-2xl font-bold text-purple-700">
-                  {data.contentComparison.avg_hybrid_score
-                    ? `${(data.contentComparison.avg_hybrid_score * 100).toFixed(1)}%`
-                    : '0%'}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Islands detection</p>
-              </div>
-              <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                <p className="text-sm text-gray-600 mb-1">High Ratio (SSR)</p>
-                <p className="text-2xl font-bold text-emerald-600">
-                  {data.contentComparison.high_ratio_count}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {data.contentComparison.total_with_metrics > 0
-                    ? `${Math.round((data.contentComparison.high_ratio_count / data.contentComparison.total_with_metrics) * 100)}%`
-                    : '0%'} of samples
-                </p>
-              </div>
-              <div className="text-center p-4 bg-rose-50 rounded-lg border border-rose-100">
-                <p className="text-sm text-gray-600 mb-1">Low Ratio (CSR)</p>
-                <p className="text-2xl font-bold text-rose-600">
-                  {data.contentComparison.low_ratio_count}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {data.contentComparison.total_with_metrics > 0
-                    ? `${Math.round((data.contentComparison.low_ratio_count / data.contentComparison.total_with_metrics) * 100)}%`
-                    : '0%'} of samples
-                </p>
-              </div>
-              <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <p className="text-sm text-gray-600 mb-1">Hybrid Detected</p>
-                <p className="text-2xl font-bold text-amber-600">
-                  {data.contentComparison.hybrid_detected_count}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {data.contentComparison.total_with_metrics > 0
-                    ? `${Math.round((data.contentComparison.hybrid_detected_count / data.contentComparison.total_with_metrics) * 100)}%`
-                    : '0%'} of samples
-                </p>
-              </div>
-            </div>
-
-            {/* Distribution Visualization */}
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">Content Ratio Distribution</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex h-8 rounded-lg overflow-hidden border border-gray-200">
-                  {data.contentComparison.high_ratio_count > 0 && (
-                    <div
-                      className="bg-emerald-500 flex items-center justify-center text-xs font-medium text-white transition-all duration-500"
-                      style={{
-                        width: `${(data.contentComparison.high_ratio_count / data.contentComparison.total_with_metrics) * 100}%`
-                      }}
-                      title={`SSR: ${data.contentComparison.high_ratio_count} (${Math.round((data.contentComparison.high_ratio_count / data.contentComparison.total_with_metrics) * 100)}%)`}
-                    >
-                      {data.contentComparison.high_ratio_count > 0 && (
-                        <span className="px-2">SSR</span>
-                      )}
-                    </div>
-                  )}
-                  {data.contentComparison.mid_ratio_count > 0 && (
-                    <div
-                      className="bg-blue-500 flex items-center justify-center text-xs font-medium text-white transition-all duration-500"
-                      style={{
-                        width: `${(data.contentComparison.mid_ratio_count / data.contentComparison.total_with_metrics) * 100}%`
-                      }}
-                      title={`Mixed: ${data.contentComparison.mid_ratio_count} (${Math.round((data.contentComparison.mid_ratio_count / data.contentComparison.total_with_metrics) * 100)}%)`}
-                    >
-                      {data.contentComparison.mid_ratio_count > 0 && (
-                        <span className="px-2">Mixed</span>
-                      )}
-                    </div>
-                  )}
-                  {data.contentComparison.low_ratio_count > 0 && (
-                    <div
-                      className="bg-rose-500 flex items-center justify-center text-xs font-medium text-white transition-all duration-500"
-                      style={{
-                        width: `${(data.contentComparison.low_ratio_count / data.contentComparison.total_with_metrics) * 100}%`
-                      }}
-                      title={`CSR: ${data.contentComparison.low_ratio_count} (${Math.round((data.contentComparison.low_ratio_count / data.contentComparison.total_with_metrics) * 100)}%)`}
-                    >
-                      {data.contentComparison.low_ratio_count > 0 && (
-                        <span className="px-2">CSR</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-emerald-500"></div>
-                  <span>High (&gt;70%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-blue-500"></div>
-                  <span>Medium (20-70%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded bg-rose-500"></div>
-                  <span>Low (&lt;20%)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Phase 1: Core Web Vitals Comparison */}
-        {data.phase1?.coreWebVitals && data.phase1.coreWebVitals.length > 0 && (
-          <div className="mb-6">
-            <CoreWebVitalsComparison data={data.phase1.coreWebVitals} />
-          </div>
-        )}
-
-        {/* Phase 3: User Journey Analysis */}
-        <div className="mb-6">
-          <UserJourneyAnalysis data={data.phase3 || null} />
-        </div>
-
-        {/* Phase 2: Tech Stack & SEO */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <TechStackTrends data={data.techStack} />
-          <SEOInsights data={data.seoStats} />
-        </div>
-
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <RenderTypeDistribution data={data.total} />
@@ -479,7 +288,13 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
           <TimelineChart data={data.timeline || []} />
         </div>
 
-        {/* New v3.2.1 Insights Row */}
+        {/* Phase 2: Tech Stack & SEO */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TechStackTrends data={data.techStack} />
+          <SEOInsights data={data.seoStats} />
+        </div>
+
+        {/* Insights Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <PlatformBreakdown data={data.frameworks || []} />
           <HybridInsights data={data.total} />

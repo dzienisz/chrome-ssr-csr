@@ -27,6 +27,12 @@ interface Analysis {
     isSPA?: boolean;
     clientRoutes?: number;
   };
+  seo_accessibility?: {
+    title?: string | null;
+  };
+  device_info?: {
+    country?: string | null;
+  };
 }
 
 export function RecentAnalyses({
@@ -92,6 +98,14 @@ export function RecentAnalyses({
     return 'text-rose-600';
   };
 
+  const getFlag = (code?: string | null): string => {
+    if (!code || code.length !== 2) return '';
+    return String.fromCodePoint(
+      0x1F1E6 + code.charCodeAt(0) - 65,
+      0x1F1E6 + code.charCodeAt(1) - 65,
+    );
+  };
+
   const handleRowClick = (analysis: Analysis) => {
     setSelectedAnalysis(analysis);
     setIsModalOpen(true);
@@ -149,6 +163,7 @@ export function RecentAnalyses({
             <thead className="sticky top-0 bg-white z-10 shadow-sm">
               <tr className="border-b border-gray-200">
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Time</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2 w-8"></th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Domain</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Type</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3 px-2">Conf.</th>
@@ -171,10 +186,20 @@ export function RecentAnalyses({
                       minute: '2-digit',
                     })}
                   </td>
+                  <td className="py-3 px-2 text-center" title={analysis.device_info?.country || undefined}>
+                    <span className="text-base leading-none" aria-label={analysis.device_info?.country || undefined}>
+                      {getFlag(analysis.device_info?.country) || <span className="text-xs text-gray-300">—</span>}
+                    </span>
+                  </td>
                   <td className="py-3 px-2">
                     <span className="text-sm font-medium text-gray-900 truncate block max-w-[180px]">
                       {analysis.domain}
                     </span>
+                    {analysis.seo_accessibility?.title && (
+                      <span className="text-xs text-gray-400 truncate block max-w-[180px]">
+                        {analysis.seo_accessibility.title}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md border ${getTypeStyle(analysis.render_type)}`}>
