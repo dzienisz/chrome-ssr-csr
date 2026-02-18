@@ -1,4 +1,4 @@
-import { LiveDashboard } from '@/components/dashboard/live-dashboard';
+import { LiveDashboard, DashboardData } from '@/components/dashboard/live-dashboard';
 import {
   getTotalStats,
   getTopFrameworks,
@@ -7,7 +7,13 @@ import {
   getRecentAnalyses,
   getLatestAnalysisTime,
   getContentComparisonStats,
+  getCoreWebVitalsByRenderType,
+  getPageTypeDistribution,
+  getDevicePerformance,
+  getDeviceTypeSummary,
 } from '@/lib/db';
+import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
+import { getHydrationStats, getNavigationStats } from '@/lib/db-phase3';
 
 // Mark as dynamic - dashboard needs fresh data
 export const dynamic = 'force-dynamic';
@@ -15,7 +21,15 @@ export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    const [total, frameworks, domains, timeline, recent, latestTime, contentComparison, techStack, seoStats] = await Promise.all([
+    const [
+      total, frameworks, domains, timeline, recent, latestTime, contentComparison,
+      // Phase 1
+      coreWebVitals, pageTypes, devicePerformance, deviceSummary,
+      // Phase 2
+      techStack, seoStats,
+      // Phase 3
+      hydration, navigation,
+    ] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
       getTopDomains(10),
@@ -23,9 +37,17 @@ async function getDashboardData() {
       getRecentAnalyses(20),
       getLatestAnalysisTime(),
       getContentComparisonStats(),
-      // Phase 2 fetches
-      import('@/lib/db-phase2').then(m => m.getTechStackStats()),
-      import('@/lib/db-phase2').then(m => m.getSEOStats()),
+      // Phase 1
+      getCoreWebVitalsByRenderType(),
+      getPageTypeDistribution(),
+      getDevicePerformance(),
+      getDeviceTypeSummary(),
+      // Phase 2
+      getTechStackStats(),
+      getSEOStats(),
+      // Phase 3
+      getHydrationStats(),
+      getNavigationStats(),
     ]);
 
     return {
@@ -36,8 +58,10 @@ async function getDashboardData() {
       recent,
       latestTime,
       contentComparison,
+      phase1: { coreWebVitals, pageTypes, devicePerformance, deviceSummary },
       techStack,
       seoStats,
+      phase3: { hydration, navigation },
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -63,7 +87,7 @@ export default async function Dashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <LiveDashboard initialData={data as any} />
+      <LiveDashboard initialData={data as unknown as DashboardData} />
     </main>
   );
 }

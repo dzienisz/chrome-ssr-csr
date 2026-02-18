@@ -104,11 +104,6 @@ export function UserJourneyAnalysis({ data }: Props) {
                </Flex>
             </div>
 
-            <div className="mt-3">
-              <Text className="text-xs italic text-sky-600/80">
-                "Soft navigations are smoother than full reloads"
-              </Text>
-            </div>
           </div>
         </Col>
 
