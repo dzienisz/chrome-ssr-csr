@@ -13,6 +13,8 @@ import {
   getDevicePerformance,
   getDeviceTypeSummary,
 } from '@/lib/db';
+import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
+import { getHydrationStats, getNavigationStats } from '@/lib/db-phase3';
 
 // Mark as dynamic to prevent static optimization errors
 export const dynamic = 'force-dynamic';
@@ -61,7 +63,13 @@ export async function GET(request: NextRequest) {
 
       case 'all':
       default:
-        const [total, topFrameworks, topDomains, timelineData, recentAnalyses, latestTime, contentComparison, coreWebVitals, pageTypes, devicePerformance, deviceSummary] = await Promise.all([
+        const [
+          total, topFrameworks, topDomains, timelineData, recentAnalyses,
+          latestTime, contentComparison,
+          coreWebVitals, pageTypes, devicePerformance, deviceSummary,
+          techStack, seoStats,
+          hydration, navigation,
+        ] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
           getTopDomains(10),
@@ -69,10 +77,17 @@ export async function GET(request: NextRequest) {
           getRecentAnalyses(20),
           getLatestAnalysisTime(),
           getContentComparisonStats(),
+          // Phase 1
           getCoreWebVitalsByRenderType(),
           getPageTypeDistribution(),
           getDevicePerformance(),
           getDeviceTypeSummary(),
+          // Phase 2
+          getTechStackStats(),
+          getSEOStats(),
+          // Phase 3
+          getHydrationStats(),
+          getNavigationStats(),
         ]);
 
         return NextResponse.json({
@@ -83,12 +98,10 @@ export async function GET(request: NextRequest) {
           recent: recentAnalyses,
           latestTime,
           contentComparison,
-          phase1: {
-            coreWebVitals,
-            pageTypes,
-            devicePerformance,
-            deviceSummary,
-          },
+          phase1: { coreWebVitals, pageTypes, devicePerformance, deviceSummary },
+          techStack,
+          seoStats,
+          phase3: { hydration, navigation },
         }, { headers: cacheHeaders });
     }
   } catch (error) {

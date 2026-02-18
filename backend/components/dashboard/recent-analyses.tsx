@@ -12,7 +12,6 @@ interface Analysis {
   render_type: string;
   confidence: number;
   frameworks: string[];
-  // Include all other potential fields for the modal
   tech_stack?: Record<string, string | string[] | null>;
   core_web_vitals?: {
     lcp?: number | null;
@@ -30,14 +29,14 @@ interface Analysis {
   };
 }
 
-export function RecentAnalyses({ 
-  data, 
-  onDelete, 
+export function RecentAnalyses({
+  data,
+  onDelete,
   onLoadMore,
   hasMore,
   isLoadingMore
-}: { 
-  data: Analysis[]; 
+}: {
+  data: Analysis[];
   onDelete?: (id: number) => Promise<void>;
   onLoadMore?: () => void;
   hasMore?: boolean;
@@ -46,7 +45,9 @@ export function RecentAnalyses({
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [deleteErrorId, setDeleteErrorId] = useState<number | null>(null);
+
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,20 +97,32 @@ export function RecentAnalyses({
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation(); // Don't open modal
+  const handleDeleteClick = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setConfirmingId(id);
+    setDeleteErrorId(null);
+  };
+
+  const handleDeleteConfirm = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
     if (!onDelete) return;
-    
-    if (confirm('Are you sure you want to remove this analysis?')) {
-      try {
-        setDeletingId(id);
-        await onDelete(id);
-      } catch (err) {
-        alert('Failed to delete analysis');
-      } finally {
-        setDeletingId(null);
+    try {
+      setDeletingId(id);
+      setConfirmingId(null);
+      await onDelete(id);
+      if (selectedAnalysis?.id === id) {
+        setIsModalOpen(false);
       }
+    } catch {
+      setDeleteErrorId(id);
+    } finally {
+      setDeletingId(null);
     }
+  };
+
+  const handleDeleteCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmingId(null);
   };
 
   if (!data || data.length === 0) {
@@ -130,8 +143,7 @@ export function RecentAnalyses({
           <Title>Recent Analyses</Title>
           <span className="text-sm text-gray-500">{data.length} loaded</span>
         </div>
-        
-        {/* Fixed height container for scrollable table */}
+
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
           <table className="w-full">
             <thead className="sticky top-0 bg-white z-10 shadow-sm">
@@ -146,8 +158,8 @@ export function RecentAnalyses({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.map((analysis) => (
-                <tr 
-                  key={analysis.id} 
+                <tr
+                  key={analysis.id}
                   className="hover:bg-gray-50 transition-colors cursor-pointer group"
                   onClick={() => handleRowClick(analysis)}
                 >
@@ -182,27 +194,54 @@ export function RecentAnalyses({
                     </span>
                   </td>
                   <td className="py-3 px-2 text-right">
-                    <button
-                      onClick={(e) => handleDelete(e, analysis.id)}
-                      disabled={deletingId === analysis.id}
-                      className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                      title="Delete Analysis"
-                    >
-                      {deletingId === analysis.id ? (
-                        <span className="animate-spin inline-block">⏳</span>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      )}
-                    </button>
+                    {deleteErrorId === analysis.id ? (
+                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                        <span className="text-xs text-red-500">Failed</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDeleteErrorId(null); }}
+                          className="text-xs text-gray-400 hover:text-gray-600 px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : confirmingId === analysis.id ? (
+                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                        <span className="text-xs text-gray-500">Delete?</span>
+                        <button
+                          onClick={e => handleDeleteConfirm(e, analysis.id)}
+                          className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={handleDeleteCancel}
+                          className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, analysis.id)}
+                        disabled={deletingId === analysis.id}
+                        className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                        title="Delete Analysis"
+                      >
+                        {deletingId === analysis.id ? (
+                          <span className="animate-spin inline-block">⏳</span>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          
-          {/* Intersection Target */}
+
           <div ref={observerTarget} className="h-10 flex items-center justify-center w-full">
             {isLoadingMore && (
               <div className="flex items-center gap-2 text-gray-400">
@@ -215,16 +254,16 @@ export function RecentAnalyses({
             )}
           </div>
         </div>
-        
+
         <div className="mt-4 text-center">
-            <Text className="text-xs text-gray-400">Click on any row to view full details · Hover to delete · Scroll for more</Text>
+          <Text className="text-xs text-gray-400">Click any row to view details · Hover to delete · Scroll for more</Text>
         </div>
       </Card>
 
-      <AnalysisDetailModal 
-        analysis={selectedAnalysis} 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <AnalysisDetailModal
+        analysis={selectedAnalysis}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </>
   );

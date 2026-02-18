@@ -104,7 +104,7 @@ interface Phase3Data {
   navigation?: NavigationStats;
 }
 
-interface DashboardData {
+export interface DashboardData {
   total: TotalStats;
   frameworks: FrameworkData[];
   domains: DomainData[];
@@ -150,43 +150,27 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     try {
       setIsRefreshing(true);
       setError(null);
-      
-      const [statsRes, phase2Res, phase3Res] = await Promise.all([
-        fetch('/api/stats?type=all', { headers: { 'Cache-Control': 'no-cache' } }),
-        fetch('/api/stats/phase2', { headers: { 'Cache-Control': 'no-cache' } }),
-        fetch('/api/stats/phase3', { headers: { 'Cache-Control': 'no-cache' } })
-      ]);
 
-      if (statsRes.ok) {
-        const newData = await statsRes.json();
-        let phase2Data = {};
-        let phase3Data = {};
-        
-        if (phase2Res.ok) {
-          phase2Data = await phase2Res.json();
-        }
+      const res = await fetch('/api/stats?type=all', { headers: { 'Cache-Control': 'no-cache' } });
 
-        if (phase3Res.ok) {
-          phase3Data = await phase3Res.json();
-        }
-
+      if (res.ok) {
+        const newData = await res.json();
         if (newData && newData.total) {
-          const phase2 = phase2Data as { techStack?: TechStackStats; seoStats?: SEOStats };
-          const phase3 = phase3Data as Phase3Data;
           setData(prev => ({
             ...newData,
-            techStack: phase2.techStack || prev.techStack,
-            seoStats: phase2.seoStats || prev.seoStats,
-            phase3: phase3 || prev.phase3
+            // Preserve phase data if the new response omits it (shouldn't happen, but safe)
+            techStack: newData.techStack || prev.techStack,
+            seoStats: newData.seoStats || prev.seoStats,
+            phase3: newData.phase3 || prev.phase3,
           }));
-          setHasMore(newData.recent.length >= 20); // Reset hasMore on full refresh
-          setCountdown(REFRESH_INTERVAL); // Reset countdown after successful fetch
+          setHasMore(newData.recent.length >= 20);
+          setCountdown(REFRESH_INTERVAL);
         } else {
           console.error('Invalid data structure:', newData);
           setError('Invalid data');
         }
       } else {
-        setError(`HTTP ${statsRes.status}`);
+        setError(`HTTP ${res.status}`);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -195,7 +179,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     } finally {
       setIsRefreshing(false);
     }
-  }, [data.latestTime]);
+  }, []);
 
   const loadMore = async () => {
     if (isLoadingMore || !hasMore) return;
@@ -521,7 +505,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         <div className="mt-8 text-center text-sm text-gray-400">
           <p>SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes every 30s</p>
           <p className="mt-2">
-            Dashboard v1.2.0 •
+            Dashboard v1.3.0 •
             <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/backend/CHANGELOG.md"
                target="_blank"
                rel="noopener noreferrer"

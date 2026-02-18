@@ -16,7 +16,16 @@ interface SEOInsightsProps {
 }
 
 export function SEOInsights({ data }: SEOInsightsProps) {
-  if (!data || data.totalAnalyzed === 0) return null;
+  if (!data || data.totalAnalyzed === 0) {
+    return (
+      <div className="rounded-lg border bg-slate-900/50 border-slate-800 text-slate-100 shadow-sm p-6">
+        <h3 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2 mb-2">
+          🔍 SEO & Accessibility
+        </h3>
+        <p className="text-sm text-slate-500 italic">No SEO data collected yet</p>
+      </div>
+    );
+  }
 
   const renderMetric = (label: string, count: number, total: number) => {
     const percentage = Math.round((count / total) * 100);

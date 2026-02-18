@@ -8,7 +8,16 @@ interface TechStackTrendsProps {
 }
 
 export function TechStackTrends({ data }: TechStackTrendsProps) {
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="rounded-lg border bg-slate-900/50 border-slate-800 text-slate-100 shadow-sm p-6">
+        <h3 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2 mb-2">
+          🛠️ Tech Stack Trends
+        </h3>
+        <p className="text-sm text-slate-500 italic">Tech stack data unavailable</p>
+      </div>
+    );
+  }
 
   const renderBarChart = (items: Record<string, number>, colorClass: string) => {
     const total = Object.values(items).reduce((a, b) => a + b, 0);
