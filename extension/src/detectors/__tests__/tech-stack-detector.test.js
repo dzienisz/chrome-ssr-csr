@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Import the detector module
-import '../tech-stack-detector.js';
+import '../../collectors/tech-stack-detector.js';
 
 describe('TechStackDetector', () => {
   beforeEach(() => {

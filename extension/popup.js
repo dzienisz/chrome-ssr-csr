@@ -202,8 +202,35 @@ function analyzeCurrentPage() {
                     // Show history button
                     document.getElementById("history-button").style.display = "block";
 
-                    // Send data if sharing is enabled
-                    sendDataIfEnabled(tab.url, analysisResults);
+                    // Phase 2: collect telemetry and send only if shareData is enabled
+                    chrome.storage.sync.get({ shareData: true }, (settings) => {
+                      if (!settings.shareData) return;
+
+                      chrome.scripting.executeScript(
+                        {
+                          target: { tabId: tab.id },
+                          files: ['src/telemetry-bundle.js']
+                        },
+                        () => {
+                          if (chrome.runtime.lastError) return;
+
+                          chrome.scripting.executeScript(
+                            {
+                              target: { tabId: tab.id },
+                              function: async (detectionResults) => await window.collectTelemetryData(detectionResults),
+                              args: [analysisResults]
+                            },
+                            (telemetryResults) => {
+                              if (chrome.runtime.lastError || !telemetryResults || !telemetryResults[0]) return;
+
+                              const telemetry = telemetryResults[0].result;
+                              const merged = { ...analysisResults, ...telemetry };
+                              sendAnalysisData(tab.url, tab.title, merged);
+                            }
+                          );
+                        }
+                      );
+                    });
                   } else {
                     showError();
                   }
@@ -340,85 +367,72 @@ function downloadFile(content, filename, mimeType) {
   URL.revokeObjectURL(url);
 }
 
-// Send data if sharing is enabled
-function sendDataIfEnabled(url, results) {
-  chrome.storage.sync.get({ shareData: true }, async (settings) => {
-    if (!settings.shareData) {
-      return;
-    }
+// Send merged detection + telemetry data to backend
+async function sendAnalysisData(url, title, results) {
+  try {
+    const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
 
+    let domain = 'unknown';
+    let anonymizedUrl = url;
     try {
-      // Backend configuration
-      const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
-
-      // Extract domain from URL
-      let domain = 'unknown';
-      let anonymizedUrl = url;
-      try {
-        const urlObj = new URL(url);
-        domain = urlObj.hostname;
-        anonymizedUrl = urlObj.origin;
-      } catch {
-        // Use defaults if URL parsing fails
-      }
-
-      // Prepare payload
-      const payload = {
-        url: anonymizedUrl,
-        domain: domain,
-        renderType: results.renderType,
-        confidence: results.confidence,
-        frameworks: results.detailedInfo?.frameworks || [],
-
-        // Phase 1: Core Web Vitals
-        coreWebVitals: results.coreWebVitals || null,
-
-        // Phase 1: Page Type
-        pageType: results.pageType || null,
-
-        // Phase 1: Device & Connection Info
-        deviceInfo: results.deviceInfo || null,
-
-        // Phase 2: Tech Stack
-        techStack: results.techStack || null,
-
-        // Phase 2: SEO & Accessibility
-        seoAccessibility: results.seoAccessibility || null,
-
-        // Phase 3: User Journey
-        hydrationData: results.hydrationData || null,
-        navigationData: results.navigationData || null,
-
-        performanceMetrics: {
-          domReady: results.detailedInfo?.timing?.domContentLoaded,
-          fcp: results.detailedInfo?.timing?.firstContentfulPaint,
-          // Content comparison metrics (v3.2.0)
-          contentRatio: results.detailedInfo?.contentComparison?.ratio,
-          rawHtmlLength: results.detailedInfo?.contentComparison?.rawLength,
-          renderedLength: results.detailedInfo?.contentComparison?.renderedLength,
-          hybridScore: results.detailedInfo?.hybridScore,
-        },
-        indicators: results.indicators || [],
-        version: chrome.runtime.getManifest().version,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Send to backend
-      const response = await fetch(`${BACKEND_URL}/api/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        await response.json();
-      }
+      const urlObj = new URL(url);
+      domain = urlObj.hostname;
+      anonymizedUrl = urlObj.origin;
     } catch {
-      // Fail silently - don't disrupt user experience
+      // Use defaults if URL parsing fails
     }
-  });
+
+    const payload = {
+      url: anonymizedUrl,
+      domain: domain,
+      renderType: results.renderType,
+      confidence: results.confidence,
+      frameworks: results.detailedInfo?.frameworks || [],
+
+      // Phase 1: Core Web Vitals
+      coreWebVitals: results.coreWebVitals || null,
+
+      // Phase 1: Page Type
+      pageType: results.pageType || null,
+
+      // Phase 1: Device & Connection Info
+      deviceInfo: results.deviceInfo || null,
+
+      // Phase 2: Tech Stack
+      techStack: results.techStack || null,
+
+      // Phase 2: SEO & Accessibility
+      seoAccessibility: results.seoAccessibility || null,
+
+      // Phase 3: User Journey
+      hydrationData: results.hydrationData || null,
+      navigationData: results.navigationData || null,
+
+      performanceMetrics: {
+        domReady: results.detailedInfo?.timing?.domContentLoaded,
+        fcp: results.detailedInfo?.timing?.firstContentfulPaint,
+        contentRatio: results.detailedInfo?.contentComparison?.ratio,
+        rawHtmlLength: results.detailedInfo?.contentComparison?.rawLength,
+        renderedLength: results.detailedInfo?.contentComparison?.renderedLength,
+        hybridScore: results.detailedInfo?.hybridScore,
+      },
+      indicators: results.indicators || [],
+      version: chrome.runtime.getManifest().version,
+      timestamp: new Date().toISOString(),
+    };
+
+    const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      await response.json();
+    }
+  } catch {
+    // Fail silently - don't disrupt user experience
+  }
 }
 
 // Setup UI elements

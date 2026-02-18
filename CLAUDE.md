@@ -238,6 +238,7 @@ Extension settings (stored in `chrome.storage.sync`):
 
 ## Version History
 
+- **v3.6.0**: Detection/telemetry split — faster results, conditional telemetry loading
 - **v3.5.0**: Phase 3 - Hydration tracking, navigation detection
 - **v3.4.0**: Phase 2 - Tech stack detection, SEO audits
 - **v3.3.0**: Phase 1 - Core Web Vitals, page type, device info

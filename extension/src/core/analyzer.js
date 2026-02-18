@@ -6,7 +6,7 @@
 /**
  * Main analysis function - coordinates all detectors
  * Now async to support raw HTML comparison
- * @returns {Promise<Object>} Complete analysis results
+ * @returns {Promise<Object>} Detection results (no telemetry)
  */
 async function pageAnalyzer() {
   const config = window.DETECTOR_CONFIG;
@@ -22,45 +22,6 @@ async function pageAnalyzer() {
 
     // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
     const comparisonResults = await window.compareInitialVsRendered();
-
-    // Phase 1: Collect Core Web Vitals (async, with timeout to prevent blocking)
-    const coreWebVitalsPromise = typeof window.collectCoreWebVitals === 'function' 
-      ? Promise.race([
-          window.collectCoreWebVitals(),
-          new Promise(resolve => setTimeout(() => resolve(null), 500)) // 500ms max
-        ])
-      : Promise.resolve(null);
-    
-    const coreWebVitals = await coreWebVitalsPromise;
-
-    // Phase 1: Detect page type (sync)
-    const pageType = typeof window.detectPageType === 'function'
-      ? window.detectPageType()
-      : 'other';
-
-    // Phase 1: Collect device info (sync)
-    const deviceInfo = typeof window.getDeviceInfoForTelemetry === 'function'
-      ? window.getDeviceInfoForTelemetry()
-      : null;
-
-    // Phase 2: Tech Stack (sync)
-    const techStack = typeof window.TechStackDetector === 'object'
-      ? window.TechStackDetector.detect()
-      : null;
-
-    // Phase 2: SEO & Accessibility (sync)
-    const seoAccessibility = typeof window.SEODetector === 'object'
-      ? window.SEODetector.detect()
-      : null;
-
-    // Phase 3: Hydration & Navigation (sync)
-    const hydrationData = typeof window.HydrationDetector === 'object'
-      ? window.HydrationDetector.detect()
-      : null;
-
-    const navigationData = typeof window.NavigationDetector === 'object'
-      ? window.NavigationDetector.detect()
-      : null;
 
     // Combine all scores
     let ssrScore = 0;
@@ -126,23 +87,7 @@ async function pageAnalyzer() {
       renderType: classification.renderType,
       confidence: classification.confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
-      
-      // Phase 1 results
-      coreWebVitals,
-      pageType,
-      deviceInfo,
-
-      // Phase 2 results
-      techStack,
-      seoAccessibility,
-
-      // Phase 3 results
-      hydrationData,
-      navigationData,
-
-      // Metadata
       timestamp: new Date().toISOString(),
-      
       detailedInfo: {
         ssrScore,
         csrScore,

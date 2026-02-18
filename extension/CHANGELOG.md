@@ -5,6 +5,16 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-02-18
+
+### Changed - Detection/Telemetry Split ⚡
+
+- **Faster results**: Detection now runs independently of telemetry collection — the SSR/CSR verdict and results UI appear immediately without waiting for Core Web Vitals, device info, SEO audits, etc.
+- **Conditional telemetry loading**: `telemetry-bundle.js` is only injected into the page when `shareData` is enabled (opt-in). Users who have opted out no longer run any telemetry code at all.
+- **New `src/collectors/` directory**: Moved 7 telemetry modules out of `src/detectors/` to make the separation of concerns explicit (`performance-collector.js`, `page-type-detector.js`, `device-detector.js`, `tech-stack-detector.js`, `seo-detector.js`, `hydration-detector.js`, `navigation-detector.js`)
+- **New `src/telemetry-bundle.js`**: Dedicated bundle for telemetry collectors, built alongside `analyzer-bundle.js`
+- **Smaller `analyzer-bundle.js`**: Reduced from ~70 KB to 37 KB by removing telemetry code
+
 ## [3.5.0] - 2026-01-27
 
 ### Added - Phase 3: User Journey & Hydration Analytics 💎
