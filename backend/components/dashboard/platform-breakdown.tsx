@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Title, Text, ProgressBar, Color } from '@tremor/react';
+import { Card, Title, Text } from '@tremor/react';
 
 interface PlatformStats {
   platform_type: string;
@@ -84,18 +84,18 @@ export function PlatformBreakdown({ data }: { data: any[] }) {
     return icons[name] || '🔧';
   };
 
-  const getPlatformColor = (name: string): Color => {
-    const colors: { [key: string]: Color } = {
-      'React': 'blue',
-      'Vue': 'emerald',
-      'Angular': 'rose',
-      'Modern': 'violet',
-      'Static': 'slate',
-      'CMS': 'indigo',
-      'Lightweight': 'yellow',
-      'Other': 'gray'
+  const getPlatformColor = (name: string): string => {
+    const colors: { [key: string]: string } = {
+      'React': 'bg-blue-500',
+      'Vue': 'bg-emerald-500',
+      'Angular': 'bg-rose-500',
+      'Modern': 'bg-violet-500',
+      'Static': 'bg-slate-400',
+      'CMS': 'bg-indigo-500',
+      'Lightweight': 'bg-amber-500',
+      'Other': 'bg-gray-400'
     };
-    return colors[name] || 'gray';
+    return colors[name] || 'bg-gray-400';
   };
 
   return (
@@ -119,7 +119,12 @@ export function PlatformBreakdown({ data }: { data: any[] }) {
                   <span className="text-xs text-gray-400">({platform.count})</span>
                 </div>
               </div>
-              <ProgressBar value={percentage} color={getPlatformColor(platform.name)} className="mt-2" />
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${getPlatformColor(platform.name)}`}
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
             </div>
           );
         })}
