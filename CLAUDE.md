@@ -152,9 +152,9 @@ Classification thresholds:
 |----------|--------|-------------|
 | `/api/analyze` | POST | Receive telemetry from extension |
 | `/api/analyze/[id]` | DELETE | Remove an analysis |
-| `/api/stats` | GET | Aggregated statistics (supports type param) |
-| `/api/stats/phase2` | GET | Tech stack and SEO statistics |
-| `/api/stats/phase3` | GET | Hydration and navigation statistics |
+| `/api/stats?type=all` | GET | All aggregated statistics (Phase 1-3) — preferred |
+| `/api/stats?type=recent` | GET | Paginated recent analyses (supports `offset` param) |
+| `/api/stats?type=frameworks\|domains\|timeline\|…` | GET | Individual stat slices |
 
 ### API Error Response Format
 
@@ -171,8 +171,11 @@ All API errors return consistent format:
 Extension sends (when user opts in):
 - **Core**: domain, render type, confidence, frameworks, indicators
 - **Phase 1**: Core Web Vitals (LCP, CLS, FID, TTFB), page type, device info
-- **Phase 2**: Tech stack (CSS framework, state management, build tool), SEO metrics
+- **Phase 2**: Tech stack (CSS framework, state management, build tool), SEO metrics (incl. page title)
 - **Phase 3**: Hydration stats (errors, timing), navigation (SPA/MPA, routes)
+
+Server-side enrichment (added by `/api/analyze` before DB insert):
+- **Country**: 2-letter ISO code from Vercel geo (`request.geo.country`), stored in `device_info.country`
 
 Privacy: URLs anonymized to origin only.
 
@@ -223,8 +226,9 @@ node scripts/migrate-db.js
 
 ### Deploying Backend
 
+Run from the **repo root** (Vercel project root is already configured as `backend/`):
+
 ```bash
-cd backend
 npx vercel --prod
 ```
 
