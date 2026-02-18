@@ -2,6 +2,32 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.3.0] - 2026-02-18
+
+### Fixed
+- **Initial load completeness**: Phase 1 (Core Web Vitals, page types, device) and Phase 3
+  (hydration, navigation) now fetched server-side on initial render — previously blank until
+  the first 30-second client-side refresh
+- **Single refresh fetch**: Dashboard now makes one request to `/api/stats?type=all` every 30s
+  instead of three separate requests (`/api/stats`, `/api/stats/phase2`, `/api/stats/phase3`)
+- **Stale refresh interval**: Removed `data.latestTime` from `fetchData` `useCallback` dependency
+  — it caused the countdown interval to be torn down and recreated on every data refresh
+- **Fake hybrid patterns**: Removed hardcoded "Astro Islands / RSC / Qwik / Streaming SSR"
+  pattern list and hardcoded "Growing adoption" trend from Hybrid Insights card
+- **Blank cards on error**: `TechStackTrends` and `SEOInsights` now render a placeholder
+  instead of returning `null` when data is unavailable
+- **Delete UX**: Replaced `confirm()` / `alert()` dialogs with inline "Delete? Yes / No"
+  row UI and an inline failure badge in Recent Analyses
+- **Modal stale state**: Detail modal now closes automatically when its record is deleted
+- **Type safety**: Exported `DashboardData` interface; replaced `data as any` with explicit cast
+
+### Changed
+- **`/api/stats?type=all`**: Now returns Phase 2 (tech stack, SEO) and Phase 3 (hydration,
+  navigation) data alongside Phase 1 — single endpoint covers everything the dashboard needs
+- **CWV thresholds**: Extracted to `lib/cwv-thresholds.ts` as single source of truth;
+  `core-web-vitals-comparison.tsx` now imports constants instead of hardcoding numbers
+- **Footer version**: Bumped to v1.3.0
+
 ## [1.2.0] - 2026-01-28
 
 ### Added - Phase 2 & 3 Analytics

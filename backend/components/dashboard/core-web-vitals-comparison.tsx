@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, Title, Text, Grid, Col, Badge, Flex } from '@tremor/react';
+import { CWV, CWVMetric } from '@/lib/cwv-thresholds';
 
 interface CoreWebVitalsData {
   render_category: string;
@@ -32,22 +33,13 @@ export function CoreWebVitalsComparison({ data }: Props) {
     );
   }
 
-  const getStatusColor = (metric: string, rawValue: number | null) => {
+  const getStatusColor = (metric: CWVMetric, rawValue: number | null) => {
     if (rawValue === null) return 'text-gray-400';
     const value = Number(rawValue);
-    
-    switch (metric) {
-      case 'lcp':
-        return value < 2500 ? 'text-emerald-600' : value < 4000 ? 'text-amber-600' : 'text-rose-600';
-      case 'cls':
-        return value < 0.1 ? 'text-emerald-600' : value < 0.25 ? 'text-amber-600' : 'text-rose-600';
-      case 'fid':
-        return value < 100 ? 'text-emerald-600' : value < 300 ? 'text-amber-600' : 'text-rose-600';
-      case 'ttfb':
-        return value < 800 ? 'text-emerald-600' : value < 1800 ? 'text-amber-600' : 'text-rose-600';
-      default:
-        return 'text-gray-600';
-    }
+    const { good, poor } = CWV[metric];
+    if (value < good) return 'text-emerald-600';
+    if (value < poor) return 'text-amber-600';
+    return 'text-rose-600';
   };
 
   const getPassRateColor = (rate: number | null) => {
@@ -75,7 +67,6 @@ export function CoreWebVitalsComparison({ data }: Props) {
             <Text className="text-xs mb-4">{item.sample_count.toLocaleString()} samples</Text>
 
             <div className="space-y-3">
-              {/* LCP */}
               <div>
                 <Flex justifyContent="between" alignItems="center" className="mb-1">
                   <Text className="text-sm">LCP</Text>
@@ -84,11 +75,10 @@ export function CoreWebVitalsComparison({ data }: Props) {
                   </span>
                 </Flex>
                 <Text className="text-xs text-gray-400 dark:text-gray-500">
-                  {item.lcp_good}/{item.sample_count} good (&lt;2.5s)
+                  {item.lcp_good}/{item.sample_count} good (&lt;{CWV.lcp.good / 1000}s)
                 </Text>
               </div>
 
-              {/* CLS */}
               <div>
                 <Flex justifyContent="between" alignItems="center" className="mb-1">
                   <Text className="text-sm">CLS</Text>
@@ -97,11 +87,10 @@ export function CoreWebVitalsComparison({ data }: Props) {
                   </span>
                 </Flex>
                 <Text className="text-xs text-gray-400 dark:text-gray-500">
-                  {item.cls_good}/{item.sample_count} good (&lt;0.1)
+                  {item.cls_good}/{item.sample_count} good (&lt;{CWV.cls.good})
                 </Text>
               </div>
 
-              {/* TTFB */}
               <div>
                 <Flex justifyContent="between" alignItems="center" className="mb-1">
                   <Text className="text-sm">TTFB</Text>
@@ -110,11 +99,10 @@ export function CoreWebVitalsComparison({ data }: Props) {
                   </span>
                 </Flex>
                 <Text className="text-xs text-gray-400 dark:text-gray-500">
-                  {item.ttfb_good}/{item.sample_count} good (&lt;800ms)
+                  {item.ttfb_good}/{item.sample_count} good (&lt;{CWV.ttfb.good}ms)
                 </Text>
               </div>
 
-              {/* FID (if available) */}
               {item.avg_fid !== null && (
                 <div>
                   <Flex justifyContent="between" alignItems="center" className="mb-1">
@@ -124,7 +112,7 @@ export function CoreWebVitalsComparison({ data }: Props) {
                     </span>
                   </Flex>
                   <Text className="text-xs text-gray-400 dark:text-gray-500">
-                    {item.fid_good}/{item.sample_count} good (&lt;100ms)
+                    {item.fid_good}/{item.sample_count} good (&lt;{CWV.fid.good}ms)
                   </Text>
                 </div>
               )}

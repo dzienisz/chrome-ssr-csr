@@ -45,7 +45,7 @@ export function PlatformBreakdown({ data }: { data: any[] }) {
     }
     
     // Other Modern Frameworks
-    if (['angular', 'svelte', 'sveltekit', 'astro', 'qwik', 'solidjs', 'preact', 'lit'].includes(fw)) {
+    if (['angular', 'svelte', 'sveltekit', 'astro', 'qwik', 'solid', 'solidjs', 'preact', 'lit'].includes(fw)) {
       return 'Modern';
     }
     
