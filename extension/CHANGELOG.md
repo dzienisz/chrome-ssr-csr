@@ -5,6 +5,20 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.1] - 2026-07-07
+
+### Fixed - Core Web Vitals telemetry never delivered 🩹
+
+- **CWV data loss**: The telemetry orchestrator raced Core Web Vitals collection
+  against a 500ms timeout, but the collector's internal observers waited 1000–2000ms
+  (CLS, FID, TBT) — so the timeout won every time and `coreWebVitals` was sent as
+  `null` for 100% of analyses since v3.6.0. Buffered `PerformanceObserver` entries
+  arrive nearly instantly on an already-loaded page, so the internal waits are now
+  300–500ms and the outer race is a 2s safety net that no longer truncates.
+- **CLS = 0 dropped**: A perfect layout-shift score of `0` was treated as missing
+  data due to a truthiness check; `0` is now reported as a valid measurement
+  (same fix for FID).
+
 ## [3.6.0] - 2026-02-18
 
 ### Changed - Detection/Telemetry Split ⚡

@@ -15,7 +15,9 @@ async function collectTelemetryData(detectionResults) {
       typeof window.collectCoreWebVitals === 'function'
         ? Promise.race([
             window.collectCoreWebVitals(),
-            new Promise(resolve => setTimeout(() => resolve(null), 500))
+            // Safety net only — must exceed the collector's slowest internal
+            // timeout (500ms LCP), or CWV is silently dropped every time
+            new Promise(resolve => setTimeout(() => resolve(null), 2000))
           ])
         : Promise.resolve(null),
       Promise.resolve(

@@ -25,12 +25,12 @@ function getLargestContentfulPaint() {
         resolve(lastEntry.renderTime || lastEntry.loadTime);
       });
       observer.observe({ type: 'largest-contentful-paint', buffered: true });
-      
-      // Timeout after 2 seconds (quick analysis)
+
+      // Buffered entries arrive almost immediately; 500ms is a generous grace
       setTimeout(() => {
         observer.disconnect();
         resolve(null);
-      }, 2000);
+      }, 500);
     } catch (error) {
       console.error('[Performance] LCP error:', error);
       resolve(null);
@@ -54,12 +54,12 @@ function getCumulativeLayoutShift() {
         }
       });
       observer.observe({ type: 'layout-shift', buffered: true });
-      
-      // Collect for 1 second (quick analysis)
+
+      // Buffered entries cover the page's history; a short window suffices
       setTimeout(() => {
         observer.disconnect();
         resolve(clsValue);
-      }, 1000);
+      }, 300);
     } catch (error) {
       console.error('[Performance] CLS error:', error);
       resolve(null);
@@ -80,12 +80,12 @@ function getFirstInputDelay() {
         resolve(firstInput.processingStart - firstInput.startTime);
       });
       observer.observe({ type: 'first-input', buffered: true });
-      
-      // Timeout after 2 seconds (user might not interact)
+
+      // Only a buffered entry can exist (icon click isn't a page interaction)
       setTimeout(() => {
         observer.disconnect();
         resolve(null);
-      }, 2000);
+      }, 300);
     } catch (error) {
       console.error('[Performance] FID error:', error);
       resolve(null);
@@ -143,12 +143,12 @@ function getTotalBlockingTime() {
         }
       });
       observer.observe({ type: 'longtask', buffered: true });
-      
-      // Collect for 1 second (quick analysis)
+
+      // Buffered entries cover the page's history; a short window suffices
       setTimeout(() => {
         observer.disconnect();
         resolve(tbt);
-      }, 1000);
+      }, 300);
     } catch (error) {
       console.error('[Performance] TBT error:', error);
       resolve(null);
@@ -214,8 +214,8 @@ async function collectCoreWebVitals() {
   
   const metrics = {
     lcp: lcp ? Math.round(lcp) : null,
-    cls: cls ? Math.round(cls * 1000) / 1000 : null,
-    fid: fid ? Math.round(fid) : null,
+    cls: cls != null ? Math.round(cls * 1000) / 1000 : null,
+    fid: fid != null ? Math.round(fid) : null,
     ttfb: ttfb ? Math.round(ttfb) : null,
     tti: tti ? Math.round(tti) : null,
     tbt: tbt ? Math.round(tbt) : null,
@@ -1187,7 +1187,9 @@ async function collectTelemetryData(detectionResults) {
       typeof window.collectCoreWebVitals === 'function'
         ? Promise.race([
             window.collectCoreWebVitals(),
-            new Promise(resolve => setTimeout(() => resolve(null), 500))
+            // Safety net only — must exceed the collector's slowest internal
+            // timeout (500ms LCP), or CWV is silently dropped every time
+            new Promise(resolve => setTimeout(() => resolve(null), 2000))
           ])
         : Promise.resolve(null),
       Promise.resolve(
