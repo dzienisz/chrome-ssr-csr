@@ -7,6 +7,7 @@ import {
   getRecentAnalyses,
   getLatestAnalysisTime,
   getContentComparisonStats,
+  getCoreWebVitalsByRenderType,
 } from '@/lib/db';
 import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
 
@@ -19,6 +20,7 @@ async function getDashboardData() {
     const [
       total, frameworks, domains, timeline, recent, latestTime, contentComparison,
       techStack, seoStats,
+      coreWebVitals,
     ] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
@@ -29,6 +31,7 @@ async function getDashboardData() {
       getContentComparisonStats(),
       getTechStackStats(),
       getSEOStats(),
+      getCoreWebVitalsByRenderType(),
     ]);
 
     return {
@@ -41,6 +44,7 @@ async function getDashboardData() {
       contentComparison,
       techStack,
       seoStats,
+      coreWebVitals,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

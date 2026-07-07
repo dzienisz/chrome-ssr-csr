@@ -15,3 +15,12 @@ export const CWV = {
 } as const;
 
 export type CWVMetric = keyof typeof CWV;
+
+export type CWVRating = 'good' | 'needs-improvement' | 'poor';
+
+export function classifyMetric(metric: CWVMetric, value: number): CWVRating {
+  const t = CWV[metric];
+  if (value < t.good) return 'good';
+  if (value < t.poor) return 'needs-improvement';
+  return 'poor';
+}
