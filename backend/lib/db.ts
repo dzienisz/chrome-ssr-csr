@@ -120,13 +120,13 @@ export async function insertAnalysis(data: AnalysisRecord) {
         ${JSON.stringify(data.indicators)},
         ${data.extension_version},
         ${data.user_agent || null},
-        ${JSON.stringify(data.core_web_vitals) || null},
+        ${data.core_web_vitals ? JSON.stringify(data.core_web_vitals) : null},
         ${data.page_type || null},
-        ${JSON.stringify(data.device_info) || null},
-        ${JSON.stringify(data.tech_stack) || null},
-        ${JSON.stringify(data.seo_accessibility) || null},
-        ${JSON.stringify(data.hydration_stats) || null},
-        ${JSON.stringify(data.navigation_stats) || null}
+        ${data.device_info ? JSON.stringify(data.device_info) : null},
+        ${data.tech_stack ? JSON.stringify(data.tech_stack) : null},
+        ${data.seo_accessibility ? JSON.stringify(data.seo_accessibility) : null},
+        ${data.hydration_stats ? JSON.stringify(data.hydration_stats) : null},
+        ${data.navigation_stats ? JSON.stringify(data.navigation_stats) : null}
       )
       RETURNING id;
     `;
@@ -311,7 +311,14 @@ export async function getCoreWebVitalsByRenderType() {
           THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
         ) as pass_rate
       FROM analyses
-      WHERE core_web_vitals IS NOT NULL
+      -- jsonb_typeof excludes legacy rows storing JSON null (pre-v1.5.1 insert bug);
+      -- the metric check keeps sample_count honest for all-null objects
+      WHERE jsonb_typeof(core_web_vitals) = 'object'
+        AND (
+          core_web_vitals->>'lcp' IS NOT NULL
+          OR core_web_vitals->>'cls' IS NOT NULL
+          OR core_web_vitals->>'ttfb' IS NOT NULL
+        )
       GROUP BY render_category
       ORDER BY sample_count DESC;
     `;
