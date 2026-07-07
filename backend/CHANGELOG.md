@@ -2,6 +2,20 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.5.1] - 2026-07-07
+
+### Fixed
+- **JSON `null` stored instead of SQL `NULL`**: `insertAnalysis` used
+  `JSON.stringify(x) || null`, and `JSON.stringify(null)` is the truthy string
+  `"null"` — so absent telemetry (CWV, device info, tech stack, SEO, hydration,
+  navigation) was stored as JSON `null`, inflating every `IS NOT NULL` count.
+  Absent objects now store SQL `NULL`.
+- **Honest CWV sample counts**: `getCoreWebVitalsByRenderType()` now requires
+  `jsonb_typeof(core_web_vitals) = 'object'` with at least one metric present,
+  so legacy JSON-`null` rows no longer count as samples (previously showed
+  n = 6,081 with zero actual data).
+- Footer and package version aligned at v1.5.1.
+
 ## [1.5.0] - 2026-07-07
 
 ### Added
