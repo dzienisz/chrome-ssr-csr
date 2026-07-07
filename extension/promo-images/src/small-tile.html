@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  body { width: 440px; height: 280px; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; gap: 14px; }
+  .app-icon { width: 64px; height: 64px; }
+  .brand-title { font-size: 34px; }
+  .tagline { font-size: 15px; }
+  .pills { display: flex; gap: 10px; margin-top: 4px; }
+  .pill { font-size: 12px; padding: 5px 12px; }
+</style>
+</head>
+<body>
+  <img class="app-icon" src="../../icon128.png" alt="">
+  <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+  <div class="tagline">See how any page really renders</div>
+  <div class="pills">
+    <span class="pill ssr"><i class="dot"></i>SSR</span>
+    <span class="pill csr"><i class="dot"></i>CSR</span>
+    <span class="pill mix"><i class="dot"></i>MIX</span>
+  </div>
+</body>
+</html>

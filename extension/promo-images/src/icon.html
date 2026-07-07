@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { background: transparent; }
+  svg { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<!-- Icon concept: the raw-vs-rendered split page.
+     Left half = hollow page outline (CSR: empty until JS runs), rose.
+     Right half = solid page with content bars (SSR: content in the HTML), emerald.
+     Dark rounded-square chip matches the promo-tile brand. -->
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="ssr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+
+  <!-- chip -->
+  <rect x="2" y="2" width="124" height="124" rx="30" fill="url(#bg)"/>
+  <rect x="2" y="2" width="124" height="124" rx="30" fill="none"
+        stroke="#38bdf8" stroke-opacity="0.25" stroke-width="2"/>
+
+  <!-- left: CSR — empty page outline -->
+  <path d="M 62 24
+           L 40 24
+           Q 30 24 30 34
+           L 30 94
+           Q 30 104 40 104
+           L 62 104"
+        fill="none" stroke="#f43f5e" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- right: SSR — solid page -->
+  <path d="M 66 24
+           L 88 24
+           Q 98 24 98 34
+           L 98 94
+           Q 98 104 88 104
+           L 66 104
+           Z"
+        fill="url(#ssr)"/>
+
+  <!-- content bars inside the SSR half -->
+  <rect x="72" y="40" width="20" height="8" rx="4" fill="#0b1120" fill-opacity="0.85"/>
+  <rect x="72" y="56" width="14" height="8" rx="4" fill="#0b1120" fill-opacity="0.85"/>
+  <rect x="72" y="72" width="18" height="8" rx="4" fill="#0b1120" fill-opacity="0.85"/>
+</svg>
+</body>
+</html>
