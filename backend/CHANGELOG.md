@@ -2,6 +2,29 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.4.0] - 2026-02-18
+
+### Added
+- **Country detection**: `/api/analyze` now reads Vercel's geo header (`request.geo.country`)
+  and stores the 2-letter country code inside the existing `device_info` JSONB — no schema
+  migration required; old rows degrade gracefully to `—`
+- **Recent Analyses — country flag column**: New compact column shows a flag emoji (🇺🇸, 🇬🇧 …)
+  next to each row; hover shows the ISO country code as a tooltip
+- **Recent Analyses — page title**: `seo_accessibility.title` (already stored since v1.2.0) now
+  surfaces as a muted subtitle beneath the domain — especially useful for `localhost` entries
+- **Analysis detail modal — enriched basic info**: Domain box now shows page title below the
+  link; Timestamp box now shows country flag + code when available
+
+### Changed
+- **PlatformBreakdown**: Replaced Tremor `ProgressBar`/`Color` with custom `h-2` div bars
+  matching the style of `RenderTypeDistribution` and `TechStackTrends`; `Lightweight` now
+  correctly maps to `amber-500` instead of Tremor's inconsistent `yellow`
+- **AnalysisDetailModal**: Stripped all dead `dark:` classes (dashboard is light-mode only);
+  replaced the oversized Tremor `Metric` component with a colored render-type badge + plain
+  confidence text, consistent with the `RecentAnalyses` table
+- Removed unused `core-web-vitals-comparison.tsx` and `user-journey-analysis.tsx` components
+- Footer version bumped to v1.4.0
+
 ## [1.3.0] - 2026-02-18
 
 ### Fixed
@@ -92,6 +115,8 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ## Version History
 
+- **v1.4.0**: Country flag + page title in Recent Analyses; visual polish (progress bars, dark mode cleanup)
+- **v1.3.0**: Single-endpoint refresh, fake data removal, delete UX improvements
 - **v1.2.0**: Phase 2 & 3 analytics (Core Web Vitals, Tech Stack, SEO, Hydration)
 - **v1.1.0**: Content comparison analytics
 - **v1.0.0**: Initial release with live dashboard, charts, and API

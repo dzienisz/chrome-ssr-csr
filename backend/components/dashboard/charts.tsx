@@ -78,18 +78,18 @@ export function RenderTypeDistribution({ data }: { data: any }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10b981' }}></div>
+                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
                 <span className="text-sm font-medium text-gray-700">SSR</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: '#059669' }}>{ssrPercent}%</span>
+                <span className="text-sm font-bold text-emerald-600">{ssrPercent}%</span>
                 <span className="text-xs text-gray-400">({ssrCount})</span>
               </div>
             </div>
-            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+            <div className="w-full rounded-full h-3 bg-gray-200">
               <div
-                className="h-3 rounded-full transition-all duration-500"
-                style={{ width: `${ssrPercent}%`, backgroundColor: '#10b981' }}
+                className="h-3 rounded-full transition-all duration-500 bg-emerald-500"
+                style={{ width: `${ssrPercent}%` }}
               ></div>
             </div>
           </div>
@@ -100,18 +100,18 @@ export function RenderTypeDistribution({ data }: { data: any }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f43f5e' }}></div>
+                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
                 <span className="text-sm font-medium text-gray-700">CSR</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: '#e11d48' }}>{csrPercent}%</span>
+                <span className="text-sm font-bold text-rose-600">{csrPercent}%</span>
                 <span className="text-xs text-gray-400">({csrCount})</span>
               </div>
             </div>
-            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+            <div className="w-full rounded-full h-3 bg-gray-200">
               <div
-                className="h-3 rounded-full transition-all duration-500"
-                style={{ width: `${csrPercent}%`, backgroundColor: '#f43f5e' }}
+                className="h-3 rounded-full transition-all duration-500 bg-rose-500"
+                style={{ width: `${csrPercent}%` }}
               ></div>
             </div>
           </div>
@@ -122,18 +122,18 @@ export function RenderTypeDistribution({ data }: { data: any }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }}></div>
+                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
                 <span className="text-sm font-medium text-gray-700">Hybrid</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: '#d97706' }}>{hybridPercent}%</span>
+                <span className="text-sm font-bold text-amber-600">{hybridPercent}%</span>
                 <span className="text-xs text-gray-400">({hybridCount})</span>
               </div>
             </div>
-            <div className="w-full rounded-full h-3" style={{ backgroundColor: '#e5e7eb' }}>
+            <div className="w-full rounded-full h-3 bg-gray-200">
               <div
-                className="h-3 rounded-full transition-all duration-500"
-                style={{ width: `${hybridPercent}%`, backgroundColor: '#f59e0b' }}
+                className="h-3 rounded-full transition-all duration-500 bg-amber-500"
+                style={{ width: `${hybridPercent}%` }}
               ></div>
             </div>
           </div>
