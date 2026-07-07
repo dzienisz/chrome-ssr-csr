@@ -8,6 +8,7 @@ import {
   getRecentAnalyses,
   getLatestAnalysisTime,
   getContentComparisonStats,
+  getCoreWebVitalsByRenderType,
 } from '@/lib/db';
 import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
 
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
           total, topFrameworks, topDomains, timelineData, recentAnalyses,
           latestTime, contentComparison,
           techStack, seoStats,
+          coreWebVitals,
         ] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
           getContentComparisonStats(),
           getTechStackStats(),
           getSEOStats(),
+          getCoreWebVitalsByRenderType(),
         ]);
 
         return NextResponse.json({
@@ -84,6 +87,7 @@ export async function GET(request: NextRequest) {
           contentComparison,
           techStack,
           seoStats,
+          coreWebVitals,
         }, { headers: cacheHeaders });
     }
   } catch (error) {

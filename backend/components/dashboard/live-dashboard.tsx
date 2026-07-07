@@ -10,6 +10,7 @@ import { HybridInsights } from './hybrid-insights';
 import { TechStackTrends } from './tech-stack-trends';
 import { SEOInsights } from './seo-insights';
 import { StatsCard } from './stats-card';
+import { CWVInsights, CWVByRenderType } from './cwv-insights';
 
 interface TotalStats {
   total_analyses: string | number;
@@ -90,6 +91,7 @@ export interface DashboardData {
   };
   techStack?: TechStackStats;
   seoStats?: SEOStats;
+  coreWebVitals?: CWVByRenderType[];
 }
 
 interface LiveDashboardProps {
@@ -286,6 +288,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         {/* Timeline Chart */}
         <div className="mb-6">
           <TimelineChart data={data.timeline || []} />
+        </div>
+
+        {/* Phase 1: Core Web Vitals by render type */}
+        <div className="mb-6">
+          <CWVInsights data={data.coreWebVitals} />
         </div>
 
         {/* Phase 2: Tech Stack & SEO */}

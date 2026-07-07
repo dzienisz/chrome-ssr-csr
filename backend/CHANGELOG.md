@@ -2,6 +2,14 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.5.0] - 2026-07-07
+
+### Added
+- **Core Web Vitals by Render Type**: New dashboard card comparing real-world
+  LCP, CLS, TTFB and CWV pass rate across SSR / CSR / Hybrid sites, using the
+  previously unconsumed `getCoreWebVitalsByRenderType()` aggregation. FID is
+  collected but intentionally not displayed (deprecated in favor of INP).
+
 ## [1.4.0] - 2026-02-18
 
 ### Added
