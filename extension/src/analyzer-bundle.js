@@ -36,7 +36,8 @@ const CONFIG = {
     rawVsRenderedMatch: 30,    // Raw HTML similar to rendered = SSR
     spaRootPattern: 20,        // #root/#app with data attributes = CSR
     noscriptFallback: 15,      // "JavaScript required" message = CSR
-    fastDomSlowFcp: 25         // Fast DOMContentLoaded + slow FCP = CSR
+    fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
+    decisiveCsrSsrCap: 10      // Max SSR score when raw HTML is near-empty vs rendered
   },
 
   // Classification thresholds
@@ -56,7 +57,8 @@ const CONFIG = {
     minConfidence: 30,    // Minimum confidence to report
     maxConfidenceSsr: 95,  // Maximum for SSR/CSR
     maxConfidenceLikely: 85, // Maximum for "Likely" categories
-    maxConfidenceHybrid: 70  // Maximum for Hybrid
+    maxConfidenceHybrid: 70,  // Maximum for Hybrid
+    maxConfidenceNoComparison: 60 // Maximum when raw HTML comparison unavailable
   },
 
   // Content analysis thresholds
@@ -80,8 +82,9 @@ const CONFIG = {
   // Content comparison thresholds (raw HTML vs rendered DOM)
   contentComparison: {
     csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
+    decisiveCsrRatio: 0.1,  // Below this = near-conclusive CSR (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
-    minRenderedLength: 200  // Minimum rendered content to compare
+    minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },
 
   // Script ratio thresholds
@@ -176,6 +179,21 @@ if (typeof module !== 'undefined' && module.exports) {
  */
 
 /**
+ * Extract user-visible text from a body element.
+ * Strips script/style/noscript/template so inline JS/CSS never counts as
+ * content. Works on a detached clone (textContent semantics), so the raw
+ * and rendered sides are measured identically.
+ * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @returns {string} Normalized visible text
+ */
+function extractVisibleText(body) {
+  if (!body) return '';
+  const clone = body.cloneNode(true);
+  clone.querySelectorAll('script, style, noscript, template').forEach(el => el.remove());
+  return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
  * Compare initial HTML (before JS) vs rendered DOM (after JS)
  * True SSR will have similar content in both; CSR will have minimal raw HTML
  * @returns {Promise<Object|null>} Comparison results or null if fetch fails
@@ -199,10 +217,10 @@ async function compareInitialVsRendered() {
     // Parse raw HTML
     const parser = new DOMParser();
     const rawDoc = parser.parseFromString(rawHTML, 'text/html');
-    const rawBodyText = rawDoc.body?.innerText?.trim() || '';
+    const rawBodyText = extractVisibleText(rawDoc.body);
 
-    // Get current rendered DOM text
-    const renderedText = document.body.innerText.trim();
+    // Get current rendered DOM text, measured the same way
+    const renderedText = extractVisibleText(document.body);
 
     // Calculate content lengths
     const rawLength = rawBodyText.length;
@@ -211,17 +229,28 @@ async function compareInitialVsRendered() {
     // Calculate content ratio
     const contentRatio = rawLength / Math.max(renderedLength, 1);
 
-    // Determine if CSR or SSR based on ratio
+    // Determine if CSR or SSR based on ratio.
+    // Both branches require enough real text to judge (symmetric guards).
+    const minLength = config.contentComparison.minRenderedLength;
     const isLikelyCSR = contentRatio < config.contentComparison.csrRatio &&
-                        renderedLength > config.contentComparison.minRenderedLength;
-    const isLikelySSR = contentRatio > config.contentComparison.ssrRatio;
+                        renderedLength > minLength;
+    const isLikelySSR = contentRatio > config.contentComparison.ssrRatio &&
+                        rawLength > minLength;
+
+    // Server sent almost none of the visible text: near-conclusive CSR
+    const isDecisiveCSR = contentRatio < config.contentComparison.decisiveCsrRatio &&
+                          renderedLength > minLength;
 
     return {
       rawLength,
       renderedLength,
       contentRatio: Math.round(contentRatio * 100) / 100,
       isLikelyCSR,
-      isLikelySSR
+      isLikelySSR,
+      isDecisiveCSR,
+      // Parsed raw document, so other detectors can check pre-JS markers.
+      // Not serializable — must not be copied into analyzer output.
+      rawDocument: rawDoc
     };
   } catch (e) {
     // Fetch failed (CORS, network error, etc.) - can't determine
@@ -232,6 +261,7 @@ async function compareInitialVsRendered() {
 
 // Export for use in other modules
 if (typeof window !== 'undefined') {
+  window.extractVisibleText = extractVisibleText;
   window.compareInitialVsRendered = compareInitialVsRendered;
 }
 
@@ -502,9 +532,13 @@ if (typeof window !== 'undefined') {
 
 /**
  * Detect frameworks and their rendering patterns
+ * @param {Document|null} rawDocument - Parsed raw (pre-JS) HTML document, when
+ *   the comparison fetch succeeded. Framework markers only count as hydration
+ *   (SSR) evidence if they exist here; markers only in the rendered DOM are
+ *   what a client-rendered app looks like after boot.
  * @returns {Object} Detection results with score and indicators
  */
-function detectFrameworks() {
+function detectFrameworks(rawDocument) {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
   let ssrScore = 0;
@@ -513,6 +547,7 @@ function detectFrameworks() {
 
   // Detect framework hydration markers
   const frameworkMarkers = {};
+  const rawFrameworkMarkers = {};
   for (const [framework, selector] of Object.entries(config.frameworks)) {
     try {
       if (framework === 'react') {
@@ -523,8 +558,11 @@ function detectFrameworks() {
       } else {
         frameworkMarkers[framework] = document.querySelector(selector) !== null;
       }
+      rawFrameworkMarkers[framework] =
+        rawDocument ? rawDocument.querySelector(selector) !== null : false;
     } catch (e) {
       frameworkMarkers[framework] = false;
+      rawFrameworkMarkers[framework] = false;
     }
   }
 
@@ -533,9 +571,15 @@ function detectFrameworks() {
     .map(([framework, _]) => framework);
 
   if (foundFrameworks.length > 0) {
-    ssrScore += config.scoring.frameworkMarkers;
-    indicators.push(`${foundFrameworks.join(', ')} hydration markers (SSR)`);
     detailedInfo.frameworks = foundFrameworks;
+
+    const hydratedFrameworks = foundFrameworks.filter(f => rawFrameworkMarkers[f]);
+    if (hydratedFrameworks.length > 0) {
+      ssrScore += config.scoring.frameworkMarkers;
+      indicators.push(`${hydratedFrameworks.join(', ')} hydration markers in raw HTML (SSR)`);
+    } else {
+      indicators.push(`${foundFrameworks.join(', ')} markers only in rendered DOM (not SSR evidence)`);
+    }
   }
 
   // Detect static site generators
@@ -820,7 +864,9 @@ function calculateClassification(ssrScore, csrScore, hybridScore, indicators) {
   const hasBothSignals = ssrScore >= 20 && csrScore >= 20;
 
   // Determine render type and confidence based on thresholds
-  if (isStrongHybrid || (hasBothSignals && ssrPercentage >= 35 && ssrPercentage <= 65)) {
+  const hybridBand = config.thresholds.hybrid;
+  if (isStrongHybrid ||
+      (hasBothSignals && ssrPercentage >= hybridBand.min && ssrPercentage <= hybridBand.max)) {
     // Strong hybrid indicators or balanced scores with both SSR and CSR signals
     renderType = "Hybrid/Islands Architecture";
     confidence = Math.min(50 + hybridScore + indicatorBonus, config.confidence.maxConfidenceHybrid + 10);
@@ -874,16 +920,18 @@ async function pageAnalyzer() {
   const config = window.DETECTOR_CONFIG;
 
   try {
+    // Fetch and compare raw HTML vs rendered DOM first (async - most important
+    // for accuracy, and detectors below need the parsed raw document)
+    const comparisonResults = await window.compareInitialVsRendered();
+    const rawDocument = comparisonResults?.rawDocument || null;
+
     // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
-    const frameworkResults = window.detectFrameworks();
+    const frameworkResults = window.detectFrameworks(rawDocument);
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
     const hybridResults = window.detectHybridPatterns();
-
-    // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
-    const comparisonResults = await window.compareInitialVsRendered();
 
     // Combine all scores
     let ssrScore = 0;
@@ -942,12 +990,38 @@ async function pageAnalyzer() {
     indicators.push(...performanceResults.indicators);
     Object.assign(detailedInfo, performanceResults.details);
 
+    // Decisive CSR: the server sent almost none of the visible text. Every
+    // SSR signal above reads the post-JS DOM, where a booted CSR app looks
+    // like an SSR page — cap their combined contribution.
+    if (comparisonResults?.isDecisiveCSR) {
+      ssrScore = Math.min(ssrScore, config.scoring.decisiveCsrSsrCap);
+      indicators.push('raw HTML nearly empty vs rendered - SSR signals capped (CSR)');
+    }
+
+    if (!comparisonResults) {
+      indicators.push('raw HTML comparison unavailable - reduced confidence');
+    }
+
     // Calculate final classification
     const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
+    let renderType = classification.renderType;
+    let confidence = classification.confidence;
+
+    // Comparison unavailable: the highest-priority signal is missing and the
+    // remaining signals are rendered-DOM based, so cap confidence and avoid
+    // definitive verdicts.
+    if (!comparisonResults) {
+      confidence = Math.min(confidence, config.confidence.maxConfidenceNoComparison);
+      if (renderType === 'Server-Side Rendered (SSR)') {
+        renderType = 'Likely SSR with Hydration';
+      } else if (renderType === 'Client-Side Rendered (CSR)') {
+        renderType = 'Likely CSR/SPA';
+      }
+    }
 
     return {
-      renderType: classification.renderType,
-      confidence: classification.confidence,
+      renderType,
+      confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
       timestamp: new Date().toISOString(),
       detailedInfo: {

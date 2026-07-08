@@ -11,6 +11,7 @@ update your row when done.
 |------|-------|----------|--------|------------|--------|
 | 001  | Ship the "Core Web Vitals by Render Type" dashboard insight | P1 | M | — | DONE (commit `db2b209` on `feat/cwv-insights`, reviewed & approved 2026-07-07; awaiting user merge) |
 | 002  | DIR-04 spike: validate detection against known-rendering sites | P1 | S | — | DONE (2026-07-08; 0/6 pure-CSR sites detected as CSR — see plan file for root causes and proposed plan 003) |
+| 003  | Fix detector SSR bias — six fixes from plan 002, extension v3.7.0 | P1 | M | 002 | DONE (2026-07-08; harness 21/22 acceptable, 12/12 SSR, 5/6 pure CSR — claude.ai bot-blocks the raw fetch and stays SSR-bucketed at capped confidence) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

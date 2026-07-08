@@ -12,16 +12,18 @@ async function pageAnalyzer() {
   const config = window.DETECTOR_CONFIG;
 
   try {
+    // Fetch and compare raw HTML vs rendered DOM first (async - most important
+    // for accuracy, and detectors below need the parsed raw document)
+    const comparisonResults = await window.compareInitialVsRendered();
+    const rawDocument = comparisonResults?.rawDocument || null;
+
     // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
-    const frameworkResults = window.detectFrameworks();
+    const frameworkResults = window.detectFrameworks(rawDocument);
     const metaResults = window.analyzeMeta();
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
     const hybridResults = window.detectHybridPatterns();
-
-    // Fetch and compare raw HTML vs rendered DOM (async - most important for accuracy)
-    const comparisonResults = await window.compareInitialVsRendered();
 
     // Combine all scores
     let ssrScore = 0;
@@ -80,12 +82,38 @@ async function pageAnalyzer() {
     indicators.push(...performanceResults.indicators);
     Object.assign(detailedInfo, performanceResults.details);
 
+    // Decisive CSR: the server sent almost none of the visible text. Every
+    // SSR signal above reads the post-JS DOM, where a booted CSR app looks
+    // like an SSR page — cap their combined contribution.
+    if (comparisonResults?.isDecisiveCSR) {
+      ssrScore = Math.min(ssrScore, config.scoring.decisiveCsrSsrCap);
+      indicators.push('raw HTML nearly empty vs rendered - SSR signals capped (CSR)');
+    }
+
+    if (!comparisonResults) {
+      indicators.push('raw HTML comparison unavailable - reduced confidence');
+    }
+
     // Calculate final classification
     const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
+    let renderType = classification.renderType;
+    let confidence = classification.confidence;
+
+    // Comparison unavailable: the highest-priority signal is missing and the
+    // remaining signals are rendered-DOM based, so cap confidence and avoid
+    // definitive verdicts.
+    if (!comparisonResults) {
+      confidence = Math.min(confidence, config.confidence.maxConfidenceNoComparison);
+      if (renderType === 'Server-Side Rendered (SSR)') {
+        renderType = 'Likely SSR with Hydration';
+      } else if (renderType === 'Client-Side Rendered (CSR)') {
+        renderType = 'Likely CSR/SPA';
+      }
+    }
 
     return {
-      renderType: classification.renderType,
-      confidence: classification.confidence,
+      renderType,
+      confidence,
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
       timestamp: new Date().toISOString(),
       detailedInfo: {
