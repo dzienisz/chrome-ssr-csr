@@ -1,0 +1,69 @@
+/* Shared layout for 1280x800 Chrome Web Store screenshots.
+   Each frame: brand background, headline left, cropped real popup right. */
+
+@import url("tile-shared.css");
+
+body {
+  width: 1280px;
+  height: 800px;
+  display: flex;
+  align-items: center;
+  gap: 64px;
+  padding: 0 72px;
+}
+
+.copy { flex: 1; }
+.copy .kicker {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.copy h1 {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-top: 14px;
+}
+.copy p {
+  font-size: 19px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-top: 16px;
+  font-weight: 500;
+}
+.copy .site {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: #cbd5e1;
+  background: #1e293b;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-weight: 600;
+}
+
+/* The cropped popup. The inner img is the full 4K capture; the wrapper
+   clips it to the popup's bounding box, scaled by --s. */
+.shot {
+  flex: none;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid #3b4a66;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  width: calc((var(--x2) - var(--x1)) * var(--s) * 1px);
+  height: calc((var(--y2) - var(--y1)) * var(--s) * 1px);
+}
+.shot img {
+  display: block;
+  width: 3840px;
+  transform-origin: 0 0;
+  transform: scale(var(--s)) translate(calc(var(--x1) * -1px), calc(var(--y1) * -1px));
+}

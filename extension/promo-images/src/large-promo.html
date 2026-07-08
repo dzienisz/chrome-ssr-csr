@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  body { width: 920px; height: 680px; padding: 56px 60px; display: flex; flex-direction: column; }
+  .head { display: flex; align-items: center; gap: 20px; }
+  .app-icon { width: 72px; height: 72px; }
+  .brand-title { font-size: 44px; }
+  .tagline { font-size: 21px; margin-top: 6px; }
+  .content { flex: 1; display: flex; align-items: center; gap: 48px; margin-top: 8px; }
+  .features { flex: 1; display: flex; flex-direction: column; gap: 26px; }
+  .feature { font-size: 19px; }
+  .feature .fdot { width: 30px; height: 30px; font-size: 15px; }
+  .feature small { font-size: 15px; margin-top: 3px; }
+  .verdict-card { width: 380px; flex: none; }
+  .verdict-badge { font-size: 19px; padding: 12px 18px; }
+  .vc-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .confidence { font-size: 14px; }
+  .conf-bar { margin-top: 8px; }
+  .chip-row { gap: 8px; margin-top: 16px; }
+  .chip { font-size: 13px; padding: 6px 10px; }
+  .metric-row { gap: 18px; margin-top: 18px; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <img class="app-icon" src="../../icon128.png" alt="">
+    <div>
+      <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+      <div class="tagline">One click shows how any page really renders</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="features">
+      <div class="feature"><span class="fdot">✓</span><span>Raw HTML vs rendered DOM<small>Direct evidence, not guesswork — inspect every indicator</small></span></div>
+      <div class="feature"><span class="fdot">✓</span><span>Framework &amp; tech stack<small>Next.js, React, Vue, Tailwind, Vite, Vercel and more</small></span></div>
+      <div class="feature"><span class="fdot">✓</span><span>Core Web Vitals on the live page<small>LCP, CLS, TTFB — with an SEO &amp; accessibility spot-check</small></span></div>
+      <div class="feature"><span class="fdot">✓</span><span>Open source &amp; privacy-respecting<small>MIT licensed, telemetry off in one toggle</small></span></div>
+    </div>
+    <div class="verdict-card">
+      <div class="vc-head"><span class="traffic"><i></i><i></i><i></i></span>nextjs.org</div>
+      <div class="vc-body">
+        <div class="verdict-badge"><span class="check">✓</span>Server-Side Rendered</div>
+        <div class="vc-row"><span class="confidence">Confidence <b>92%</b></span></div>
+        <div class="conf-bar"><i></i></div>
+        <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Vercel</span></div>
+        <div class="metric-row"><span>LCP <b class="good">1.8s</b></span><span>CLS <b class="good">0.02</b></span><span>TTFB <b class="good">320ms</b></span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

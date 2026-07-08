@@ -1,0 +1,144 @@
+/* Shared design system for Chrome Web Store promo tiles.
+   Dark developer aesthetic; colors mirror the product's verdict palette. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-0: #0b1120;
+  --bg-1: #16213b;
+  --card: #0f172a;
+  --border: #2c3a55;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --ssr: #10b981;
+  --csr: #f43f5e;
+  --mix: #f59e0b;
+  --accent: #38bdf8;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  font-family: var(--ui);
+  color: var(--text);
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(16, 185, 129, 0.10), transparent 60%),
+    linear-gradient(135deg, var(--bg-0) 0%, var(--bg-1) 100%);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* faint dot grid for texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.13) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+.app-icon {
+  border-radius: 22%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.brand-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.brand-title .vs { color: var(--muted); font-weight: 600; }
+.brand-title .csr { color: var(--csr); }
+.brand-title .ssr { color: var(--ssr); }
+
+.tagline { color: var(--muted); font-weight: 500; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-family: var(--mono);
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1.5px solid;
+}
+.pill .dot { width: 0.55em; height: 0.55em; border-radius: 50%; }
+.pill.ssr { color: var(--ssr); border-color: rgba(16,185,129,.45); background: rgba(16,185,129,.10); }
+.pill.ssr .dot { background: var(--ssr); }
+.pill.csr { color: var(--csr); border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.10); }
+.pill.csr .dot { background: var(--csr); }
+.pill.mix { color: var(--mix); border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.10); }
+.pill.mix .dot { background: var(--mix); }
+
+/* ---- mock verdict card ---- */
+.verdict-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.verdict-card .vc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.verdict-card .vc-head .traffic { display: flex; gap: 6px; }
+.verdict-card .vc-head .traffic i {
+  width: 10px; height: 10px; border-radius: 50%; display: block;
+  background: #334155;
+}
+.verdict-card .vc-body { padding: 18px; }
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid rgba(16, 185, 129, 0.5);
+  color: var(--ssr);
+  font-weight: 800;
+  border-radius: 12px;
+}
+.verdict-badge .check { font-weight: 900; }
+.confidence { color: var(--muted); font-weight: 600; }
+.confidence b { color: var(--text); }
+
+.conf-bar {
+  height: 8px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.conf-bar i { display: block; height: 100%; width: 92%; border-radius: 999px;
+  background: linear-gradient(90deg, #34d399, #10b981); }
+
+.chip-row { display: flex; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono);
+  color: #cbd5e1;
+  background: #1e293b;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.metric-row { display: flex; color: var(--muted); font-family: var(--mono); }
+.metric-row b { color: var(--text); font-weight: 700; }
+.metric-row .good { color: var(--ssr); }
+
+.feature { display: flex; align-items: flex-start; gap: 12px; color: #e2e8f0; font-weight: 600; }
+.feature .fdot {
+  flex: none; border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1.5px solid rgba(56, 189, 248, 0.5);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900;
+}
+.feature small { display: block; color: var(--muted); font-weight: 500; }

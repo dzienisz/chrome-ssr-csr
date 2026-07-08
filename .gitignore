@@ -30,3 +30,6 @@ out/
 
 # Vercel
 .vercel
+
+# Raw marketing screenshot captures (local inputs only — retake to regenerate)
+extension/promo-images/raw/
