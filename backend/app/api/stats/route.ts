@@ -11,6 +11,7 @@ import {
   getCoreWebVitalsByRenderType,
 } from '@/lib/db';
 import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
+import { getNavigationByRenderType } from '@/lib/db-phase3';
 
 // Mark as dynamic to prevent static optimization errors
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
           latestTime, contentComparison,
           techStack, seoStats,
           coreWebVitals,
+          navigationByRenderType,
         ] = await Promise.all([
           getTotalStats(),
           getTopFrameworks(10),
@@ -75,6 +77,7 @@ export async function GET(request: NextRequest) {
           getTechStackStats(),
           getSEOStats(),
           getCoreWebVitalsByRenderType(),
+          getNavigationByRenderType(),
         ]);
 
         return NextResponse.json({
@@ -88,6 +91,7 @@ export async function GET(request: NextRequest) {
           techStack,
           seoStats,
           coreWebVitals,
+          navigationByRenderType,
         }, { headers: cacheHeaders });
     }
   } catch (error) {

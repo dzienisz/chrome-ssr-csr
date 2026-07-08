@@ -11,6 +11,7 @@ import { TechStackTrends } from './tech-stack-trends';
 import { SEOInsights } from './seo-insights';
 import { StatsCard } from './stats-card';
 import { CWVInsights, CWVByRenderType } from './cwv-insights';
+import { NavigationInsights, NavigationByRenderType } from './navigation-insights';
 
 interface TotalStats {
   total_analyses: string | number;
@@ -92,6 +93,7 @@ export interface DashboardData {
   techStack?: TechStackStats;
   seoStats?: SEOStats;
   coreWebVitals?: CWVByRenderType[];
+  navigationByRenderType?: NavigationByRenderType[];
 }
 
 interface LiveDashboardProps {
@@ -123,6 +125,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             ...newData,
             techStack: newData.techStack || prev.techStack,
             seoStats: newData.seoStats || prev.seoStats,
+            navigationByRenderType: newData.navigationByRenderType || prev.navigationByRenderType,
           }));
           setHasMore(newData.recent.length >= 20);
           setCountdown(REFRESH_INTERVAL);
@@ -295,6 +298,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
           <CWVInsights data={data.coreWebVitals} />
         </div>
 
+        {/* Phase 3: SPA vs MPA navigation by render type */}
+        <div className="mb-6">
+          <NavigationInsights data={data.navigationByRenderType} />
+        </div>
+
         {/* Phase 2: Tech Stack & SEO */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <TechStackTrends data={data.techStack} />
@@ -327,7 +335,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         <div className="mt-8 text-center text-sm text-gray-400">
           <p>SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes every 30s</p>
           <p className="mt-2">
-            Dashboard v1.5.1 •
+            Dashboard v1.6.0 •
             <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/backend/CHANGELOG.md"
                target="_blank"
                rel="noopener noreferrer"

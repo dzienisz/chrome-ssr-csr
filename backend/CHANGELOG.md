@@ -2,6 +2,18 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [1.6.0] - 2026-07-08
+
+### Added
+- **SPA vs MPA Navigation card**: Phase 3 navigation telemetry (collected since
+  v3.5.0 but displayed nowhere since `user-journey-analysis.tsx` was removed in
+  v1.4.0) now surfaces as a dashboard card — SPA share and average client-side
+  routes per visit, segmented by SSR / CSR / Hybrid via the new
+  `getNavigationByRenderType()` aggregation (resolves audit finding DIR-02 by
+  shipping the card rather than dropping collection). Elevated SPA share inside
+  the SSR bucket doubles as a cross-check on detection accuracy (see plans/002).
+- `navigationByRenderType` included in `/api/stats?type=all` response.
+
 ## [1.5.1] - 2026-07-07
 
 ### Fixed

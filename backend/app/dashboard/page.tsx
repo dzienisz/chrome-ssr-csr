@@ -10,6 +10,7 @@ import {
   getCoreWebVitalsByRenderType,
 } from '@/lib/db';
 import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
+import { getNavigationByRenderType } from '@/lib/db-phase3';
 
 // Mark as dynamic - dashboard needs fresh data
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ async function getDashboardData() {
       total, frameworks, domains, timeline, recent, latestTime, contentComparison,
       techStack, seoStats,
       coreWebVitals,
+      navigationByRenderType,
     ] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
@@ -32,6 +34,7 @@ async function getDashboardData() {
       getTechStackStats(),
       getSEOStats(),
       getCoreWebVitalsByRenderType(),
+      getNavigationByRenderType(),
     ]);
 
     return {
@@ -45,6 +48,7 @@ async function getDashboardData() {
       techStack,
       seoStats,
       coreWebVitals,
+      navigationByRenderType,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
