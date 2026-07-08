@@ -25,10 +25,11 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   `extension/src/core/scoring.js:35` classifies the wide 35–65% band as hybrid.
   Spike: validate against 15–20 known-rendering sites before trusting cross-category
   comparisons. Interacts with plan 001's credibility.
-- **DIR-05 Housekeeping**: no aggregate country query despite collection since
-  2026-02-18; CLAUDE.md documents pre-v3.6.0 detector layout and a stale manual
-  deploy step (GitHub integration auto-deploys); empty `backend/app/api/auth/` dir;
-  stale `csr-ssr-detector-v3.6.0.zip` at repo root. S total.
+- **DIR-05 Housekeeping**: MOSTLY RESOLVED 2026-07-08 (branch `chore/dir05-housekeeping`) —
+  CLAUDE.md updated to the v3.6.0 detector/collector split and auto-deploy flow;
+  empty `backend/app/api/auth/` dir and stale root `csr-ssr-detector-v3.6.0.zip`
+  removed. Remaining: aggregate country query/card (deferred — fold into the next
+  dashboard release, e.g. alongside DIR-03).
 
 ## Findings considered and rejected
 
