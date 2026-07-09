@@ -17,10 +17,11 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 ## Findings surfaced but not planned (user selected 001 only)
 
-- **DIR-02 Phase 3 data fate**: hydration/navigation stats are collected and served
-  by `/api/stats/phase3` but displayed nowhere since `user-journey-analysis.tsx` was
-  removed in v1.4.0. Decide: ship an "SPA vs MPA" card, or remove collection
-  (privacy/payload win). S effort either way.
+- **DIR-02 Phase 3 data fate**: RESOLVED 2026-07-08 (branch `feat/phase3-spa-mpa-card`,
+  dashboard v1.6.0) — decided to ship the "SPA vs MPA" card rather than drop
+  collection: navigation data doubles as a detection-accuracy cross-check after
+  the DIR-04 spike (plan 002) showed CSR sites misclassified as SSR. Hydration
+  stats remain collected-but-undisplayed; fold into a future card or revisit.
 - **DIR-03 Extension value-back**: popup could show "your site vs the average"
   using the public stats API (CORS already open). M effort + store release cycle.
 - **DIR-04 CSR undercount investigation**: RESOLVED by plan 002 (2026-07-08).
