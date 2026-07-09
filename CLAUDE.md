@@ -20,9 +20,11 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 │   ├── options.html/js     # Settings page
 │   ├── background.js       # Service worker
 │   ├── src/                # Source modules
-│   │   ├── analyzer-bundle.js  # Bundled analysis code (injected)
-│   │   ├── core/           # Core analysis logic
-│   │   ├── detectors/      # Detection modules (see below)
+│   │   ├── analyzer-bundle.js   # Bundled detection code (injected)
+│   │   ├── telemetry-bundle.js  # Bundled telemetry collectors (injected only when shareData is on)
+│   │   ├── core/           # Core analysis logic (analyzer, scoring, config)
+│   │   ├── detectors/      # SSR/CSR detection modules (see below)
+│   │   ├── collectors/     # Telemetry collectors (see below)
 │   │   └── ui/             # UI components
 │   ├── icon*.png           # Extension icons
 │   ├── promo-images/       # Chrome Web Store images
@@ -70,8 +72,10 @@ After making code changes:
 cd backend
 npm install
 npm run dev    # Local development at http://localhost:3000
-npx vercel --prod  # Deploy to production
 ```
+
+Deployment is automatic: merges to `main` deploy via the Vercel GitHub
+integration (no manual `vercel --prod` step).
 
 ### URLs
 - **Dashboard**: https://backend-mauve-beta-88.vercel.app/dashboard
@@ -89,16 +93,20 @@ npx vercel --prod  # Deploy to production
    - Exposes `window.pageAnalyzer()` async function
    - Modular detectors (see Detector Modules below)
    - Fetches raw HTML to compare with rendered DOM
-   - Returns: `{renderType, confidence, indicators, detailedInfo, coreWebVitals, pageType, deviceInfo, techStack, seoAccessibility, hydrationData, navigationData}`
+   - Returns: `{renderType, confidence, indicators, detailedInfo}` — detection only (since v3.6.0)
 
-3. **popup.js** (Popup UI)
+3. **src/telemetry-bundle.js** (Injected only when `shareData` is enabled)
+   - Runs the telemetry collectors (see Collector Modules below)
+   - Returns: `{coreWebVitals, pageType, deviceInfo, techStack, seoAccessibility, hydrationData, navigationData}`
+
+4. **popup.js** (Popup UI)
    - Injects analyzer and displays results
    - Manages history, exports, and telemetry
    - Updates badge on extension icon (SSR/CSR/MIX)
 
 ### Detector Modules
 
-Located in `extension/src/detectors/`:
+Located in `extension/src/detectors/` — SSR/CSR detection signals:
 
 | Module | Purpose |
 |--------|---------|
@@ -109,6 +117,14 @@ Located in `extension/src/detectors/`:
 | `comparison-detector.js` | Raw vs rendered HTML comparison |
 | `csr-pattern-detector.js` | CSR-specific patterns |
 | `hybrid-detector.js` | Islands/partial hydration patterns |
+
+### Collector Modules
+
+Located in `extension/src/collectors/` — telemetry only, moved out of
+`detectors/` in v3.6.0; they never influence the SSR/CSR verdict:
+
+| Module | Purpose |
+|--------|---------|
 | `performance-collector.js` | Core Web Vitals (LCP, CLS, FID, TTFB) |
 | `page-type-detector.js` | Page type classification |
 | `device-detector.js` | Device and browser info |
@@ -123,9 +139,18 @@ Located in `extension/src/detectors/`:
 - Raw HTML much smaller than rendered = CSR (JS loaded content)
 - Raw HTML matches rendered = SSR (content in initial HTML)
 
+Since v3.7.0 both sides are measured identically with `script/style/noscript/
+template` text stripped; both the CSR and SSR branches require ~200 chars of
+real text. When the server sent <10% of the visible text (decisive CSR), the
+rendered-DOM SSR signals are capped rather than allowed to outvote the
+comparison; when the raw fetch fails, confidence is capped and definitive
+verdicts downgrade to "Likely". Validate detection changes against the 22-site
+ground-truth harness: `node extension/scripts/validate-detection.mjs`
+(requires playwright).
+
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
-- Framework hydration markers (30 points)
+- Framework hydration markers (30 points; since v3.7.0 they require raw-HTML evidence)
 - Serialized data patterns (25 points)
 - Fast DOM + slow FCP pattern (25 points CSR)
 - SPA root containers with React/Vue markers (20 points CSR)
@@ -186,14 +211,14 @@ Edit `extension/src/detectors/framework-detector.js`:
 ```javascript
 newframework: document.querySelector('[data-newframework]') !== null
 ```
-Then update `extension/src/analyzer-bundle.js` to include changes.
+Then rebuild the bundles: `cd extension && npm run build`.
 
 ### Adding a New Detector
 
-1. Create `extension/src/detectors/new-detector.js`
+1. Create `extension/src/detectors/new-detector.js` (or `src/collectors/` for telemetry-only modules)
 2. Export detection function to `window`
-3. Import in `extension/src/analyzer-bundle.js`
-4. Add to `pageAnalyzer()` results
+3. Add it to the module list in `extension/scripts/build-bundle.js` and run `npm run build`
+4. Add to `pageAnalyzer()` results (detectors) or the telemetry payload (collectors)
 
 ### Creating Extension Release
 
@@ -225,11 +250,9 @@ node scripts/migrate-db.js
 
 ### Deploying Backend
 
-Run from the **repo root** (Vercel project root is already configured as `backend/`):
-
-```bash
-npx vercel --prod
-```
+Merges to `main` deploy automatically via the Vercel GitHub integration
+(project root is configured as `backend/`). No manual deploy step is needed;
+`npx vercel --prod` from the repo root exists only as a fallback.
 
 ## Settings
 
@@ -241,6 +264,8 @@ Extension settings (stored in `chrome.storage.sync`):
 
 ## Version History
 
+- **v3.7.0**: Detection SSR-bias fix — script-stripped comparison, decisive-CSR override, raw-evidence hydration markers (plan 003)
+- **v3.6.1**: CWV telemetry race fix (500ms timeout it could never win)
 - **v3.6.0**: Detection/telemetry split — faster results, conditional telemetry loading
 - **v3.5.0**: Phase 3 - Hydration tracking, navigation detection
 - **v3.4.0**: Phase 2 - Tech stack detection, SEO audits
