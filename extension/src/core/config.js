@@ -28,7 +28,8 @@ const CONFIG = {
     rawVsRenderedMatch: 30,    // Raw HTML similar to rendered = SSR
     spaRootPattern: 20,        // #root/#app with data attributes = CSR
     noscriptFallback: 15,      // "JavaScript required" message = CSR
-    fastDomSlowFcp: 25         // Fast DOMContentLoaded + slow FCP = CSR
+    fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
+    decisiveCsrSsrCap: 10      // Max SSR score when raw HTML is near-empty vs rendered
   },
 
   // Classification thresholds
@@ -48,7 +49,8 @@ const CONFIG = {
     minConfidence: 30,    // Minimum confidence to report
     maxConfidenceSsr: 95,  // Maximum for SSR/CSR
     maxConfidenceLikely: 85, // Maximum for "Likely" categories
-    maxConfidenceHybrid: 70  // Maximum for Hybrid
+    maxConfidenceHybrid: 70,  // Maximum for Hybrid
+    maxConfidenceNoComparison: 60 // Maximum when raw HTML comparison unavailable
   },
 
   // Content analysis thresholds
@@ -72,8 +74,9 @@ const CONFIG = {
   // Content comparison thresholds (raw HTML vs rendered DOM)
   contentComparison: {
     csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
+    decisiveCsrRatio: 0.1,  // Below this = near-conclusive CSR (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
-    minRenderedLength: 200  // Minimum rendered content to compare
+    minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },
 
   // Script ratio thresholds

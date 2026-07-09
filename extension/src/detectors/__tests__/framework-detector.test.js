@@ -3,6 +3,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 // Import the detector module
 import '../framework-detector.js';
 
+// Build a raw (pre-JS) document the way comparison-detector does
+function parseRaw(html) {
+  return new DOMParser().parseFromString(html, 'text/html');
+}
+
 describe('detectFrameworks', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -13,7 +18,7 @@ describe('detectFrameworks', () => {
     it('should detect React via data-reactroot', () => {
       document.body.innerHTML = '<div data-reactroot>React app</div>';
 
-      const result = window.detectFrameworks();
+      const result = window.detectFrameworks(parseRaw('<div data-reactroot>React app</div>'));
 
       expect(result.details.frameworks).toContain('react');
       expect(result.ssrScore).toBeGreaterThan(0);
@@ -87,14 +92,15 @@ describe('detectFrameworks', () => {
 
     it('should detect Angular via multiple ng-version elements', () => {
       // Using ng-version which is the most reliable Angular indicator in jsdom
-      document.body.innerHTML = `
+      const html = `
         <app-root ng-version="17.0.0">
           <app-header ng-version="17.0.0">Header</app-header>
           Angular component
         </app-root>
       `;
+      document.body.innerHTML = html;
 
-      const result = window.detectFrameworks();
+      const result = window.detectFrameworks(parseRaw(html));
 
       expect(result.details.frameworks).toContain('angular');
       expect(result.ssrScore).toBeGreaterThan(0);
@@ -182,13 +188,14 @@ describe('detectFrameworks', () => {
   describe('script pattern analysis', () => {
     it('should detect Next.js chunks as SSR indicator', () => {
       // Add Next.js root element along with chunks to trigger detection
-      document.body.innerHTML = `
+      const html = `
         <div id="__next">App content</div>
         <script src="/_next/static/chunks/main.js"></script>
         <script src="/_next/static/chunks/framework.js"></script>
       `;
+      document.body.innerHTML = html;
 
-      const result = window.detectFrameworks();
+      const result = window.detectFrameworks(parseRaw(html));
 
       // Should detect Next.js framework which is an SSR indicator
       expect(result.details.frameworks).toContain('nextjs');
@@ -227,6 +234,49 @@ describe('detectFrameworks', () => {
 
       expect(result.details.frameworks || []).toHaveLength(0);
       expect(result.details.generators || []).toHaveLength(0);
+    });
+  });
+
+  describe('raw HTML requirement for hydration credit', () => {
+    it('should give SSR credit when markers exist in the raw HTML', () => {
+      document.body.innerHTML = '<div data-reactroot>Hydrated app</div>';
+      const rawDoc = parseRaw('<div data-reactroot>Server-rendered app</div>');
+
+      const result = window.detectFrameworks(rawDoc);
+
+      expect(result.ssrScore).toBeGreaterThan(0);
+      expect(result.indicators.some(i => i.includes('hydration markers in raw HTML'))).toBe(true);
+    });
+
+    it('should give no SSR credit when markers exist only in the rendered DOM', () => {
+      // A booted CSR app: framework markers in the live DOM, empty raw shell
+      document.body.innerHTML = '<div data-reactroot>Client-rendered app</div>';
+      const rawDoc = parseRaw('<div id="root"></div>');
+
+      const result = window.detectFrameworks(rawDoc);
+
+      expect(result.details.frameworks).toContain('react');
+      expect(result.ssrScore).toBe(0);
+      expect(result.indicators.some(i => i.includes('only in rendered DOM'))).toBe(true);
+    });
+
+    it('should give no SSR credit when the raw document is unavailable', () => {
+      document.body.innerHTML = '<div data-reactroot>App</div>';
+
+      const result = window.detectFrameworks(null);
+
+      expect(result.details.frameworks).toContain('react');
+      expect(result.ssrScore).toBe(0);
+    });
+
+    it('should still list rendered-only frameworks for telemetry', () => {
+      document.body.innerHTML = '<div class="svelte-1abc23">Svelte CSR app</div>';
+      const rawDoc = parseRaw('<div id="app"></div>');
+
+      const result = window.detectFrameworks(rawDoc);
+
+      expect(result.details.frameworks).toContain('svelte');
+      expect(result.ssrScore).toBe(0);
     });
   });
 });

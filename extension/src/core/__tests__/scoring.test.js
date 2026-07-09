@@ -70,6 +70,24 @@ describe('calculateClassification', () => {
       expect(result.renderType).toMatch(/Hybrid|Mixed/);
       expect(result.ssrPercentage).toBe(50);
     });
+
+    it('should use the configured hybrid band (41-59), not the old 35-65', () => {
+      // The mastodon case from plans/002: comparison fired CSR but soft SSR
+      // signals pushed ssrPercentage to 38% — inside the old hardcoded 35-65
+      // band, outside the configured 41-59 one. Must be Likely CSR/SPA.
+      const result = window.calculateClassification(25, 40, 0, ['ssr soft signal', 'csr comparison']);
+
+      expect(result.ssrPercentage).toBe(38);
+      expect(result.renderType).toBe('Likely CSR/SPA');
+    });
+
+    it('should use the configured hybrid band upper edge too', () => {
+      // 62% with both signals: outside 41-59, inside old 35-65 → Likely SSR
+      const result = window.calculateClassification(62, 38, 0, ['ssr marker', 'csr marker']);
+
+      expect(result.ssrPercentage).toBe(62);
+      expect(result.renderType).toBe('Likely SSR with Hydration');
+    });
   });
 
   describe('Likely classifications', () => {
