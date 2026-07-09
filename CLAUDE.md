@@ -140,9 +140,18 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 - Raw HTML much smaller than rendered = CSR (JS loaded content)
 - Raw HTML matches rendered = SSR (content in initial HTML)
 
+Since v3.7.0 both sides are measured identically with `script/style/noscript/
+template` text stripped; both the CSR and SSR branches require ~200 chars of
+real text. When the server sent <10% of the visible text (decisive CSR), the
+rendered-DOM SSR signals are capped rather than allowed to outvote the
+comparison; when the raw fetch fails, confidence is capped and definitive
+verdicts downgrade to "Likely". Validate detection changes against the 22-site
+ground-truth harness: `node extension/scripts/validate-detection.mjs`
+(requires playwright).
+
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
-- Framework hydration markers (30 points)
+- Framework hydration markers (30 points; since v3.7.0 they require raw-HTML evidence)
 - Serialized data patterns (25 points)
 - Fast DOM + slow FCP pattern (25 points CSR)
 - SPA root containers with React/Vue markers (20 points CSR)
@@ -256,6 +265,7 @@ Extension settings (stored in `chrome.storage.sync`):
 
 ## Version History
 
+- **v3.7.0**: Detection SSR-bias fix — script-stripped comparison, decisive-CSR override, raw-evidence hydration markers (plan 003)
 - **v3.6.1**: CWV telemetry race fix (500ms timeout it could never win)
 - **v3.6.0**: Detection/telemetry split — faster results, conditional telemetry loading
 - **v3.5.0**: Phase 3 - Hydration tracking, navigation detection
