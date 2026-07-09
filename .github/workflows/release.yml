@@ -1,0 +1,41 @@
+name: Extension Release
+
+# Push a tag like v3.8.0 (matching extension/manifest.json) to build the
+# Chrome Web Store zip and attach it to a GitHub Release.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches manifest version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          MANIFEST_VERSION="$(jq -r .version extension/manifest.json)"
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "Tag ($TAG_VERSION) does not match manifest.json ($MANIFEST_VERSION)" >&2
+            exit 1
+          fi
+
+      - name: Build extension zip
+        run: |
+          cd extension
+          zip -r "../csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
+            manifest.json popup.html popup.js options.html options.js \
+            background.js welcome.html welcome.js icon*.png src/ \
+            -x '*.DS_Store'
+
+      - name: Create GitHub Release with zip
+        uses: softprops/action-gh-release@v2
+        with:
+          files: csr-ssr-detector-v*.zip
+          generate_release_notes: true

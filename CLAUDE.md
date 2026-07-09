@@ -222,6 +222,19 @@ Then rebuild the bundles: `cd extension && npm run build`.
 
 ### Creating Extension Release
 
+Releases are tag-driven (`.github/workflows/release.yml`):
+
+1. Bump `extension/manifest.json` version and update `extension/CHANGELOG.md`
+2. Merge to `main`
+3. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`
+
+The workflow verifies the tag matches `manifest.json`, builds the Chrome Web
+Store zip, and attaches it to a GitHub Release. Download the zip from the
+release page and upload it to the Chrome Web Store developer dashboard
+(store listing and privacy disclosures are updated manually there).
+
+Manual fallback:
+
 ```bash
 cd extension
 zip -r ../csr-ssr-detector-vX.Y.Z.zip manifest.json popup.html popup.js \
