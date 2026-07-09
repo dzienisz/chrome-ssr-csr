@@ -23,8 +23,7 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 │   │   ├── analyzer-bundle.js  # Bundled analysis code (injected)
 │   │   ├── core/           # Core analysis logic
 │   │   ├── detectors/      # Detection modules (see below)
-│   │   ├── ui/             # UI components
-│   │   └── telemetry.js    # Telemetry handling
+│   │   └── ui/             # UI components
 │   ├── icon*.png           # Extension icons
 │   ├── promo-images/       # Chrome Web Store images
 │   ├── privacy-policy.md   # Privacy policy

@@ -5,6 +5,17 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **Legacy `src/telemetry.js`**: Dead module left over from the pre-bundle
+  architecture. It was never loaded — absent from both bundles, `manifest.json`,
+  and the HTML pages — and duplicated (and drifted from) the telemetry logic in
+  `popup.js`, which owns the actual `sendAnalysisData` implementation. (The
+  v3.7.0 "telemetry version" fix below landed in this dead copy; the live
+  sender in `popup.js` already read `chrome.runtime.getManifest().version`.)
+
 ## [3.7.0] - 2026-07-08
 
 ### Fixed - Structural SSR bias in detection 🎯

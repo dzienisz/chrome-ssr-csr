@@ -104,7 +104,6 @@ extension/
 ├── background.js        # Service worker
 ├── src/
 │   ├── analyzer-bundle.js   # Bundled analysis code (injected into pages)
-│   ├── telemetry.js         # Telemetry handling
 │   ├── core/
 │   │   ├── config.js        # Scoring weights configuration
 │   │   ├── analyzer.js      # Main analysis orchestration
