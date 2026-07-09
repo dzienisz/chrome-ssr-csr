@@ -18,6 +18,7 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 │   ├── manifest.json       # Extension configuration
 │   ├── popup.html/js       # Extension popup UI
 │   ├── options.html/js     # Settings page
+│   ├── welcome.html/js     # Onboarding page (opened once on first install)
 │   ├── background.js       # Service worker
 │   ├── src/                # Source modules
 │   │   ├── analyzer-bundle.js   # Bundled detection code (injected)
@@ -83,9 +84,10 @@ integration (no manual `vercel --prod` step).
 
 ## Extension Architecture
 
-### Three-Part Execution Model
+### Execution Model
 
 1. **background.js** (Service Worker)
+   - Opens `welcome.html` on first install (pin walkthrough + telemetry opt-out)
    - Listens for extension icon clicks
    - Handles notifications and history storage
 
@@ -103,6 +105,7 @@ integration (no manual `vercel --prod` step).
    - Injects analyzer and displays results
    - Manages history, exports, and telemetry
    - Updates badge on extension icon (SSR/CSR/MIX)
+   - Shows a dismissible pin-to-toolbar hint when `isOnToolbar` is false
 
 ### Detector Modules
 
@@ -274,6 +277,9 @@ Extension settings (stored in `chrome.storage.sync`):
 - `historyLimit`: number (default: 10)
 - `notifications`: boolean (default: true)
 - `shareData`: boolean (default: true, opt-out)
+
+One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
+`analysisHistory` (history entries). Clear these when testing onboarding.
 
 ## Version History
 
