@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI elements
   setupUI();
 
+  // Show pin hint if the extension isn't pinned to the toolbar
+  setupPinHint();
+
   // Add event listener for settings button
   document.getElementById("settingsButton").addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
@@ -493,6 +496,29 @@ function setupUI() {
     `;
     document.body.appendChild(helpSection);
   }
+}
+
+// Show a dismissible "pin me" hint when the extension isn't on the toolbar.
+// Chrome can't pin programmatically; getUserSettings() (Chrome 91+) only
+// reports whether the user has done it.
+function setupPinHint() {
+  if (!chrome.action || !chrome.action.getUserSettings) return;
+
+  chrome.storage.local.get(['pinHintDismissed'], (data) => {
+    if (data.pinHintDismissed) return;
+
+    chrome.action.getUserSettings((settings) => {
+      if (settings.isOnToolbar) return;
+
+      const banner = document.getElementById('pin-banner');
+      banner.style.display = 'flex';
+
+      document.getElementById('pin-banner-close').addEventListener('click', () => {
+        banner.style.display = 'none';
+        chrome.storage.local.set({ pinHintDismissed: true });
+      });
+    });
+  });
 }
 
 // Show error message

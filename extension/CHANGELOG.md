@@ -5,7 +5,29 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.8.0] - 2026-07-10
+
+### Added
+
+- **Onboarding page** (`welcome.html`): opens once on first install. Walks
+  through pinning the extension to the toolbar (with a live pinned/not-pinned
+  status via `chrome.action.getUserSettings()`), explains the SSR/CSR/MIX
+  badge, and surfaces the telemetry opt-out and privacy policy up front.
+- **Pin hint in popup**: a dismissible banner shown when the extension isn't
+  pinned to the toolbar (`isOnToolbar === false`). Dismissal is remembered in
+  `chrome.storage.local` (`pinHintDismissed`). Chrome offers no API to pin
+  programmatically, so both features nudge instead.
+
+### Fixed
+
+- **Broken logo on the settings page**: `options.html` referenced `icon.webp`,
+  which doesn't exist in the package — now uses `icon48.png` like the popup.
+- **Missing `<meta charset="utf-8">` in `popup.html`**: emoji in the popup
+  relied on Chrome's extension-page encoding default; now declared explicitly.
+- **Privacy policy brought in line with reality**: telemetry is described as
+  opt-out (enabled by default) instead of "opt-in", and the server-side
+  country-from-IP enrichment (`device_info.country`, IP never stored) is now
+  disclosed in the data list.
 
 ### Removed
 

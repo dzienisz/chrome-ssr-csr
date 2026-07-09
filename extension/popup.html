@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
     <title>CSR vs SSR Detector</title>
     <style>
       :root {
@@ -42,6 +43,40 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 16px;
+      }
+
+      #pin-banner {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      #pin-banner strong {
+        color: var(--text-primary);
+      }
+
+      #pin-banner-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-size: 14px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+
+      #pin-banner-close:hover {
+        background-color: var(--button-secondary-hover);
       }
 
       h2 {
@@ -148,6 +183,11 @@
     </style>
   </head>
   <body>
+    <div id="pin-banner">
+      <span>📌 <strong>Pin the extension</strong> (🧩 → 📌) to check any site in one click.</span>
+      <button id="pin-banner-close" title="Dismiss">✕</button>
+    </div>
+
     <div class="header">
       <h2><img src="icon48.png" alt="Logo">CSR vs SSR Detector</h2>
       <button class="settings-icon" id="settingsButton" title="Settings">

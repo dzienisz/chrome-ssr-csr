@@ -225,7 +225,7 @@ Then rebuild the bundles: `cd extension && npm run build`.
 ```bash
 cd extension
 zip -r ../csr-ssr-detector-vX.Y.Z.zip manifest.json popup.html popup.js \
-  options.html options.js background.js icon*.png src/
+  options.html options.js background.js welcome.html welcome.js icon*.png src/
 ```
 
 ### Database Setup
@@ -264,6 +264,7 @@ Extension settings (stored in `chrome.storage.sync`):
 
 ## Version History
 
+- **v3.8.0**: Onboarding — welcome page on install, pin-to-toolbar hint in popup, options logo fix
 - **v3.7.0**: Detection SSR-bias fix — script-stripped comparison, decisive-CSR override, raw-evidence hydration markers (plan 003)
 - **v3.6.1**: CWV telemetry race fix (500ms timeout it could never win)
 - **v3.6.0**: Detection/telemetry split — faster results, conditional telemetry loading
