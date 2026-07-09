@@ -1,6 +1,6 @@
 # SSR/CSR Analytics Dashboard
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](./CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](./CHANGELOG.md)
 [![Live Dashboard](https://img.shields.io/badge/dashboard-live-brightgreen)](https://backend-mauve-beta-88.vercel.app/dashboard)
 
 Real-time analytics dashboard for the [CSR vs SSR Detector](../extension) Chrome extension.
@@ -12,9 +12,11 @@ Real-time analytics dashboard for the [CSR vs SSR Detector](../extension) Chrome
 Features:
 - Real-time stats with 30-second auto-refresh
 - SSR/CSR/Hybrid distribution charts
+- Core Web Vitals by render type (LCP, CLS, TTFB, pass rate)
+- SPA vs MPA navigation behavior by render type
 - Framework detection trends
-- Top analyzed domains
-- Recent analyses table
+- Top analyzed domains (with country flags and page titles)
+- Recent analyses table with infinite scroll and record deletion
 
 ## Tech Stack
 
@@ -54,23 +56,22 @@ POSTGRES_DATABASE="..."
 
 # Optional: API key for additional security (not required, CORS is used)
 # API_SECRET_KEY="your-super-secret-key-here"
-
-# Generate with: openssl rand -base64 32
-NEXTAUTH_SECRET="your-nextauth-secret"
-NEXTAUTH_URL="http://localhost:3000"
 ```
 
 ### 3. Run Locally
 
 ```bash
-npm run dev
+npm run dev       # http://localhost:3000
+npm run test:run  # unit tests
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ## Deployment to Vercel
 
-### Option 1: Using Vercel CLI (Recommended)
+**Day-to-day deploys are automatic**: merges to `main` deploy production via
+the Vercel GitHub integration (project root is `backend/`). The options below
+are only needed for first-time project setup.
+
+### Option 1: Using Vercel CLI
 
 1. **Install Vercel CLI**:
 ```bash
@@ -102,10 +103,9 @@ vercel env pull .env.local  # Pull environment variables
 npm run db:setup
 ```
 
-6. **Set API Key**:
+6. **Optional API Key**:
    - In Vercel dashboard, go to Settings > Environment Variables
    - Add `API_SECRET_KEY` with a secure random value
-   - Add `NEXTAUTH_SECRET` with output from: `openssl rand -base64 32`
 
 7. **Redeploy**:
 ```bash
@@ -159,7 +159,7 @@ Submit analysis data from the extension.
     "fcp": 650
   },
   "indicators": ["Rich initial content", "Hydration markers"],
-  "version": "3.5.0"
+  "version": "3.7.0"
 }
 ```
 
@@ -176,14 +176,19 @@ Submit analysis data from the extension.
 Get aggregated statistics.
 
 **Query Parameters**:
-- `type`: `all`, `total`, `frameworks`, `domains`, `timeline`, `recent`
+- `type`: `all`, `total`, `frameworks`, `domains`, `timeline`, `recent`, `contentComparison`
 - `limit`: Number of results (for frameworks, domains, recent)
+- `offset`: Pagination offset (for recent)
 - `days`: Number of days for timeline (default: 30)
 
 **Examples**:
-- `/api/stats?type=all` - All stats
+- `/api/stats?type=all` - All stats (Phase 1-3, preferred)
 - `/api/stats?type=frameworks&limit=10` - Top 10 frameworks
 - `/api/stats?type=timeline&days=7` - Last 7 days
+
+### DELETE /api/analyze/[id]
+
+Remove a single analysis record (used by the dashboard's delete action).
 
 ## Dashboard
 
