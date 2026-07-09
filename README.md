@@ -27,6 +27,10 @@ git clone https://github.com/dzienisz/chrome-ssr-csr.git
 cd chrome-ssr-csr
 
 # Extension development
+cd extension
+npm install
+npm run build     # rebuild bundles after editing src/
+npm run test:run  # unit tests
 # Load extension/ folder in chrome://extensions (Developer Mode)
 
 # Backend development
@@ -37,7 +41,7 @@ npm run dev
 
 ## Features
 
-- **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators
+- **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators — validated against a 22-site ground-truth suite (v3.7.0)
 - **Framework Recognition** - Detects Next.js, Nuxt, Gatsby, React, Vue, Angular, and more
 - **Tech Stack Intelligence** - Identifies CSS frameworks (Tailwind, Bootstrap), Build Tools (Vite), and Hosting (Vercel, Netlify)
 - **SEO & Accessibility Audit** - Checks meta tags, social preview tags, alt text coverage, and ARIA labels
@@ -45,6 +49,7 @@ npm run dev
 - **Export Results** - Download as JSON, CSV, or Markdown
 - **Dark Mode** - Beautiful dark theme
 - **Analytics Dashboard** - Aggregated usage data with live updates
+- **Privacy-respecting telemetry** - Opt-out anonymous stats, origin only (never full URLs) — see the [privacy policy](./extension/privacy-policy.md)
 
 ## SSR vs CSR
 

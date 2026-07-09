@@ -1,7 +1,7 @@
 # CSR vs SSR Detector - Chrome Extension
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
-[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](./CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](./CHANGELOG.md)
 
 A Chrome extension that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
 
@@ -76,7 +76,7 @@ The extension uses a weighted scoring system analyzing:
 |-----------|------------|------------|
 | **Raw HTML vs Rendered mismatch** | - | +40 |
 | Raw HTML matches rendered | +30 | - |
-| Framework hydration markers | +30 | - |
+| Framework hydration markers (raw-HTML evidence required since v3.7.0) | +30 | - |
 | Serialized data (`__NEXT_DATA__`) | +25 | - |
 | Fast DOM + slow FCP pattern | - | +25 |
 | SPA root container (#root/#app) | - | +20 |
@@ -86,6 +86,8 @@ The extension uses a weighted scoring system analyzing:
 | Noscript JS warning | - | +15 |
 
 **Key Detection Method (v3.2.0+):** The extension fetches the page's raw HTML and compares it to the rendered DOM. If raw HTML is much smaller than rendered content, it's likely CSR (JavaScript loaded the content).
+
+**Accuracy hardening (v3.7.0):** both sides of the comparison strip `script`/`style` text before measuring; framework hydration markers only count toward SSR when found in the raw HTML; when the server sent almost none of the visible text, post-JS "SSR-looking" signals are capped; and when the raw fetch is blocked, confidence is capped instead of guessing confidently. Detection changes are validated against a 22-site ground-truth suite: `node scripts/validate-detection.mjs` (requires playwright).
 
 **Classification:**
 - ≥75% SSR score → "Server-Side Rendered (SSR)"
@@ -102,20 +104,25 @@ extension/
 ├── popup.html/js        # Extension popup UI
 ├── options.html/js      # Settings page
 ├── background.js        # Service worker
+├── scripts/
+│   ├── build-bundle.js      # Builds the bundles from src/ (npm run build)
+│   └── validate-detection.mjs  # 22-site ground-truth validation harness
 ├── src/
-│   ├── analyzer-bundle.js   # Bundled analysis code (injected into pages)
+│   ├── analyzer-bundle.js   # Bundled detection code (injected into pages)
+│   ├── telemetry-bundle.js  # Bundled collectors (injected only when Share Data is on)
 │   ├── core/
 │   │   ├── config.js        # Scoring weights configuration
 │   │   ├── analyzer.js      # Main analysis orchestration
 │   │   └── scoring.js       # Classification logic
-│   ├── detectors/
+│   ├── detectors/           # SSR/CSR detection signals
 │   │   ├── content-detector.js       # DOM/content analysis
 │   │   ├── framework-detector.js     # Framework detection
 │   │   ├── meta-detector.js          # Meta tags analysis
 │   │   ├── performance-detector.js   # Timing metrics
 │   │   ├── comparison-detector.js    # Raw HTML vs rendered DOM
 │   │   ├── csr-pattern-detector.js   # SPA/CSR patterns
-│   │   ├── hybrid-detector.js        # Islands/partial hydration
+│   │   └── hybrid-detector.js        # Islands/partial hydration
+│   ├── collectors/          # Telemetry only (v3.6.0 split) — never affect the verdict
 │   │   ├── performance-collector.js  # Core Web Vitals (v3.3.0+)
 │   │   ├── page-type-detector.js     # Page classification (v3.3.0+)
 │   │   ├── device-detector.js        # Device info (v3.3.0+)
@@ -136,9 +143,10 @@ extension/
 ### Making Changes
 
 1. Edit source files in `src/` directory
-2. **Important**: After modifying `src/core/` or `src/detectors/`, update `src/analyzer-bundle.js`
-3. Reload extension in `chrome://extensions` (click refresh icon)
-4. Test on various websites
+2. Rebuild the bundles: `npm run build` (or `npm run build:watch` while developing)
+3. Run the unit tests: `npm run test:run`
+4. Reload extension in `chrome://extensions` (click refresh icon)
+5. For detection changes, run the ground-truth harness: `node scripts/validate-detection.mjs`
 
 ### Adding Framework Detection
 
@@ -152,14 +160,14 @@ newframework: document.querySelector('[data-newframework]') !== null
 newgenerator: document.querySelector('meta[name="generator"][content*="NewGen"]') !== null
 ```
 
-Then update `src/analyzer-bundle.js` to include changes.
+Then rebuild the bundles: `npm run build`.
 
 ### Creating a Release
 
 ```bash
 zip -r ../csr-ssr-detector-vX.Y.Z.zip \
   manifest.json popup.html popup.js options.html options.js \
-  background.js icon*.png src/analyzer-bundle.js
+  background.js icon*.png src/ -x "src/**/__tests__/*"
 ```
 
 ## Settings
@@ -174,8 +182,8 @@ zip -r ../csr-ssr-detector-vX.Y.Z.zip \
 ## Privacy
 
 - All analysis happens **locally** in your browser
-- No data is sent unless you enable "Share anonymous data"
-- When enabled, only **domain** (not full URL), render type, and frameworks are shared
+- No data is sent unless "Share Data" is enabled (on by default, opt-out in settings); when disabled, the telemetry collectors are never even injected (v3.6.0+)
+- When enabled, only the **domain** (never the full URL) is shared, along with the render verdict, confidence, detected frameworks, and technical metrics (Core Web Vitals, device/browser type, tech stack, SEO/accessibility flags, hydration and navigation stats)
 - See [privacy-policy.md](./privacy-policy.md) for details
 
 ## Contributing
@@ -186,11 +194,9 @@ zip -r ../csr-ssr-detector-vX.Y.Z.zip \
 4. Submit a pull request
 
 ### Testing Checklist
-- [ ] Next.js sites (nextjs.org, vercel.com)
-- [ ] React SPAs (create-react-app apps)
-- [ ] Static sites (Jekyll, Hugo)
-- [ ] Traditional server-rendered pages
-- [ ] Hybrid applications
+- [ ] `npm run test:run` passes (105+ unit tests)
+- [ ] `node scripts/validate-detection.mjs` — 22-site ground-truth suite (aim: ≥20/22)
+- [ ] Manual spot-check: a Next.js site, a pure CSR SPA, a static site, a hybrid/islands site
 
 ## Changelog
 
