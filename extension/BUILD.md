@@ -27,7 +27,6 @@ extension/
 │   ├── ui/
 │   │   └── components/
 │   │       └── results-renderer.js
-│   ├── telemetry.js
 │   └── analyzer-bundle.js       # Generated bundle (DO NOT EDIT)
 ├── scripts/
 │   └── build-bundle.js          # Build script

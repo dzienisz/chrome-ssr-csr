@@ -25,8 +25,7 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 │   │   ├── core/           # Core analysis logic (analyzer, scoring, config)
 │   │   ├── detectors/      # SSR/CSR detection modules (see below)
 │   │   ├── collectors/     # Telemetry collectors (see below)
-│   │   ├── ui/             # UI components
-│   │   └── telemetry.js    # Telemetry handling
+│   │   └── ui/             # UI components
 │   ├── icon*.png           # Extension icons
 │   ├── promo-images/       # Chrome Web Store images
 │   ├── privacy-policy.md   # Privacy policy
