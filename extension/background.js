@@ -1,3 +1,10 @@
+// Open the onboarding page on first install (not on updates)
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: 'welcome.html' });
+  }
+});
+
 // Listen for extension icon click
 chrome.action.onClicked.addListener((tab) => {
   // First inject the analyzer.js script

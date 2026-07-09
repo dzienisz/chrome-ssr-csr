@@ -10,10 +10,10 @@ This extension stores the following information locally on your device:
 - Timestamps of when analyses were performed
 - Your preferences (theme, history limit, notification settings)
 
-### Optional Anonymous Telemetry
-If you opt-in to "Share anonymous data" in settings, the extension sends anonymized usage data to help improve the extension:
+### Anonymous Telemetry (enabled by default, opt-out)
+Unless you disable "Share anonymous data" in settings, the extension sends anonymized usage data to help improve the extension:
 
-**Data sent when opted-in:**
+**Data sent while sharing is enabled:**
 - Domain name only (e.g., "example.com", NOT full URLs or paths)
 - Detected render type (SSR/CSR/Hybrid)
 - Confidence score
@@ -42,20 +42,22 @@ If you opt-in to "Share anonymous data" in settings, the extension sends anonymi
 - Navigation type (SPA vs MPA)
 - Extension version
 - Timestamp
+- Approximate location: country only (2-letter code, e.g., "US"), derived
+  server-side from the request IP address; the IP address itself is not stored
 
 **Data NOT collected:**
 - Full URLs or page paths
 - Personal information
 - Browsing history
 - Page content
-- IP addresses are not stored
+- IP addresses (used transiently server-side to derive the country code above, never stored)
 
 ## Data Usage
 
 ### Local Data
-Local data is used solely to provide the history feature, allowing you to view your past analyses. All local data is stored on your device using chrome.storage and is not transmitted unless you opt-in to telemetry.
+Local data is used solely to provide the history feature, allowing you to view your past analyses. All local data is stored on your device using chrome.storage and is not transmitted unless telemetry sharing is enabled.
 
-### Telemetry Data (opt-in only)
+### Telemetry Data (only while sharing is enabled)
 Anonymous telemetry data is used to:
 - Understand which frameworks are most commonly detected
 - Improve detection accuracy
@@ -89,4 +91,4 @@ You can clear all stored data by clearing your browser's extension storage or by
 ## Contact
 For questions about this privacy policy, please open an issue on the GitHub repository.
 
-Last updated: 2026-01-28
+Last updated: 2026-07-10

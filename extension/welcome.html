@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Welcome - CSR vs SSR Detector</title>
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f3f4f6;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border-color: #e5e7eb;
+        --accent-color: #2563eb;
+        --accent-hover: #1d4ed8;
+        --button-secondary: #f3f4f6;
+        --button-secondary-hover: #e5e7eb;
+        --success-color: #10b981;
+      }
+
+      [data-theme="dark"] {
+        --bg-primary: #1f2937;
+        --bg-secondary: #111827;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --accent-color: #3b82f6;
+        --accent-hover: #2563eb;
+        --button-secondary: #374151;
+        --button-secondary-hover: #4b5563;
+        --success-color: #34d399;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 40px 20px;
+        color: var(--text-primary);
+        background-color: var(--bg-secondary);
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .container {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .hero img {
+        width: 64px;
+        height: 64px;
+      }
+
+      .hero h1 {
+        margin: 12px 0 8px;
+        font-size: 28px;
+        color: var(--accent-color);
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 15px;
+      }
+
+      .card {
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: var(--accent-color);
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .card p {
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+      }
+
+      .card p strong {
+        color: var(--text-primary);
+      }
+
+      .pin-steps {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin: 14px 0;
+        font-size: 14px;
+      }
+
+      .pin-steps .icon-step {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .pin-steps .arrow {
+        color: var(--text-secondary);
+      }
+
+      #pin-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+
+      #pin-status.pinned {
+        color: var(--success-color);
+        border-color: var(--success-color);
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .badge-item {
+        flex: 1;
+        min-width: 160px;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .badge {
+        display: inline-block;
+        color: #ffffff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .badge.ssr { background-color: #059669; }
+      .badge.csr { background-color: #dc2626; }
+      .badge.mix { background-color: #d97706; }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button.secondary {
+        background-color: var(--button-secondary);
+        color: var(--text-primary);
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+
+      button.secondary:hover {
+        background-color: var(--button-secondary-hover);
+      }
+
+      a {
+        color: var(--accent-color);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="hero">
+        <img src="icon128.png" alt="CSR vs SSR Detector logo">
+        <h1>Welcome to CSR vs SSR Detector</h1>
+        <p>Find out how any webpage is rendered — server-side, client-side, or a mix.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-number">1</span>Pin the extension</h2>
+        <p>Chrome hides new extensions behind the puzzle icon. Pin it so it's always one click away:</p>
+        <div class="pin-steps">
+          <span class="icon-step">Click <strong>🧩</strong> in the toolbar</span>
+          <span class="arrow">→</span>
+          <span class="icon-step">find <strong>CSR vs SSR Detector</strong></span>
+          <span class="arrow">→</span>
+          <span class="icon-step">click <strong>📌</strong></span>
+        </div>
+        <span id="pin-status">📌 Not pinned yet</span>
+      </div>
+
+      <div class="card">
+        <h2><span class="step-number">2</span>Analyze any page</h2>
+        <p>Visit any website, click the extension icon, and hit <strong>Analyze Page</strong>. The verdict appears in the popup and as a badge on the icon:</p>
+        <div class="badges">
+          <div class="badge-item">
+            <span class="badge ssr">SSR</span><br>
+            Content arrives in the initial HTML from the server. Good for SEO and first paint.
+          </div>
+          <div class="badge-item">
+            <span class="badge csr">CSR</span><br>
+            Content is built in the browser by JavaScript. Typical for SPAs and app-like sites.
+          </div>
+          <div class="badge-item">
+            <span class="badge mix">MIX</span><br>
+            Hybrid rendering — some content from the server, some hydrated or loaded client-side.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔒 Your privacy</h2>
+        <p>
+          The extension shares <strong>anonymous</strong> usage statistics (domain, render type,
+          performance metrics — never full URLs or personal data) to help map how the web renders.
+          You can opt out anytime in the settings.
+        </p>
+        <div class="actions">
+          <button class="secondary" id="open-settings">Open settings</button>
+          <button class="secondary" id="open-privacy">Privacy policy</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><span id="version"></span> — <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a></p>
+      </div>
+    </div>
+
+    <script src="welcome.js"></script>
+  </body>
+</html>
