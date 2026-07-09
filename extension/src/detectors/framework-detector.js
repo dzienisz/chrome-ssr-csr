@@ -5,9 +5,13 @@
 
 /**
  * Detect frameworks and their rendering patterns
+ * @param {Document|null} rawDocument - Parsed raw (pre-JS) HTML document, when
+ *   the comparison fetch succeeded. Framework markers only count as hydration
+ *   (SSR) evidence if they exist here; markers only in the rendered DOM are
+ *   what a client-rendered app looks like after boot.
  * @returns {Object} Detection results with score and indicators
  */
-function detectFrameworks() {
+function detectFrameworks(rawDocument) {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
   let ssrScore = 0;
@@ -16,6 +20,7 @@ function detectFrameworks() {
 
   // Detect framework hydration markers
   const frameworkMarkers = {};
+  const rawFrameworkMarkers = {};
   for (const [framework, selector] of Object.entries(config.frameworks)) {
     try {
       if (framework === 'react') {
@@ -26,8 +31,11 @@ function detectFrameworks() {
       } else {
         frameworkMarkers[framework] = document.querySelector(selector) !== null;
       }
+      rawFrameworkMarkers[framework] =
+        rawDocument ? rawDocument.querySelector(selector) !== null : false;
     } catch (e) {
       frameworkMarkers[framework] = false;
+      rawFrameworkMarkers[framework] = false;
     }
   }
 
@@ -36,9 +44,15 @@ function detectFrameworks() {
     .map(([framework, _]) => framework);
 
   if (foundFrameworks.length > 0) {
-    ssrScore += config.scoring.frameworkMarkers;
-    indicators.push(`${foundFrameworks.join(', ')} hydration markers (SSR)`);
     detailedInfo.frameworks = foundFrameworks;
+
+    const hydratedFrameworks = foundFrameworks.filter(f => rawFrameworkMarkers[f]);
+    if (hydratedFrameworks.length > 0) {
+      ssrScore += config.scoring.frameworkMarkers;
+      indicators.push(`${hydratedFrameworks.join(', ')} hydration markers in raw HTML (SSR)`);
+    } else {
+      indicators.push(`${foundFrameworks.join(', ')} markers only in rendered DOM (not SSR evidence)`);
+    }
   }
 
   // Detect static site generators

@@ -52,7 +52,11 @@ async function sendAnalysisData(url, title, results) {
       },
       
       indicators: results.indicators || [],
-      version: '3.5.0',  // Phase 3: User Journey & Hydration Analytics
+      // Real extension version so dashboard data can be segmented per release.
+      // Guarded: getManifest is unavailable if this ever runs in page context.
+      version: (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+        ? chrome.runtime.getManifest().version
+        : 'unknown',
       timestamp: new Date().toISOString(),
     };
 

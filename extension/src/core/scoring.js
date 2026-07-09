@@ -32,7 +32,9 @@ function calculateClassification(ssrScore, csrScore, hybridScore, indicators) {
   const hasBothSignals = ssrScore >= 20 && csrScore >= 20;
 
   // Determine render type and confidence based on thresholds
-  if (isStrongHybrid || (hasBothSignals && ssrPercentage >= 35 && ssrPercentage <= 65)) {
+  const hybridBand = config.thresholds.hybrid;
+  if (isStrongHybrid ||
+      (hasBothSignals && ssrPercentage >= hybridBand.min && ssrPercentage <= hybridBand.max)) {
     // Strong hybrid indicators or balanced scores with both SSR and CSR signals
     renderType = "Hybrid/Islands Architecture";
     confidence = Math.min(50 + hybridScore + indicatorBonus, config.confidence.maxConfidenceHybrid + 10);
