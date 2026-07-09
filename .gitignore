@@ -1,6 +1,9 @@
 # Build artifacts
 *.zip
 
+# Detection validation harness output (plans/002+)
+extension/scripts/validate-detection-results.json
+
 # Dependencies
 node_modules/
 

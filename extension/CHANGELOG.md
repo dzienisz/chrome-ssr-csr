@@ -12,7 +12,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Legacy `src/telemetry.js`**: Dead module left over from the pre-bundle
   architecture. It was never loaded — absent from both bundles, `manifest.json`,
   and the HTML pages — and duplicated (and drifted from) the telemetry logic in
-  `popup.js`, which owns the actual `sendAnalysisData` implementation.
+  `popup.js`, which owns the actual `sendAnalysisData` implementation. (The
+  v3.7.0 "telemetry version" fix below landed in this dead copy; the live
+  sender in `popup.js` already read `chrome.runtime.getManifest().version`.)
+
+## [3.7.0] - 2026-07-08
+
+### Fixed - Structural SSR bias in detection 🎯
+
+The DIR-04 spike (`plans/002`) showed 0/6 known pure-CSR sites detected as
+CSR — most classified as SSR. Six fixes:
+
+- **Inline script/style text no longer counts as content**: the raw-vs-rendered
+  comparison read `innerText` off the detached fetched document, which falls
+  back to `textContent` and includes inline `<script>`/`<style>` text — so
+  script-heavy (i.e. CSR) pages got SSR credit proportional to their bundle
+  size. Both sides now strip `script/style/noscript/template` and are measured
+  identically.
+- **Symmetric comparison guards**: the SSR branch now also requires ~200 chars
+  of real raw text (previously 10 chars of raw text could count as "SSR match").
+- **Decisive-CSR override**: when the server sent <10% of the visible text,
+  rendered-DOM SSR signals (which describe the post-JS DOM) are capped instead
+  of outvoting the comparison.
+- **Framework markers require raw-HTML evidence**: React/Vue/Svelte/… markers
+  found only in the rendered DOM no longer count as "hydration (SSR)" — that is
+  exactly what a booted CSR app looks like.
+- **Hybrid band aligned with config**: scoring hardcoded a 35–65% hybrid band
+  instead of the configured 41–59, absorbing true CSR sites into "Hybrid".
+- **Comparison-unavailable handling**: when the raw-HTML fetch fails, confidence
+  is capped and definitive verdicts downgrade to "Likely" ones.
+- **Telemetry version**: `src/telemetry.js` sent a hardcoded `3.5.0`; it now
+  reads `chrome.runtime.getManifest().version` so dashboard data can be
+  segmented into pre/post-fix eras.
+
+Validated against the 22-site ground-truth harness
+(`scripts/validate-detection.mjs`).
 
 ## [3.6.1] - 2026-07-07
 

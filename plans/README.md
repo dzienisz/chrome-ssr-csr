@@ -10,6 +10,8 @@ update your row when done.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001  | Ship the "Core Web Vitals by Render Type" dashboard insight | P1 | M | — | DONE (commit `db2b209` on `feat/cwv-insights`, reviewed & approved 2026-07-07; awaiting user merge) |
+| 002  | DIR-04 spike: validate detection against known-rendering sites | P1 | S | — | DONE (2026-07-08; 0/6 pure-CSR sites detected as CSR — see plan file for root causes and proposed plan 003) |
+| 003  | Fix detector SSR bias — six fixes from plan 002, extension v3.7.0 | P1 | M | 002 | DONE (2026-07-08; harness 21/22 acceptable, 12/12 SSR, 5/6 pure CSR — claude.ai bot-blocks the raw fetch and stays SSR-bucketed at capped confidence) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -21,10 +23,11 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   (privacy/payload win). S effort either way.
 - **DIR-03 Extension value-back**: popup could show "your site vs the average"
   using the public stats API (CORS already open). M effort + store release cycle.
-- **DIR-04 CSR undercount investigation**: production shows 1.4% CSR vs 10.7% hybrid;
-  `extension/src/core/scoring.js:35` classifies the wide 35–65% band as hybrid.
-  Spike: validate against 15–20 known-rendering sites before trusting cross-category
-  comparisons. Interacts with plan 001's credibility.
+- **DIR-04 CSR undercount investigation**: RESOLVED by plan 002 (2026-07-08).
+  Worse than hypothesized: 0/6 pure-CSR sites detected as CSR; most classify as
+  SSR, not hybrid. Primary cause is inline-script text inflating the raw-HTML
+  side of the comparison detector, not the hybrid band (though that contributes).
+  Fix plan proposed as plan 003 in `002-dir04-detection-validation-spike.md`.
 - **DIR-05 Housekeeping**: no aggregate country query despite collection since
   2026-02-18; CLAUDE.md documents pre-v3.6.0 detector layout and a stale manual
   deploy step (GitHub integration auto-deploys); empty `backend/app/api/auth/` dir;
