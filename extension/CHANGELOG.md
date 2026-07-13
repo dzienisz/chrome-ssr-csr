@@ -5,6 +5,17 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] - 2026-07-14
+
+### Added
+
+- **i18n stage 1 — localized name/description** (`_locales/`): en (default),
+  ja, ko, fr, de, es, pt_BR, pl. Manifest uses `__MSG_appName__`/
+  `__MSG_appDesc__` with `default_locale: en`. This unlocks per-language
+  Chrome Web Store listings (listing languages are derived from the locales
+  the package declares). Extension UI itself remains English for now —
+  full UI translation is a follow-up stage.
+
 ## [3.8.1] - 2026-07-13
 
 ### Fixed

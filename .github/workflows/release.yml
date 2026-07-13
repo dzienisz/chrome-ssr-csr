@@ -31,7 +31,7 @@ jobs:
           cd extension
           zip -r "../csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
             manifest.json popup.html popup.js options.html options.js \
-            background.js welcome.html welcome.js icon*.png src/ \
+            background.js welcome.html welcome.js icon*.png src/ _locales/ \
             -x '*.DS_Store'
 
       - name: Create GitHub Release with zip

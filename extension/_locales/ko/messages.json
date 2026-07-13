@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "CSR vs SSR Detector"
+  },
+  "appDesc": {
+    "message": "웹페이지가 클라이언트 사이드 렌더링(CSR)인지 서버 사이드 렌더링(SSR)인지 감지합니다"
+  }
+}

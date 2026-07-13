@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "CSR vs SSR Detector"
+  },
+  "appDesc": {
+    "message": "ウェブページがクライアントサイドレンダリング（CSR）かサーバーサイドレンダリング（SSR）かを検出します"
+  }
+}

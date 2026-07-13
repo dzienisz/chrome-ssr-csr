@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "CSR vs SSR Detector",
+    "description": "Extension name — keep identical across locales (brand)"
+  },
+  "appDesc": {
+    "message": "Detect if a webpage is using Client-Side Rendering or Server-Side Rendering",
+    "description": "Extension description shown on the extensions page and Chrome Web Store (max 132 chars)"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "CSR vs SSR Detector"
+  },
+  "appDesc": {
+    "message": "Erkennt, ob eine Webseite Client-Side-Rendering (CSR) oder Server-Side-Rendering (SSR) verwendet"
+  }
+}

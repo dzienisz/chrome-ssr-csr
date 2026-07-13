@@ -16,6 +16,7 @@ The extension is published on the Chrome Web Store and helps developers and SEO 
 /
 ├── extension/              # Chrome Extension (Manifest V3)
 │   ├── manifest.json       # Extension configuration
+│   ├── _locales/           # i18n: name/description per locale (en, ja, ko, fr, de, es, pt_BR, pl)
 │   ├── popup.html/js       # Extension popup UI
 │   ├── options.html/js     # Settings page
 │   ├── welcome.html/js     # Onboarding page (opened once on first install)
@@ -241,7 +242,8 @@ Manual fallback:
 ```bash
 cd extension
 zip -r ../csr-ssr-detector-vX.Y.Z.zip manifest.json popup.html popup.js \
-  options.html options.js background.js welcome.html welcome.js icon*.png src/
+  options.html options.js background.js welcome.html welcome.js icon*.png \
+  src/ _locales/
 ```
 
 ### Database Setup
@@ -283,6 +285,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v3.9.0**: i18n stage 1 — localized name/description via `_locales` (8 languages), enabling per-language store listings
 - **v3.8.1**: Settings-page privacy notice fixed (stale "backend coming in v3.1" text)
 - **v3.8.0**: Onboarding — welcome page on install, pin-to-toolbar hint in popup, options logo fix
 - **v3.7.0**: Detection SSR-bias fix — script-stripped comparison, decisive-CSR override, raw-evidence hydration markers (plan 003)
