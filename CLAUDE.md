@@ -283,6 +283,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v3.8.1**: Settings-page privacy notice fixed (stale "backend coming in v3.1" text)
 - **v3.8.0**: Onboarding — welcome page on install, pin-to-toolbar hint in popup, options logo fix
 - **v3.7.0**: Detection SSR-bias fix — script-stripped comparison, decisive-CSR override, raw-evidence hydration markers (plan 003)
 - **v3.6.1**: CWV telemetry race fix (500ms timeout it could never win)
