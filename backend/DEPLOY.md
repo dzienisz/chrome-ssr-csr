@@ -123,7 +123,8 @@ git push -u origin main
 
 ## Next: Integrate with Extension
 
-See `EXTENSION_INTEGRATION.md` for connecting your Chrome extension to the backend.
+Telemetry is already built into the extension — update the `BACKEND_URL`
+constant in `extension/popup.js` to your deployment URL.
 
 ## Monitoring
 

@@ -202,15 +202,12 @@ Features:
 - Recent analyses table
 - Real-time updates
 
-## Updating the Chrome Extension
+## Chrome Extension Integration
 
-After deploying, update your extension to send data to the backend:
-
-1. Add the API endpoint URL to extension settings
-2. Add the API key securely (don't hardcode in extension)
-3. Update the telemetry code to call your API
-
-See `EXTENSION_INTEGRATION.md` for detailed instructions.
+Telemetry is already built into the extension (since v3.2.0) — see
+`sendAnalysisData()` in `extension/popup.js`. To point it at your own
+deployment, change the `BACKEND_URL` constant there. Users can opt out via
+the "Share Anonymous Data" toggle in the extension settings.
 
 ## Security
 
