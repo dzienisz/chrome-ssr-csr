@@ -1,9 +1,10 @@
 {
   "name": "ssr-csr-detector-extension",
   "version": "3.7.0",
-  "description": "Chrome extension to detect SSR vs CSR rendering",
+  "description": "Browser extension (Chrome & Firefox) to detect SSR vs CSR rendering",
   "scripts": {
     "build": "node scripts/build-bundle.js",
+    "build:firefox": "node scripts/build-firefox.js",
     "build:watch": "nodemon --watch src --exec 'npm run build'",
     "lint": "echo 'Linting not configured yet'",
     "test": "vitest",

@@ -3,7 +3,7 @@
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Chrome extension that detects whether a webpage uses **Server-Side Rendering (SSR)** or **Client-Side Rendering (CSR)**. Helps developers and SEO specialists understand page rendering strategies.
+A browser extension (Chrome and Firefox) that detects whether a webpage uses **Server-Side Rendering (SSR)** or **Client-Side Rendering (CSR)**. Helps developers and SEO specialists understand page rendering strategies.
 
 ## Projects
 
@@ -11,7 +11,7 @@ This monorepo contains two projects:
 
 | Project | Description | Links |
 |---------|-------------|-------|
-| **[Chrome Extension](./extension)** | Detects SSR/CSR rendering on any webpage | [Install](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Docs](./extension/README.md) |
+| **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome & Firefox) | [Install](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Docs](./extension/README.md) |
 | **[Analytics Dashboard](./backend)** | Real-time usage analytics | [Live](https://backend-mauve-beta-88.vercel.app/dashboard) · [Docs](./backend/README.md) |
 
 ## Quick Start
@@ -21,6 +21,9 @@ This monorepo contains two projects:
 2. Click "Add to Chrome"
 3. Click the extension icon on any webpage to analyze
 
+Firefox (128+): build the package with `cd extension && npm run build:firefox`,
+then load `extension/dist/firefox/` via `about:debugging` (AMO listing pending).
+
 ### Development
 ```bash
 git clone https://github.com/dzienisz/chrome-ssr-csr.git
@@ -29,9 +32,11 @@ cd chrome-ssr-csr
 # Extension development
 cd extension
 npm install
-npm run build     # rebuild bundles after editing src/
-npm run test:run  # unit tests
-# Load extension/ folder in chrome://extensions (Developer Mode)
+npm run build         # rebuild bundles after editing src/
+npm run build:firefox # generate the Firefox variant in dist/firefox/
+npm run test:run      # unit tests
+# Chrome: load extension/ folder in chrome://extensions (Developer Mode)
+# Firefox: load extension/dist/firefox/ in about:debugging#/runtime/this-firefox
 
 # Backend development
 cd backend

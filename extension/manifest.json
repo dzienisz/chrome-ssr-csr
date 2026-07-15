@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
   "permissions": ["activeTab", "scripting", "storage", "notifications"],
@@ -13,7 +13,10 @@
       "128": "icon128.png"
     }
   },
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "background.js"
   },

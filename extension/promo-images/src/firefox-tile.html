@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  /* Compact Firefox social / GitHub tile. 440x280. */
+  body { width: 440px; height: 280px; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; gap: 13px; }
+  .app-icon { width: 60px; height: 60px; }
+  .brand-title { font-size: 32px; }
+  .tagline { font-size: 15px; }
+  .pills { display: flex; gap: 10px; margin-top: 2px; }
+  .pill { font-size: 12px; padding: 5px 12px; }
+  .ff-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-weight: 700; font-size: 13px;
+    color: #ffb066;
+    background: rgba(255, 122, 24, 0.12);
+    border: 1.5px solid rgba(255, 122, 24, 0.5);
+    border-radius: 999px; padding: 6px 13px; margin-top: 6px;
+  }
+  .ff-badge .fox { font-size: 15px; line-height: 1; }
+</style>
+</head>
+<body>
+  <img class="app-icon" src="../../icon128.png" alt="">
+  <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+  <div class="tagline">See how any page really renders</div>
+  <div class="pills">
+    <span class="pill ssr"><i class="dot"></i>SSR</span>
+    <span class="pill csr"><i class="dot"></i>CSR</span>
+    <span class="pill mix"><i class="dot"></i>MIX</span>
+  </div>
+  <span class="ff-badge"><span class="fox">🦊</span>Now on Firefox 128+</span>
+</body>
+</html>

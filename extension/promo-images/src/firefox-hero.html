@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  /* AMO listing hero / "now on Firefox" announcement. 1400x560. */
+  body { width: 1400px; height: 560px; padding: 0 90px; display: flex; align-items: center; gap: 80px; }
+  .left { flex: 1; }
+  .ff-badge {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-weight: 700; font-size: 15px;
+    color: #ffb066;
+    background: rgba(255, 122, 24, 0.12);
+    border: 1.5px solid rgba(255, 122, 24, 0.5);
+    border-radius: 999px; padding: 7px 15px;
+    letter-spacing: 0.02em;
+  }
+  .ff-badge .fox { font-size: 18px; line-height: 1; }
+  .head { display: flex; align-items: center; gap: 18px; margin-top: 22px; }
+  .app-icon { width: 60px; height: 60px; }
+  .brand-title { font-size: 46px; }
+  .tagline { font-size: 23px; margin-top: 14px; }
+  .pills { display: flex; gap: 12px; margin-top: 24px; }
+  .pill { font-size: 15px; padding: 8px 16px; }
+  .sub { color: var(--muted); font-size: 16px; margin-top: 24px; font-weight: 500; }
+  .sub b { color: #e2e8f0; }
+  .verdict-card { width: 430px; flex: none; }
+  .verdict-badge { font-size: 20px; padding: 13px 20px; }
+  .vc-row { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
+  .confidence { font-size: 15px; }
+  .conf-bar { margin-top: 9px; }
+  .chip-row { gap: 9px; margin-top: 18px; }
+  .chip { font-size: 14px; padding: 7px 11px; }
+  .metric-row { gap: 22px; margin-top: 20px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <div class="left">
+    <span class="ff-badge"><span class="fox">🦊</span>Now on Firefox 128+ · also on Chrome</span>
+    <div class="head">
+      <img class="app-icon" src="../../icon128.png" alt="">
+      <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+    </div>
+    <div class="tagline">Does Google see your content — or an empty div?</div>
+    <div class="pills">
+      <span class="pill ssr"><i class="dot"></i>SSR</span>
+      <span class="pill csr"><i class="dot"></i>CSR</span>
+      <span class="pill mix"><i class="dot"></i>MIX</span>
+    </div>
+    <div class="sub"><b>Raw HTML vs rendered DOM</b> · framework &amp; tech stack · Core Web Vitals · open source</div>
+  </div>
+  <div class="verdict-card">
+    <div class="vc-head"><span class="traffic"><i></i><i></i><i></i></span>nextjs.org</div>
+    <div class="vc-body">
+      <div class="verdict-badge"><span class="check">✓</span>Server-Side Rendered</div>
+      <div class="vc-row"><span class="confidence">Confidence <b>92%</b></span></div>
+      <div class="conf-bar"><i></i></div>
+      <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Vercel</span></div>
+      <div class="metric-row"><span>LCP <b class="good">1.8s</b></span><span>CLS <b class="good">0.02</b></span><span>TTFB <b class="good">320ms</b></span></div>
+    </div>
+  </div>
+</body>
+</html>

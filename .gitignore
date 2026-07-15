@@ -1,5 +1,6 @@
 # Build artifacts
 *.zip
+extension/dist/
 
 # Detection validation harness output (plans/002+)
 extension/scripts/validate-detection-results.json

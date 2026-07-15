@@ -1,7 +1,7 @@
 name: Extension Release
 
 # Push a tag like v3.8.0 (matching extension/manifest.json) to build the
-# Chrome Web Store zip and attach it to a GitHub Release.
+# Chrome Web Store and Firefox (AMO) zips and attach them to a GitHub Release.
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
             exit 1
           fi
 
-      - name: Build extension zip
+      - name: Build Chrome extension zip
         run: |
           cd extension
           zip -r "../csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
@@ -34,8 +34,15 @@ jobs:
             background.js welcome.html welcome.js icon*.png src/ _locales/ \
             -x '*.DS_Store'
 
-      - name: Create GitHub Release with zip
+      - name: Build Firefox extension zip
+        run: |
+          node extension/scripts/build-firefox.js --zip
+          mv extension/dist/csr-ssr-detector-firefox-*.zip .
+
+      - name: Create GitHub Release with zips
         uses: softprops/action-gh-release@v2
         with:
-          files: csr-ssr-detector-v*.zip
+          files: |
+            csr-ssr-detector-v*.zip
+            csr-ssr-detector-firefox-v*.zip
           generate_release_notes: true

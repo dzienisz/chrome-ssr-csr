@@ -5,6 +5,30 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] - 2026-07-15
+
+### Added
+
+- **Firefox support** via the cross-browser WebExtensions API. The Chrome
+  `manifest.json` stays canonical; `npm run build:firefox` (or the release
+  workflow) generates a Firefox package in `dist/firefox/` with a transformed
+  manifest: `background.scripts` event page instead of `service_worker`,
+  plus `browser_specific_settings.gecko` (AMO add-on id,
+  `strict_min_version: 128` for `world: "MAIN"` content scripts, and the
+  data-collection disclosure AMO requires). Validated with `web-ext lint`
+  (0 errors). Requires Firefox 128+.
+- Release workflow now attaches a `csr-ssr-detector-firefox-vX.Y.Z.zip`
+  (for addons.mozilla.org) alongside the Chrome Web Store zip.
+
+### Changed
+
+- `chrome.scripting.executeScript` calls use the standard `func:` key instead
+  of Chrome's deprecated `function:` alias (Firefox only accepts `func`).
+- `options_page` replaced with `options_ui` (`open_in_tab: true`) — same
+  behavior in Chrome, and the only form Firefox supports.
+- Popup's restricted-URL guard also recognizes `moz-extension:` and
+  `resource:` pages.
+
 ## [3.9.0] - 2026-07-14
 
 ### Added

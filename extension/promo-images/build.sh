@@ -17,10 +17,14 @@ shoot() { # src-name width height out-name
   echo "✓ $4"
 }
 
-# Promo tiles
+# Promo tiles (Chrome Web Store)
 shoot small-tile 440 280 small-tile-440x280.png
 shoot large-promo 920 680 large-promo-920x680.png
 shoot marquee 1400 560 marquee-1400x560.png
+
+# Firefox (AMO) promo — "now on Firefox" hero + compact social tile
+shoot firefox-hero 1400 560 firefox-hero-1400x560.png
+shoot firefox-tile 440 280 firefox-tile-440x280.png
 
 # Store screenshots (compose raw popup captures from raw/ — see README)
 for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn; do
