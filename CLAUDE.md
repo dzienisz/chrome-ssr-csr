@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a monorepo containing:
-- **Chrome Extension** (`/extension`): Detects whether a webpage uses SSR or CSR
+- **Browser Extension** (`/extension`): Detects whether a webpage uses SSR or CSR (Chrome + Firefox since v3.10.0)
 - **Analytics Backend** (`/backend`): Next.js dashboard for anonymous telemetry
 
 The extension is published on the Chrome Web Store and helps developers and SEO specialists understand page rendering strategies.
@@ -67,6 +67,29 @@ After making code changes:
 1. Go to `chrome://extensions`
 2. Click the refresh icon on the CSR vs SSR Detector card
 3. Test on various websites
+
+#### Firefox (128+)
+
+The Chrome `manifest.json` is canonical; Firefox uses a generated variant:
+
+```bash
+cd extension
+npm run build:firefox        # writes dist/firefox/ (add --zip for the AMO zip)
+```
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on…" and select `extension/dist/firefox/manifest.json`
+3. Re-run `npm run build:firefox` + reload after changes (edits under `extension/` are not picked up automatically — Firefox loads the copy in `dist/firefox/`)
+
+Manifest differences (applied by `scripts/build-firefox.js`): `background.scripts`
+event page instead of `service_worker`, and `browser_specific_settings.gecko`
+(AMO id, `strict_min_version: 128` for `world: "MAIN"` content scripts,
+data-collection disclosure). Validate with `npx web-ext lint --source-dir dist/firefox`.
+
+Cross-browser code rules: use `func:` (not the Chrome-only `function:` alias)
+in `chrome.scripting.executeScript`; use `options_ui` (not `options_page`);
+guard Chrome-only APIs (e.g. `chrome.action.getUserSettings`) — Firefox
+supports the `chrome.*` namespace with callbacks, so no polyfill is needed.
 
 ### Backend Development
 
@@ -285,6 +308,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v3.10.0**: Firefox support — generated Gecko manifest (`npm run build:firefox`), `func:`/`options_ui` cross-browser fixes, Firefox zip in releases
 - **v3.9.0**: i18n stage 1 — localized name/description via `_locales` (8 languages), enabling per-language store listings
 - **v3.8.1**: Settings-page privacy notice fixed (stale "backend coming in v3.1" text)
 - **v3.8.0**: Onboarding — welcome page on install, pin-to-toolbar hint in popup, options logo fix

@@ -18,7 +18,7 @@ chrome.action.onClicked.addListener((tab) => {
       chrome.scripting.executeScript(
         {
           target: { tabId: tab.id },
-          function: async () => await window.pageAnalyzer()
+          func: async () => await window.pageAnalyzer()
         },
         (results) => {
           if (results && results[0] && results[0].result) {

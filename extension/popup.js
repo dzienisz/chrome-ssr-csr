@@ -122,8 +122,8 @@ function analyzeCurrentPage() {
     lastAnalysisUrl = tab.url;
     lastAnalysisTitle = tab.title;
 
-    // Check if URL is restricted (chrome://, edge://, about:, etc.)
-    const restrictedProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'view-source:'];
+    // Check if URL is restricted (chrome://, edge://, about:, moz-extension://, etc.)
+    const restrictedProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'view-source:', 'moz-extension:', 'resource:'];
     const isRestricted = restrictedProtocols.some(protocol => tab.url.startsWith(protocol));
 
     if (isRestricted) {
@@ -132,7 +132,7 @@ function analyzeCurrentPage() {
           <p style="font-size: 24px; margin-bottom: 10px;">🚫</p>
           <p style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Cannot Analyze This Page</p>
           <p style="font-size: 13px; line-height: 1.5;">
-            Chrome extensions cannot access internal browser pages like:
+            Browser extensions cannot access internal browser pages like:
             <br><br>
             <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">chrome://</code>
             <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">edge://</code>
@@ -168,7 +168,7 @@ function analyzeCurrentPage() {
         chrome.scripting.executeScript(
           {
             target: { tabId: tab.id },
-            function: async () => await window.pageAnalyzer()
+            func: async () => await window.pageAnalyzer()
           },
           (results) => {
             if (chrome.runtime.lastError) {
@@ -185,7 +185,7 @@ function analyzeCurrentPage() {
               chrome.scripting.executeScript(
                 {
                   target: { tabId: tab.id },
-                  function: (results) => window.createResultsHTML(results),
+                  func: (results) => window.createResultsHTML(results),
                   args: [analysisResults]
                 },
                 (htmlResults) => {
@@ -220,7 +220,7 @@ function analyzeCurrentPage() {
                           chrome.scripting.executeScript(
                             {
                               target: { tabId: tab.id },
-                              function: async (detectionResults) => await window.collectTelemetryData(detectionResults),
+                              func: async (detectionResults) => await window.collectTelemetryData(detectionResults),
                               args: [analysisResults]
                             },
                             (telemetryResults) => {

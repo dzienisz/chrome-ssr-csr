@@ -1,9 +1,9 @@
-# CSR vs SSR Detector - Chrome Extension
+# CSR vs SSR Detector - Browser Extension
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](./CHANGELOG.md)
 
-A Chrome extension that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
+A browser extension (Chrome and Firefox 128+) that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
 
 ## Installation
 
@@ -17,6 +17,11 @@ A Chrome extension that detects whether a webpage uses Server-Side Rendering (SS
 2. Open Chrome → `chrome://extensions`
 3. Enable **Developer Mode** (top-right toggle)
 4. Click **Load unpacked** → select this `extension/` directory
+
+### Firefox (128+)
+1. Run `npm run build:firefox` in this directory (generates `dist/firefox/`)
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click **Load Temporary Add-on…** → select `dist/firefox/manifest.json`
 
 ## Features
 
