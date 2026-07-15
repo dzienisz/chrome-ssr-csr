@@ -3,6 +3,9 @@
 Source of truth for the store listing text. Update this file first, then copy
 into the Chrome Web Store Developer Dashboard (Store Listing section).
 
+Related: `store-listings.md` (translations, 8 languages) · `amo-listing.md`
+(Firefox/AMO equivalent — keep the privacy wording in sync across both stores).
+
 Last synced to the store: NOT YET — draft of 2026-07-07.
 
 ## Name
