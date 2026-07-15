@@ -7,21 +7,22 @@ A browser extension (Chrome and Firefox 128+) that detects whether a webpage use
 
 ## Installation
 
-### From Chrome Web Store (Recommended)
-1. Visit the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
-2. Click "Add to Chrome"
-3. The extension icon will appear in your toolbar
+### From a store
+- **Chrome / Edge / Brave** — install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome". (Recommended.)
+- **Firefox (128+)** — the addons.mozilla.org listing is prepared and pending review (v3.10.0). Until it's live, use the developer install below.
 
-### For Development
-1. Clone the repository and navigate to extension folder
+### Developer install — Chrome
+1. Clone the repository and `cd extension`
 2. Open Chrome → `chrome://extensions`
 3. Enable **Developer Mode** (top-right toggle)
 4. Click **Load unpacked** → select this `extension/` directory
 
-### Firefox (128+)
-1. Run `npm run build:firefox` in this directory (generates `dist/firefox/`)
+### Developer install — Firefox (128+)
+1. Run `npm run build:firefox` (generates the Gecko variant in `dist/firefox/`)
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on…** → select `dist/firefox/manifest.json`
+
+Firefox loads the copy in `dist/firefox/`, not your live `src/` edits — re-run `npm run build:firefox` and reload the add-on after each change. Firefox 128 is the floor because the analyzer relies on a `world: "MAIN"` content script.
 
 ## Features
 
@@ -59,7 +60,7 @@ A browser extension (Chrome and Firefox 128+) that detects whether a webpage use
 ## Usage
 
 1. Navigate to any website
-2. Click the extension icon in Chrome toolbar
+2. Click the extension icon in the browser toolbar
 3. Click "Analyze Page"
 4. View results:
    - Rendering type (SSR/CSR/Hybrid)
@@ -105,12 +106,14 @@ The extension uses a weighted scoring system analyzing:
 
 ```
 extension/
-├── manifest.json        # Chrome extension config (Manifest V3)
+├── manifest.json        # Extension config (Manifest V3) — Chrome canonical; Firefox variant generated
 ├── popup.html/js        # Extension popup UI
 ├── options.html/js      # Settings page
-├── background.js        # Service worker
+├── welcome.html/js      # First-install onboarding page
+├── background.js        # Service worker (Chrome) / event page (Firefox)
 ├── scripts/
-│   ├── build-bundle.js      # Builds the bundles from src/ (npm run build)
+│   ├── build-bundle.js      # Builds the src/ bundles (npm run build)
+│   ├── build-firefox.js     # Generates the Firefox/Gecko package in dist/firefox/ (npm run build:firefox)
 │   └── validate-detection.mjs  # 22-site ground-truth validation harness
 ├── src/
 │   ├── analyzer-bundle.js   # Bundled detection code (injected into pages)
@@ -137,8 +140,11 @@ extension/
 │   │   └── navigation-detector.js    # SPA navigation (v3.5.0+)
 │   └── ui/
 │       └── results-renderer.js     # Results HTML generation
+├── _locales/            # i18n name/description (en, ja, ko, fr, de, es, pt_BR, pl)
 ├── icon*.png            # Extension icons
-├── promo-images/        # Chrome Web Store assets
+├── promo-images/        # Store marketing assets (Chrome tiles + Firefox promo; HTML→PNG)
+├── store-listing.md     # Chrome Web Store listing copy (+ store-listings.md translations)
+├── amo-listing.md       # Firefox/AMO listing copy + submission-form answers
 ├── privacy-policy.md    # Privacy policy
 └── CHANGELOG.md         # Version history
 ```
@@ -150,7 +156,9 @@ extension/
 1. Edit source files in `src/` directory
 2. Rebuild the bundles: `npm run build` (or `npm run build:watch` while developing)
 3. Run the unit tests: `npm run test:run`
-4. Reload extension in `chrome://extensions` (click refresh icon)
+4. Reload the extension:
+   - **Chrome** — `chrome://extensions` → click the refresh icon
+   - **Firefox** — re-run `npm run build:firefox`, then reload the add-on in `about:debugging`
 5. For detection changes, run the ground-truth harness: `node scripts/validate-detection.mjs`
 
 ### Adding Framework Detection
@@ -169,10 +177,24 @@ Then rebuild the bundles: `npm run build`.
 
 ### Creating a Release
 
+Releases are tag-driven (`.github/workflows/release.yml`). Bump `manifest.json`
++ `CHANGELOG.md`, merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+One tag builds **both** store packages — Chrome (`csr-ssr-detector-vX.Y.Z.zip`)
+and Firefox (`csr-ssr-detector-firefox-vX.Y.Z.zip`) — and attaches them to a
+GitHub Release. Upload the Chrome zip to the Web Store dashboard and the Firefox
+zip to AMO (see `amo-listing.md` for the reviewer build notes). Full flow and
+gotchas: the root [`CLAUDE.md`](../CLAUDE.md) "Creating Extension Release".
+
+Manual fallback (build the zips locally):
+
 ```bash
+# Chrome
 zip -r ../csr-ssr-detector-vX.Y.Z.zip \
   manifest.json popup.html popup.js options.html options.js \
-  background.js icon*.png src/ -x "src/**/__tests__/*"
+  background.js welcome.html welcome.js icon*.png src/ _locales/ \
+  -x "*/__tests__/*"
+# Firefox → dist/csr-ssr-detector-firefox-vX.Y.Z.zip
+npm run build:firefox -- --zip
 ```
 
 ## Settings
