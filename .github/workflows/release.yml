@@ -32,7 +32,7 @@ jobs:
           zip -r "../csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
             manifest.json popup.html popup.js options.html options.js \
             background.js welcome.html welcome.js icon*.png src/ _locales/ \
-            -x '*.DS_Store'
+            -x '*.DS_Store' '*/__tests__/*'
 
       - name: Build Firefox extension zip
         run: |
