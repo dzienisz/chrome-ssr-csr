@@ -1,6 +1,7 @@
 # CSR vs SSR Detector
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
+[![Mozilla Add-on](https://img.shields.io/amo/v/csr-vs-ssr-detector)](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A browser extension (Chrome and Firefox) that detects whether a webpage uses **Server-Side Rendering (SSR)** or **Client-Side Rendering (CSR)**. Helps developers and SEO specialists understand page rendering strategies.
@@ -11,18 +12,16 @@ This monorepo contains two projects:
 
 | Project | Description | Links |
 |---------|-------------|-------|
-| **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome & Firefox) | [Install](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Docs](./extension/README.md) |
+| **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome & Firefox) | [Chrome](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Firefox](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) · [Docs](./extension/README.md) |
 | **[Analytics Dashboard](./backend)** | Real-time usage analytics | [Live](https://backend-mauve-beta-88.vercel.app/dashboard) · [Docs](./backend/README.md) |
 
 ## Quick Start
 
 ### Install Extension
-1. Visit the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
-2. Click "Add to Chrome"
-3. Click the extension icon on any webpage to analyze
+- **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome"
+- **Firefox (128+)**: [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) → "Add to Firefox"
 
-Firefox (128+): build the package with `cd extension && npm run build:firefox`,
-then load `extension/dist/firefox/` via `about:debugging` (AMO listing pending).
+Then click the extension icon on any webpage to analyze it.
 
 ### Development
 ```bash

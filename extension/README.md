@@ -1,6 +1,7 @@
 # CSR vs SSR Detector - Browser Extension
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
+[![Mozilla Add-on](https://img.shields.io/amo/v/csr-vs-ssr-detector)](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](./CHANGELOG.md)
 
 A browser extension (Chrome and Firefox 128+) that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
@@ -8,8 +9,8 @@ A browser extension (Chrome and Firefox 128+) that detects whether a webpage use
 ## Installation
 
 ### From a store
-- **Chrome / Edge / Brave** — install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome". (Recommended.)
-- **Firefox (128+)** — the addons.mozilla.org listing is prepared and pending review (v3.10.0). Until it's live, use the developer install below.
+- **Chrome / Edge / Brave** — install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome".
+- **Firefox (128+)** — install from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) → "Add to Firefox".
 
 ### Developer install — Chrome
 1. Clone the repository and `cd extension`
