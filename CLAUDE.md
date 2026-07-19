@@ -8,9 +8,9 @@ This is a monorepo containing:
 - **Browser Extension** (`/extension`): Detects whether a webpage uses SSR or CSR (Chrome + Firefox since v3.10.0)
 - **Analytics Backend** (`/backend`): Next.js dashboard for anonymous telemetry
 
-The extension is published on the Chrome Web Store (Firefox/AMO submission
-prepared as of v3.10.0) and helps developers and SEO specialists understand
-page rendering strategies.
+The extension is published on the Chrome Web Store and on addons.mozilla.org
+(Firefox, since v3.10.0; AMO slug `csr-vs-ssr-detector`) and helps developers
+and SEO specialists understand page rendering strategies.
 
 ## Repository Structure
 

@@ -3,7 +3,9 @@
 Source of truth for the addons.mozilla.org listing. Update this file first,
 then copy into the AMO Developer Hub when submitting/updating the add-on.
 
-Last synced to AMO: NOT YET — draft of 2026-07-15 (first Firefox submission, v3.10.0).
+Last synced to AMO: 2026-07-16 — v3.10.0 (initial submission, approved).
+Live listing: https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/
+(AMO slug: `csr-vs-ssr-detector`.)
 
 AMO fields differ from the Chrome Web Store, so this is kept separate from
 `store-listing.md`:
