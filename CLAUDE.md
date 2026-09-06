@@ -275,16 +275,33 @@ Releases are tag-driven (`.github/workflows/release.yml`). One tag produces
    from the tagged commit)
 4. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`
 
-The workflow verifies the tag matches `manifest.json`, builds both the
+That is the whole release. The workflow verifies the tag matches
+`manifest.json`, runs the tests, checks the committed bundles still match a
+fresh build (the same diff AMO reviewers do), builds both the
 `csr-ssr-detector-vX.Y.Z.zip` (Chrome) and `csr-ssr-detector-firefox-vX.Y.Z.zip`
-(Firefox, via `npm run build:firefox --zip`), and attaches both to a GitHub
-Release. Then upload manually:
+(Firefox, via `npm run build:firefox --zip`), attaches both to a GitHub
+Release, and then submits them:
 
-- **Chrome Web Store** dashboard ← the Chrome zip. Listing copy: `store-listing.md`
-  (+ `store-listings.md` translations). "What's new" field ← the CHANGELOG entry.
-- **addons.mozilla.org** (AMO) ← the Firefox zip. Listing copy + reviewer build
-  instructions + submission-form answers: `amo-listing.md`. Validate before
-  upload: `npx web-ext lint --source-dir extension/dist/firefox`.
+- **Chrome Web Store** — `chrome-webstore-upload-cli` uploads *and* publishes;
+  the store reviews and rolls out.
+- **addons.mozilla.org** — `web-ext sign --channel listed --approval-timeout 0`
+  uploads and validates without waiting for the (multi-day) human review.
+
+Both steps skip themselves with a warning when their secrets are absent, so a
+tag never fails over missing credentials. Required repository secrets:
+
+| Secret | Where it comes from |
+|--------|---------------------|
+| `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN` | Google Cloud OAuth client with the Chrome Web Store API enabled |
+| `CWS_EXTENSION_ID` | the id in the CWS dashboard URL |
+| `CWS_PUBLISHER_ID` | only for a group publisher; omit otherwise |
+| `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` | addons.mozilla.org → Manage API Keys |
+
+**Listing copy is still edited by hand** — the APIs ship the package, not the
+store page. `store-listing.md` (+ `store-listings.md` translations) and the
+"What's new" field from the CHANGELOG entry for Chrome; `amo-listing.md` for
+AMO. Validate a package locally before tagging with
+`npx web-ext lint --source-dir extension/dist/firefox`.
 
 Keep privacy wording consistent across `privacy-policy.md`, both listing files,
 and the manifest's `data_collection_permissions` (AMO cross-checks them).
