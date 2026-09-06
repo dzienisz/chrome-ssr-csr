@@ -7,7 +7,9 @@ export interface CWVByRenderType {
   lcp_good: string | number;
   avg_cls: string | number | null;
   cls_good: string | number;
-  avg_fid: string | number | null;   // received but NOT displayed — FID is deprecated
+  avg_inp: string | number | null;
+  inp_good: string | number;
+  avg_fid: string | number | null;   // legacy rows only — FID is deprecated, not displayed
   fid_good: string | number;
   avg_ttfb: string | number | null;
   ttfb_good: string | number;

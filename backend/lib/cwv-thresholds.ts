@@ -10,7 +10,8 @@
 export const CWV = {
   lcp:  { good: 2500,  poor: 4000  },  // ms
   cls:  { good: 0.1,   poor: 0.25  },  // unitless
-  fid:  { good: 100,   poor: 300   },  // ms
+  inp:  { good: 200,   poor: 500   },  // ms — replaced FID as a Core Web Vital in March 2024
+  fid:  { good: 100,   poor: 300   },  // ms — legacy rows only; the extension stopped sending it in v3.11.0
   ttfb: { good: 800,   poor: 1800  },  // ms
 } as const;
 

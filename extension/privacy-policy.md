@@ -19,7 +19,8 @@ Unless you disable "Share anonymous data" in settings, the extension sends anony
 - Confidence score
 - Detected frameworks (e.g., "Next.js", "React")
 - Performance metrics (DOM ready time, First Contentful Paint)
-- Core Web Vitals (LCP, CLS, FID, TTFB - performance metrics)
+- Core Web Vitals (LCP, CLS, INP, TTFB - performance metrics) and aggregate
+  Long Animation Frame counts/durations (no script names or URLs)
 - Page type classification (e.g., "blog", "ecommerce", "docs")
 - Device information:
   - Device type (mobile/tablet/desktop)

@@ -150,6 +150,7 @@ Located in `extension/src/detectors/` — SSR/CSR detection signals:
 | `comparison-detector.js` | Raw vs rendered HTML comparison |
 | `csr-pattern-detector.js` | CSR-specific patterns |
 | `hybrid-detector.js` | Islands/partial hydration patterns |
+| `platform-detector.js` | Speculation rules, cross-doc view transitions, declarative partial updates, prerender/prefetch context |
 
 ### Collector Modules
 
@@ -158,7 +159,7 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 
 | Module | Purpose |
 |--------|---------|
-| `performance-collector.js` | Core Web Vitals (LCP, CLS, FID, TTFB) |
+| `performance-collector.js` | Core Web Vitals (LCP, CLS, INP, TTFB) + LoAF stats |
 | `page-type-detector.js` | Page type classification |
 | `device-detector.js` | Device and browser info |
 | `tech-stack-detector.js` | CSS frameworks, state management, build tools |
@@ -183,13 +184,21 @@ ground-truth harness: `node extension/scripts/validate-detection.mjs`
 
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
-- Framework hydration markers (30 points; since v3.7.0 they require raw-HTML evidence)
+- Framework hydration markers (30 points; since v3.7.0 they require raw-HTML
+  evidence — since v3.11.0 they also match script contents via
+  `config.frameworkContentPatterns`, because the Next.js App Router ships no
+  identifiable element)
 - Serialized data patterns (25 points)
 - Fast DOM + slow FCP pattern (25 points CSR)
 - SPA root containers with React/Vue markers (20 points CSR)
 - HTML content structure (20 points for rich content)
 - Meta tags and structured data (15-20 points)
 - Performance timing metrics (15-25 points)
+- Modern platform signals (15-20 points; see `platform-detector.js`)
+
+Timing signals are rebased on `activationStart` and skipped entirely for
+speculative navigations (prerender / `deliveryType: navigational-prefetch`),
+which would otherwise read as impossibly fast SSR or CSR.
 
 Classification thresholds:
 - ≥75% SSR score: "Server-Side Rendered (SSR)"
@@ -227,7 +236,7 @@ All API errors return consistent format:
 
 Extension sends (when user opts in):
 - **Core**: domain, render type, confidence, frameworks, indicators
-- **Phase 1**: Core Web Vitals (LCP, CLS, FID, TTFB), page type, device info
+- **Phase 1**: Core Web Vitals (LCP, CLS, INP, TTFB) + Long Animation Frame stats, page type, device info
 - **Phase 2**: Tech stack (CSS framework, state management, build tool), SEO metrics (incl. page title)
 - **Phase 3**: Hydration stats (errors, timing), navigation (SPA/MPA, routes)
 
@@ -331,6 +340,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v3.11.0**: Platform 2026 — Next.js App Router detection fix, Soft Navigations + Navigation API, prerender/prefetch timing correction, INP replaces FID, `platform-detector.js`
 - **v3.10.0**: Firefox support — generated Gecko manifest (`npm run build:firefox`), `func:`/`options_ui` cross-browser fixes, Firefox zip in releases
 - **v3.9.0**: i18n stage 1 — localized name/description via `_locales` (8 languages), enabling per-language store listings
 - **v3.8.1**: Settings-page privacy notice fixed (stale "backend coming in v3.1" text)

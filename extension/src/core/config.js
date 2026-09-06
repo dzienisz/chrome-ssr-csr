@@ -29,7 +29,11 @@ const CONFIG = {
     spaRootPattern: 20,        // #root/#app with data attributes = CSR
     noscriptFallback: 15,      // "JavaScript required" message = CSR
     fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
-    decisiveCsrSsrCap: 10      // Max SSR score when raw HTML is near-empty vs rendered
+    decisiveCsrSsrCap: 10,     // Max SSR score when raw HTML is near-empty vs rendered
+    // Modern platform signals (see platform-detector.js)
+    speculationRules: 15,      // <script type="speculationrules"> in raw HTML = MPA
+    crossDocViewTransition: 15,// @view-transition{navigation:auto} = MPA that animates
+    declarativePartialUpdate: 20 // <?start/?end + <template for> = JS-free streaming SSR
   },
 
   // Classification thresholds
@@ -89,17 +93,22 @@ const CONFIG = {
   frameworks: {
     // React ecosystem
     react: '[data-reactroot], [data-reactid], [data-react-checksum]',
+    // #__next / #__NEXT_DATA__ are Pages Router only; the App Router (default
+    // since Next 13) emits neither — it streams the RSC payload through
+    // self.__next_f, caught by frameworkContentPatterns below.
     nextjs: '#__next, #__NEXT_DATA__',
     gatsby: '#___gatsby',
-    remix: '[data-remix-run]',
+    // data-remix-run is Remix v1; v2 and React Router 7 emit the
+    // data-remix-managed-head / data-remix-stylesheet pair instead.
+    remix: '[data-remix-run], [data-remix-managed-head], [data-remix-stylesheet]',
     // Vue ecosystem
     vue: '[data-v-app], [data-v]',
-    nuxt: '#__nuxt, #__NUXT__',
+    nuxt: '#__nuxt, #__NUXT__, #__NUXT_DATA__',
     // Svelte ecosystem
     svelte: '[class*="svelte-"]',
-    sveltekit: '#svelte',
-    // Angular
-    angular: '[ng-version], [_nghost], [_ngcontent]',
+    sveltekit: '#svelte, [data-sveltekit-preload-data], [data-sveltekit-preload-code]',
+    // Angular — ngh is the hydration annotation emitted by Angular SSR (v16+)
+    angular: '[ng-version], [_nghost], [_ngcontent], [ngh]',
     // Other frameworks
     astro: '[data-astro-cid], [data-astro-island]',
     qwik: '[q\\:container]',
@@ -115,6 +124,18 @@ const CONFIG = {
     webflow: 'html[data-wf-site], script[src*="webflow"]',
     wix: 'meta[name="generator"][content*="Wix"]',
     squarespace: 'script[src*="squarespace"]'
+  },
+
+  // Framework markers that live in script contents rather than the DOM.
+  // Matched against raw/rendered HTML source, so they also work for
+  // frameworks that stopped emitting identifiable elements.
+  frameworkContentPatterns: {
+    nextjs: ['self.__next_f', '__next_f.push'],
+    remix: ['__reactRouterContext', '__remixContext'],
+    nuxt: ['window.__NUXT__', '__NUXT_DATA__'],
+    gatsby: ['window.___gatsby', 'window.page.staticQueryHashes'],
+    solidjs: ['_$HY.'],
+    qwik: ['qwikloader']
   },
 
   // Static site generator detection

@@ -15,7 +15,8 @@ interface AnalysisData {
   core_web_vitals?: {
     lcp?: number | null;
     cls?: number | null;
-    fid?: number | null;
+    inp?: number | null;
+    fid?: number | null;  // legacy rows only
     ttfb?: number | null;
   };
   tech_stack?: Record<string, string | string[] | null>;
@@ -210,8 +211,17 @@ export function AnalysisDetailModal({ analysis, isOpen, onClose }: Props) {
                           <Text className="font-medium text-sm">{analysis.core_web_vitals.cls ?? '-'}</Text>
                         </div>
                         <div>
-                          <Text className="text-xs text-gray-400">FID</Text>
-                          <Text className="font-medium text-sm">{analysis.core_web_vitals.fid ? `${analysis.core_web_vitals.fid}ms` : '-'}</Text>
+                          {/* Rows written before v3.11.0 carry FID instead of INP */}
+                          <Text className="text-xs text-gray-400">
+                            {analysis.core_web_vitals.inp == null && analysis.core_web_vitals.fid != null ? 'FID' : 'INP'}
+                          </Text>
+                          <Text className="font-medium text-sm">
+                            {analysis.core_web_vitals.inp != null
+                              ? `${analysis.core_web_vitals.inp}ms`
+                              : analysis.core_web_vitals.fid != null
+                                ? `${analysis.core_web_vitals.fid}ms`
+                                : '-'}
+                          </Text>
                         </div>
                         <div>
                           <Text className="text-xs text-gray-400">TTFB</Text>

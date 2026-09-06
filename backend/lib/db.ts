@@ -3,7 +3,8 @@ import { sql } from '@vercel/postgres';
 export interface CoreWebVitals {
   lcp?: number | null;
   cls?: number | null;
-  fid?: number | null;
+  inp?: number | null;
+  fid?: number | null;  // legacy rows only (pre-v3.11.0 extensions)
   ttfb?: number | null;
   tti?: number | null;
   tbt?: number | null;
@@ -72,6 +73,23 @@ export interface NavigationStats {
   isSPA?: boolean;
   clientRoutes?: number;
   routes?: string[];
+  // Soft Navigations API (Chrome 151+): browser-verified route changes with
+  // per-route paint timing. Absent on engines that do not implement it.
+  softNavigations?: {
+    supported: boolean;
+    count: number;
+    entries?: Array<{
+      view: string | null;
+      startTime: number;
+      paintTime: number | null;
+      interactionContentfulPaint: number | null;
+    }>;
+  };
+  // Navigation API (Baseline since Firefox 147)
+  navigationApi?: {
+    supported: boolean;
+    clientEntries: number;
+  };
 }
 
 export interface AnalysisRecord {
@@ -297,7 +315,10 @@ export async function getCoreWebVitalsByRenderType() {
         -- CLS (Cumulative Layout Shift)
         ROUND(AVG((core_web_vitals->>'cls')::numeric), 3) as avg_cls,
         COUNT(CASE WHEN (core_web_vitals->>'cls')::numeric < 0.1 THEN 1 END) as cls_good,
-        -- FID (First Input Delay)
+        -- INP (Interaction to Next Paint) — the current interactivity vital
+        ROUND(AVG((core_web_vitals->>'inp')::numeric)) as avg_inp,
+        COUNT(CASE WHEN (core_web_vitals->>'inp')::numeric < 200 THEN 1 END) as inp_good,
+        -- FID (First Input Delay) — legacy rows only, kept so history stays readable
         ROUND(AVG((core_web_vitals->>'fid')::numeric)) as avg_fid,
         COUNT(CASE WHEN (core_web_vitals->>'fid')::numeric < 100 THEN 1 END) as fid_good,
         -- TTFB (Time to First Byte)

@@ -4,6 +4,33 @@
  */
 
 /**
+ * Concatenate the inline script contents of a document, skipping this
+ * extension's own bundles. The analyzer normally runs as a content script and
+ * never lands in the DOM, but the validation harness injects it as a script
+ * tag — without this guard it would detect the framework names in its own
+ * config as if they were the page's.
+ *
+ * @param {Document|null} doc
+ * @returns {string}
+ */
+function collectScriptSource(doc) {
+  if (!doc) return '';
+  try {
+    const parts = [];
+    doc.querySelectorAll('script').forEach(script => {
+      const text = script.textContent || '';
+      if (!text) return;
+      if (text.includes('__SSR_CSR_ANALYZER_LOADED__') ||
+          text.includes('__SSR_CSR_TELEMETRY_LOADED__')) return;
+      parts.push(text);
+    });
+    return parts.join('\n');
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
  * Detect frameworks and their rendering patterns
  * @param {Document|null} rawDocument - Parsed raw (pre-JS) HTML document, when
  *   the comparison fetch succeeded. Framework markers only count as hydration
@@ -17,6 +44,22 @@ function detectFrameworks(rawDocument) {
   let ssrScore = 0;
   let csrScore = 0;
   const detailedInfo = {};
+
+  // Script-content markers: frameworks that ship no identifiable element.
+  // Scoped to script contents rather than the whole serialized document, so a
+  // docs page that merely *writes about* __next_f is not a Next.js app — and
+  // so this detector never matches its own bundle when it is injected as a
+  // script tag rather than as a content script.
+  const renderedSource = collectScriptSource(document);
+  const rawSource = collectScriptSource(rawDocument);
+
+  const contentPatterns = config.frameworkContentPatterns || {};
+  const contentMarkers = {};
+  const rawContentMarkers = {};
+  for (const [framework, patterns] of Object.entries(contentPatterns)) {
+    contentMarkers[framework] = patterns.some(pat => renderedSource.includes(pat));
+    rawContentMarkers[framework] = patterns.some(pat => rawSource.includes(pat));
+  }
 
   // Detect framework hydration markers
   const frameworkMarkers = {};
@@ -37,6 +80,12 @@ function detectFrameworks(rawDocument) {
       frameworkMarkers[framework] = false;
       rawFrameworkMarkers[framework] = false;
     }
+  }
+
+  // Merge selector hits with script-content hits, on both sides
+  for (const framework of Object.keys(contentPatterns)) {
+    frameworkMarkers[framework] = frameworkMarkers[framework] || contentMarkers[framework];
+    rawFrameworkMarkers[framework] = rawFrameworkMarkers[framework] || rawContentMarkers[framework];
   }
 
   const foundFrameworks = Object.entries(frameworkMarkers)

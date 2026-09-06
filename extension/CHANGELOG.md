@@ -5,6 +5,66 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-09-06
+
+### Fixed
+
+- **Next.js App Router was never detected.** The `nextjs` marker was
+  `#__next, #__NEXT_DATA__` — both Pages Router only. App Router pages (the
+  default since Next 13) emit neither; they stream the RSC payload through
+  `self.__next_f`. Verified against nextjs.org and vercel.com: zero
+  `__NEXT_DATA__`, zero `#__next`, 46 and 7 hits for `__next_f`. Framework
+  detection now also matches script contents, not just CSS selectors
+  (`config.frameworkContentPatterns`), with the same rule as before — a marker
+  only counts as SSR evidence when it is present in the **raw** HTML.
+- Remix/React Router markers were equally stale: `[data-remix-run]` is Remix
+  v1. Added `data-remix-managed-head` / `data-remix-stylesheet` and the
+  `__reactRouterContext` / `__remixContext` globals (React Router 7).
+- Angular SSR hydration (`ngh`), SvelteKit preload attributes and Nuxt's
+  `#__NUXT_DATA__` island are now recognized.
+- **Speculative navigations no longer corrupt the timing signals.** A
+  prerendered document's clock starts before the user navigates, so its FCP
+  read as impossibly fast; a prefetched one has a TTFB it never paid. FCP is
+  now rebased on `PerformanceNavigationTiming.activationStart`, and when the
+  navigation was prerendered or `deliveryType === 'navigational-prefetch'`
+  the timing heuristics are skipped rather than scored wrong.
+
+### Added
+
+- **Soft Navigations API** (`soft-navigation` + `interaction-contentful-paint`,
+  stable in Chrome 151): browser-verified SPA route changes with per-route
+  paint timing. Unlike the patched `history.pushState`, these require a real
+  interaction, a URL change *and* a paint — a router that only rewrites the
+  URL no longer counts as a route change. Chromium-only; the history patch
+  stays as the fallback.
+- **Navigation API** support in the probe (`navigate` events) and in the
+  collector (`navigation.entries()`), Baseline since Firefox 147. Catches
+  routers that never touch `history.*`, and reports client-side routing that
+  happened before the extension ran. Records are deduplicated, so engines that
+  surface `pushState` through both paths cannot double-count.
+- **New `platform-detector.js`** for rendering signals from post-2024 platform
+  features, all credited from raw HTML only:
+  - `<script type="speculationrules">` — prerendering whole documents only
+    makes sense in a multi-page architecture (+15 SSR)
+  - `@view-transition { navigation: auto }` — an MPA that animates between
+    real navigations, which otherwise *looks* like an SPA (+15 SSR)
+  - declarative partial updates (`<?start>`/`<?end>` + `<template for>`) —
+    JS-free out-of-order streaming, a rendering strategy the taxonomy had no
+    name for (+20 SSR)
+- **INP replaces FID** in telemetry. FID stopped being a Core Web Vital in
+  March 2024 and the dashboard already refused to display it. As with FID,
+  only interactions the user made before opening the popup are visible, so
+  null stays a normal result.
+- **Long Animation Frame stats** (count, blocking duration, longest frame).
+  Aggregates only — LoAF entries carry script sourceURLs, and the payload is
+  anonymized to origin.
+
+### Changed
+
+- Backend: `/api/stats` CWV aggregation returns `avg_inp`/`inp_good`; the
+  analysis modal shows INP, falling back to FID for rows written by older
+  extensions.
+
 ## [3.10.0] - 2026-07-15
 
 ### Added

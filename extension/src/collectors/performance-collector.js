@@ -60,26 +60,85 @@ function getCumulativeLayoutShift() {
 }
 
 /**
- * Get First Input Delay (FID)
- * Target: < 100ms (Good), < 300ms (Needs Improvement), >= 300ms (Poor)
+ * Get Interaction to Next Paint (INP)
+ * Target: < 200ms (Good), < 500ms (Needs Improvement), >= 500ms (Poor)
+ *
+ * Replaces FID, which stopped being a Core Web Vital in March 2024. Like the
+ * FID collector before it, this can only report interactions the user already
+ * made before opening the popup — clicking the extension icon is not a page
+ * interaction — so null is a normal result on a freshly loaded page.
+ *
+ * Google's INP is a high percentile over a session; with the handful of
+ * buffered interactions available here, the worst one is the honest summary.
  */
-function getFirstInputDelay() {
+function getInteractionToNextPaint() {
   return new Promise((resolve) => {
     try {
+      let worst = null;
       const observer = new PerformanceObserver((list) => {
-        const firstInput = list.getEntries()[0];
-        observer.disconnect();
-        resolve(firstInput.processingStart - firstInput.startTime);
+        for (const entry of list.getEntries()) {
+          // interactionId 0 means the event was not part of a discrete
+          // interaction (e.g. a scroll-driven event) and is out of scope.
+          if (!entry.interactionId) continue;
+          if (worst === null || entry.duration > worst) worst = entry.duration;
+        }
       });
-      observer.observe({ type: 'first-input', buffered: true });
+      observer.observe({ type: 'event', buffered: true, durationThreshold: 40 });
 
-      // Only a buffered entry can exist (icon click isn't a page interaction)
+      // Buffered entries arrive almost immediately
       setTimeout(() => {
         observer.disconnect();
-        resolve(null);
+        resolve(worst);
       }, 300);
     } catch (error) {
-      console.error('[Performance] FID error:', error);
+      console.error('[Performance] INP error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get Long Animation Frame stats (Chrome 123+)
+ *
+ * LoAF supersedes the Long Tasks API used for TBT: it measures whole janky
+ * frames rather than single tasks, which is what a booting client-rendered
+ * app actually produces. Only aggregate numbers are kept — LoAF entries carry
+ * script sourceURLs, and the telemetry payload is anonymized to origin.
+ */
+function getLongAnimationFrames() {
+  return new Promise((resolve) => {
+    const supported = typeof PerformanceObserver !== 'undefined' &&
+      Array.isArray(PerformanceObserver.supportedEntryTypes) &&
+      PerformanceObserver.supportedEntryTypes.includes('long-animation-frame');
+
+    if (!supported) {
+      resolve(null);
+      return;
+    }
+
+    try {
+      let count = 0;
+      let blockingDuration = 0;
+      let longestFrame = 0;
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          count++;
+          blockingDuration += entry.blockingDuration || 0;
+          if (entry.duration > longestFrame) longestFrame = entry.duration;
+        }
+      });
+      observer.observe({ type: 'long-animation-frame', buffered: true });
+
+      setTimeout(() => {
+        observer.disconnect();
+        resolve({
+          count,
+          blockingDuration: Math.round(blockingDuration),
+          longestFrame: Math.round(longestFrame)
+        });
+      }, 300);
+    } catch (error) {
+      console.error('[Performance] LoAF error:', error);
       resolve(null);
     }
   });
@@ -192,11 +251,12 @@ function getResourceMetrics() {
  * This is the main function to call
  */
 async function collectCoreWebVitals() {
-  const [lcp, cls, fid, tbt] = await Promise.all([
+  const [lcp, cls, inp, tbt, loaf] = await Promise.all([
     getLargestContentfulPaint(),
     getCumulativeLayoutShift(),
-    getFirstInputDelay(),
-    getTotalBlockingTime()
+    getInteractionToNextPaint(),
+    getTotalBlockingTime(),
+    getLongAnimationFrames()
   ]);
   
   const ttfb = getTimeToFirstByte();
@@ -207,7 +267,7 @@ async function collectCoreWebVitals() {
   const metrics = {
     lcp: lcp ? Math.round(lcp) : null,
     cls: cls != null ? Math.round(cls * 1000) / 1000 : null,
-    fid: fid != null ? Math.round(fid) : null,
+    inp: inp != null ? Math.round(inp) : null,
     ttfb: ttfb ? Math.round(ttfb) : null,
     tti: tti ? Math.round(tti) : null,
     tbt: tbt ? Math.round(tbt) : null,
@@ -217,7 +277,10 @@ async function collectCoreWebVitals() {
     cachedResources: resourceMetrics.cachedResources,
     cacheHitRate: resourceMetrics.resourceCount > 0 
       ? Math.round((resourceMetrics.cachedResources / resourceMetrics.resourceCount) * 100) 
-      : null
+      : null,
+    loafCount: loaf ? loaf.count : null,
+    loafBlockingDuration: loaf ? loaf.blockingDuration : null,
+    loafLongestFrame: loaf ? loaf.longestFrame : null
   };
 
   return metrics;
@@ -230,7 +293,7 @@ function evaluateCoreWebVitals(metrics) {
   const passes = {
     lcp: metrics.lcp && metrics.lcp < 2500,
     cls: metrics.cls && metrics.cls < 0.1,
-    fid: metrics.fid && metrics.fid < 100
+    inp: metrics.inp && metrics.inp < 200
   };
   
   const passCount = Object.values(passes).filter(Boolean).length;
@@ -246,5 +309,6 @@ function evaluateCoreWebVitals(metrics) {
 // Export for use in other modules
 if (typeof window !== 'undefined') {
   window.collectCoreWebVitals = collectCoreWebVitals;
+  window.getLongAnimationFrames = getLongAnimationFrames;
   window.evaluateCoreWebVitals = evaluateCoreWebVitals;
 }

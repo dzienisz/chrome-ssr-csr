@@ -51,6 +51,60 @@ describe('detectFrameworks', () => {
 
       expect(result.details.frameworks).toContain('nextjs');
     });
+
+    it('should detect the App Router through the streamed RSC payload', () => {
+      // No #__next and no __NEXT_DATA__: that is what App Router pages emit
+      const html = '<script>self.__next_f.push([1,"chunk"])</script><main>Docs</main>';
+      document.body.innerHTML = html;
+
+      const result = window.detectFrameworks(parseRaw(html));
+
+      expect(result.details.frameworks).toContain('nextjs');
+      expect(result.ssrScore).toBeGreaterThan(0);
+      expect(result.indicators.some(i => i.includes('raw HTML'))).toBe(true);
+    });
+
+    it('should not credit an App Router marker that only exists after boot', () => {
+      const rendered = '<script>self.__next_f.push([1,"chunk"])</script><main>App</main>';
+      document.body.innerHTML = rendered;
+
+      const result = window.detectFrameworks(parseRaw('<div id="app"></div>'));
+
+      expect(result.details.frameworks).toContain('nextjs');
+      expect(result.ssrScore).toBe(0);
+    });
+  });
+
+  describe('React Router / Remix detection', () => {
+    it('should detect Remix v2 via data-remix-managed-head', () => {
+      const html = '<div data-remix-managed-head>Remix</div>';
+      document.body.innerHTML = html;
+
+      const result = window.detectFrameworks(parseRaw(html));
+
+      expect(result.details.frameworks).toContain('remix');
+    });
+
+    it('should detect React Router 7 via __reactRouterContext', () => {
+      const html = '<script>window.__reactRouterContext = {};</script><main>Page</main>';
+      document.body.innerHTML = html;
+
+      const result = window.detectFrameworks(parseRaw(html));
+
+      expect(result.details.frameworks).toContain('remix');
+    });
+  });
+
+  describe('Angular hydration detection', () => {
+    it('should detect Angular SSR via the ngh annotation', () => {
+      const html = '<app-root ngh="0">Server rendered</app-root>';
+      document.body.innerHTML = html;
+
+      const result = window.detectFrameworks(parseRaw(html));
+
+      expect(result.details.frameworks).toContain('angular');
+      expect(result.ssrScore).toBeGreaterThan(0);
+    });
   });
 
   describe('Vue detection', () => {

@@ -16,6 +16,7 @@ async function pageAnalyzer() {
     // for accuracy, and detectors below need the parsed raw document)
     const comparisonResults = await window.compareInitialVsRendered();
     const rawDocument = comparisonResults?.rawDocument || null;
+    const rawHTML = comparisonResults?.rawHTML || null;
 
     // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
@@ -24,6 +25,7 @@ async function pageAnalyzer() {
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
     const hybridResults = window.detectHybridPatterns();
+    const platformResults = window.detectPlatformSignals(rawDocument, rawHTML);
 
     // Combine all scores
     let ssrScore = 0;
@@ -81,6 +83,13 @@ async function pageAnalyzer() {
     csrScore += performanceResults.csrScore;
     indicators.push(...performanceResults.indicators);
     Object.assign(detailedInfo, performanceResults.details);
+
+    // Add modern platform signals (speculation rules, view transitions,
+    // declarative partial updates)
+    ssrScore += platformResults.ssrScore;
+    csrScore += platformResults.csrScore;
+    indicators.push(...platformResults.indicators);
+    Object.assign(detailedInfo, platformResults.details);
 
     // Decisive CSR: the server sent almost none of the visible text. Every
     // SSR signal above reads the post-JS DOM, where a booted CSR app looks
