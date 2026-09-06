@@ -48,7 +48,7 @@ Click the icon and find out in seconds. CSR vs SSR Detector compares the raw HTM
 The core method is direct evidence, not guesswork: the extension fetches the page's raw HTML and diffs it against the rendered DOM. Framework hydration markers, serialized state and timing signals refine the verdict — 15+ indicators combined into a weighted score you can inspect yourself.
 
 🔒 PRIVACY
-Analysis runs locally in your browser. The extension optionally shares anonymous, aggregate statistics (rendering type, framework — never full URLs, only the site's origin) to power a public dashboard of rendering trends. One toggle in settings turns this off completely.
+Analysis runs locally in your browser. The extension optionally shares anonymous, aggregate statistics (rendering type, framework — never full URLs or page paths, only the site's origin) to power a public dashboard of rendering trends. One toggle in settings turns this off completely.
 
 📖 Open source (MIT) — read the code, open an issue, or star it: github.com/dzienisz/chrome-ssr-csr
 
@@ -62,7 +62,8 @@ Declared in the manifest and surfaced to users at install:
 - **Optional — Technical and interaction data**: aggregate Core Web Vitals and
   tech-stack signals that accompany an analysis when sharing is enabled.
 
-Never collected: full URLs, page content, personal data, or browsing history.
+Never collected: full URLs or page paths, page content, personal data, or
+browsing history.
 Matches `privacy-policy.md` — keep the two consistent.
 
 ## Submission form answers (AMO Developer Hub)
@@ -113,7 +114,7 @@ scripts. Validated with: npx web-ext lint --source-dir dist/firefox (0 errors).
 Telemetry is opt-out (shareData, on by default; a single settings toggle
 disables it) and disclosed via data_collection_permissions in the manifest.
 Only the site's origin + detected rendering type/framework are sent — never
-full URLs, page content, or personal data. Privacy policy:
+full URLs, page paths, page content, or personal data. Privacy policy:
 https://github.com/dzienisz/chrome-ssr-csr/blob/main/extension/privacy-policy.md
 ```
 
