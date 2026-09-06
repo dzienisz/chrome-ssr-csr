@@ -40,7 +40,7 @@ Click the icon and find out in seconds. CSR vs SSR Detector compares the raw HTM
 The core method is direct evidence, not guesswork: the extension fetches the page's raw HTML and diffs it against the rendered DOM. Framework hydration markers, serialized state and timing signals refine the verdict — 15+ indicators combined into a weighted score you can inspect yourself.
 
 🔒 PRIVACY
-Analysis runs locally in your browser. The extension optionally shares anonymous, aggregate statistics (rendering type, framework — never full URLs, only the site's origin) to power a public dashboard of rendering trends. One toggle in settings turns this off completely.
+Analysis runs locally in your browser. The extension optionally shares anonymous, aggregate statistics (rendering type, framework — never full URLs or page paths, only the site's origin) to power a public dashboard of rendering trends. One toggle in settings turns this off completely.
 
 📖 Open source (MIT) — read the code, open an issue, or star it: github.com/dzienisz/chrome-ssr-csr
 
