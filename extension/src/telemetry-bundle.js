@@ -70,33 +70,49 @@ function getCumulativeLayoutShift() {
 /**
  * Get Interaction to Next Paint (INP)
  * Target: < 200ms (Good), < 500ms (Needs Improvement), >= 500ms (Poor)
+ * (exclusive bounds match the project-wide convention in cwv-thresholds.ts)
  *
  * Replaces FID, which stopped being a Core Web Vital in March 2024. Like the
  * FID collector before it, this can only report interactions the user already
  * made before opening the popup — clicking the extension icon is not a page
  * interaction — so null is a normal result on a freshly loaded page.
  *
- * Google's INP is a high percentile over a session; with the handful of
- * buffered interactions available here, the worst one is the honest summary.
+ * Follows Google's rule: the worst interaction, minus one dropped outlier per
+ * 50 interactions (the 98th percentile). Note the buffer only holds events of
+ * 104ms or longer — the Event Timing spec's fixed buffered threshold, which a
+ * lower durationThreshold cannot retroactively lower — so faster interactions
+ * are invisible here. That only hides interactions already in the "good"
+ * range, which is why no threshold is requested.
  */
 function getInteractionToNextPaint() {
   return new Promise((resolve) => {
     try {
-      let worst = null;
+      // An interaction spans several events (pointerdown, pointerup, click);
+      // its latency is the longest of them, so group by interactionId.
+      const interactions = new Map();
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           // interactionId 0 means the event was not part of a discrete
           // interaction (e.g. a scroll-driven event) and is out of scope.
           if (!entry.interactionId) continue;
-          if (worst === null || entry.duration > worst) worst = entry.duration;
+          const previous = interactions.get(entry.interactionId) || 0;
+          if (entry.duration > previous) {
+            interactions.set(entry.interactionId, entry.duration);
+          }
         }
       });
-      observer.observe({ type: 'event', buffered: true, durationThreshold: 40 });
+      observer.observe({ type: 'event', buffered: true });
 
       // Buffered entries arrive almost immediately
       setTimeout(() => {
         observer.disconnect();
-        resolve(worst);
+        if (interactions.size === 0) {
+          resolve(null);
+          return;
+        }
+        const sorted = Array.from(interactions.values()).sort((a, b) => b - a);
+        const index = Math.floor(sorted.length / 50);
+        resolve(sorted[index]);
       }, 300);
     } catch (error) {
       console.error('[Performance] INP error:', error);
@@ -1216,7 +1232,13 @@ const NavigationDetector = {
       // a paint, so a router that only rewrites the URL no longer counts.
       isSPA: softNav.count > 0 || clientRoutes > 0 || navApi.clientEntries > 0 || this.detectSPA(),
       clientRoutes,
-      routes: navigations.slice(-5), // Last 5 routes
+      // Timing only: the privacy policy lists page paths as not collected, so
+      // the probe's pathnames stay in the page and never reach the payload.
+      routes: navigations.slice(-5).map(nav => ({
+        type: nav.type,
+        time: nav.time,
+        source: nav.source
+      })),
       softNavigations: softNav,
       navigationApi: navApi
     };
@@ -1242,8 +1264,6 @@ const NavigationDetector = {
       return {
         supported: true,
         count: entries.length,
-        // Pathname only — the payload is anonymized to origin, and entry.name
-        // is a full URL.
         entries: entries.slice(-5).map(entry => {
           let icp = null;
           try {
@@ -1255,13 +1275,9 @@ const NavigationDetector = {
             if (largest) icp = Math.round(largest.startTime - entry.startTime);
           } catch (e) {}
 
-          let view = null;
-          try {
-            view = new URL(entry.name).pathname;
-          } catch (e) {}
-
+          // entry.name is the route's full URL and is deliberately dropped:
+          // the payload carries timing, never where the user went.
           return {
-            view,
             startTime: Math.round(entry.startTime),
             paintTime: entry.paintTime ? Math.round(entry.paintTime - entry.startTime) : null,
             interactionContentfulPaint: icp
@@ -1283,12 +1299,17 @@ const NavigationDetector = {
       if (!window.navigation || typeof window.navigation.entries !== 'function') {
         return { supported: false, clientEntries: 0 };
       }
-      const entries = window.navigation.entries();
+      // entries() also contains contiguous same-origin entries from real
+      // document navigations, so an ordinary MPA visit would otherwise read
+      // as client-side routing. Only same-document entries belong to this
+      // document's own routing.
+      const sameDocument = window.navigation.entries()
+        .filter(entry => entry.sameDocument);
       return {
         supported: true,
         // The initial entry is the page load itself; anything beyond it is a
         // client-side route change.
-        clientEntries: Math.max(0, entries.length - 1)
+        clientEntries: Math.max(0, sameDocument.length - 1)
       };
     } catch (e) {
       return { supported: false, clientEntries: 0 };

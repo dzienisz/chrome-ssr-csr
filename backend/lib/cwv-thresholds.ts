@@ -21,6 +21,10 @@ export type CWVRating = 'good' | 'needs-improvement' | 'poor';
 
 export function classifyMetric(metric: CWVMetric, value: number): CWVRating {
   const t = CWV[metric];
+  // Bounds are exclusive by deliberate project convention (locked in by
+  // cwv-thresholds.test.ts), applied uniformly to every metric. web.dev
+  // defines them inclusively; switching would reclassify historical rows for
+  // all metrics at once, so it is not something a feature change should do.
   if (value < t.good) return 'good';
   if (value < t.poor) return 'needs-improvement';
   return 'poor';

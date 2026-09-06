@@ -62,33 +62,49 @@ function getCumulativeLayoutShift() {
 /**
  * Get Interaction to Next Paint (INP)
  * Target: < 200ms (Good), < 500ms (Needs Improvement), >= 500ms (Poor)
+ * (exclusive bounds match the project-wide convention in cwv-thresholds.ts)
  *
  * Replaces FID, which stopped being a Core Web Vital in March 2024. Like the
  * FID collector before it, this can only report interactions the user already
  * made before opening the popup — clicking the extension icon is not a page
  * interaction — so null is a normal result on a freshly loaded page.
  *
- * Google's INP is a high percentile over a session; with the handful of
- * buffered interactions available here, the worst one is the honest summary.
+ * Follows Google's rule: the worst interaction, minus one dropped outlier per
+ * 50 interactions (the 98th percentile). Note the buffer only holds events of
+ * 104ms or longer — the Event Timing spec's fixed buffered threshold, which a
+ * lower durationThreshold cannot retroactively lower — so faster interactions
+ * are invisible here. That only hides interactions already in the "good"
+ * range, which is why no threshold is requested.
  */
 function getInteractionToNextPaint() {
   return new Promise((resolve) => {
     try {
-      let worst = null;
+      // An interaction spans several events (pointerdown, pointerup, click);
+      // its latency is the longest of them, so group by interactionId.
+      const interactions = new Map();
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           // interactionId 0 means the event was not part of a discrete
           // interaction (e.g. a scroll-driven event) and is out of scope.
           if (!entry.interactionId) continue;
-          if (worst === null || entry.duration > worst) worst = entry.duration;
+          const previous = interactions.get(entry.interactionId) || 0;
+          if (entry.duration > previous) {
+            interactions.set(entry.interactionId, entry.duration);
+          }
         }
       });
-      observer.observe({ type: 'event', buffered: true, durationThreshold: 40 });
+      observer.observe({ type: 'event', buffered: true });
 
       // Buffered entries arrive almost immediately
       setTimeout(() => {
         observer.disconnect();
-        resolve(worst);
+        if (interactions.size === 0) {
+          resolve(null);
+          return;
+        }
+        const sorted = Array.from(interactions.values()).sort((a, b) => b - a);
+        const index = Math.floor(sorted.length / 50);
+        resolve(sorted[index]);
       }, 300);
     } catch (error) {
       console.error('[Performance] INP error:', error);

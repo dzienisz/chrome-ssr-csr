@@ -22,6 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `__reactRouterContext` / `__remixContext` globals (React Router 7).
 - Angular SSR hydration (`ngh`), SvelteKit preload attributes and Nuxt's
   `#__NUXT_DATA__` island are now recognized.
+- Navigation API entry counting filters on `sameDocument`. `entries()` also
+  contains contiguous same-origin entries from real document navigations, so
+  an ordinary multi-page visit would otherwise have been reported as an SPA.
+- Structural platform signals are matched against markup and `<style>`
+  contents, never script bodies — a bundle carrying
+  `@view-transition { navigation: auto }` as a string literal is not a page
+  using cross-document transitions. Framework script-content markers skip the
+  extension's own bundles for the same reason.
+- INP follows Google's percentile rule (drop one outlier per 50 interactions)
+  and groups events by `interactionId`, rather than reporting the single worst
+  event. Note the Event Timing buffer only retains events of 104ms or longer,
+  which no `durationThreshold` can retroactively lower.
 - **Speculative navigations no longer corrupt the timing signals.** A
   prerendered document's clock starts before the user navigates, so its FCP
   read as impossibly fast; a prefetched one has a TTFB it never paid. FCP is
@@ -64,6 +76,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backend: `/api/stats` CWV aggregation returns `avg_inp`/`inp_good`; the
   analysis modal shows INP, falling back to FID for rows written by older
   extensions.
+
+### Privacy
+
+- **Route paths are no longer sent.** `navigation_stats.routes` carried
+  `view` pathnames (since v3.5.0), which contradicts the privacy policy's
+  "Data NOT collected: Full URLs or page paths". Routes now carry type,
+  timing and source only, and soft-navigation entries never included a path.
+  Nothing consumed the field — neither the popup nor the dashboard.
 
 ## [3.10.0] - 2026-07-15
 

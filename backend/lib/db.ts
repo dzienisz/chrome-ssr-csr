@@ -72,14 +72,14 @@ export interface HydrationStats {
 export interface NavigationStats {
   isSPA?: boolean;
   clientRoutes?: number;
-  routes?: string[];
+  // Timing only — page paths are excluded from telemetry by the privacy policy
+  routes?: Array<{ type?: string; time?: number; source?: string }>;
   // Soft Navigations API (Chrome 151+): browser-verified route changes with
   // per-route paint timing. Absent on engines that do not implement it.
   softNavigations?: {
     supported: boolean;
     count: number;
     entries?: Array<{
-      view: string | null;
       startTime: number;
       paintTime: number | null;
       interactionContentfulPaint: number | null;

@@ -28,7 +28,13 @@ const NavigationDetector = {
       // a paint, so a router that only rewrites the URL no longer counts.
       isSPA: softNav.count > 0 || clientRoutes > 0 || navApi.clientEntries > 0 || this.detectSPA(),
       clientRoutes,
-      routes: navigations.slice(-5), // Last 5 routes
+      // Timing only: the privacy policy lists page paths as not collected, so
+      // the probe's pathnames stay in the page and never reach the payload.
+      routes: navigations.slice(-5).map(nav => ({
+        type: nav.type,
+        time: nav.time,
+        source: nav.source
+      })),
       softNavigations: softNav,
       navigationApi: navApi
     };
@@ -54,8 +60,6 @@ const NavigationDetector = {
       return {
         supported: true,
         count: entries.length,
-        // Pathname only — the payload is anonymized to origin, and entry.name
-        // is a full URL.
         entries: entries.slice(-5).map(entry => {
           let icp = null;
           try {
@@ -67,13 +71,9 @@ const NavigationDetector = {
             if (largest) icp = Math.round(largest.startTime - entry.startTime);
           } catch (e) {}
 
-          let view = null;
-          try {
-            view = new URL(entry.name).pathname;
-          } catch (e) {}
-
+          // entry.name is the route's full URL and is deliberately dropped:
+          // the payload carries timing, never where the user went.
           return {
-            view,
             startTime: Math.round(entry.startTime),
             paintTime: entry.paintTime ? Math.round(entry.paintTime - entry.startTime) : null,
             interactionContentfulPaint: icp
@@ -95,12 +95,17 @@ const NavigationDetector = {
       if (!window.navigation || typeof window.navigation.entries !== 'function') {
         return { supported: false, clientEntries: 0 };
       }
-      const entries = window.navigation.entries();
+      // entries() also contains contiguous same-origin entries from real
+      // document navigations, so an ordinary MPA visit would otherwise read
+      // as client-side routing. Only same-document entries belong to this
+      // document's own routing.
+      const sameDocument = window.navigation.entries()
+        .filter(entry => entry.sameDocument);
       return {
         supported: true,
         // The initial entry is the page load itself; anything beyond it is a
         // client-side route change.
-        clientEntries: Math.max(0, entries.length - 1)
+        clientEntries: Math.max(0, sameDocument.length - 1)
       };
     } catch (e) {
       return { supported: false, clientEntries: 0 };

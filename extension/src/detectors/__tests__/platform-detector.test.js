@@ -38,6 +38,16 @@ describe('detectPlatformSignals', () => {
       expect(result.ssrScore).toBe(window.DETECTOR_CONFIG.scoring.crossDocViewTransition);
     });
 
+    it('should not fire on the rule appearing inside a script bundle', () => {
+      // CSS-in-JS bundles carry stylesheet text as string literals
+      const html = '<script>const css = "@view-transition { navigation: auto; }";</script>';
+
+      const result = window.detectPlatformSignals(parseRaw(html), html);
+
+      expect(result.details.crossDocumentViewTransitions).toBeUndefined();
+      expect(result.ssrScore).toBe(0);
+    });
+
     it('should not fire on same-document view transition styling alone', () => {
       const html = '<style>::view-transition-old(root) { animation: none; }</style>';
 
@@ -57,6 +67,15 @@ describe('detectPlatformSignals', () => {
 
       expect(result.details.declarativePartialUpdates).toBe(true);
       expect(result.ssrScore).toBe(window.DETECTOR_CONFIG.scoring.declarativePartialUpdate);
+    });
+
+    it('should not fire on partial-update tokens quoted inside a script', () => {
+      const html = '<script>const tpl = \'<?start slot?><template for="slot"></template>\';</script>';
+
+      const result = window.detectPlatformSignals(parseRaw(html), html);
+
+      expect(result.details.declarativePartialUpdates).toBeUndefined();
+      expect(result.ssrScore).toBe(0);
     });
 
     it('should not fire on a plain template element', () => {

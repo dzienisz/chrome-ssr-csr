@@ -29,6 +29,17 @@ function detectPlatformSignals(rawDocument, rawHTML) {
       ? rawDocument.documentElement.outerHTML
       : '');
 
+  // Script bodies are excluded from every structural check below. A bundle
+  // that merely contains the string "@view-transition { navigation: auto }"
+  // (CSS-in-JS is full of them) is not a page using cross-document
+  // transitions, and these branches move the SSR score.
+  const rawMarkup = rawSource.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  const rawStyles = rawDocument
+    ? Array.from(rawDocument.querySelectorAll('style'))
+        .map(el => el.textContent || '')
+        .join('\n')
+    : rawMarkup;
+
   // --- Speculation Rules: prerendering/prefetching whole documents only
   // makes sense when navigations *are* document loads, i.e. an MPA.
   if (rawDocument) {
@@ -43,7 +54,7 @@ function detectPlatformSignals(rawDocument, rawHTML) {
   // --- Cross-document view transitions: an MPA that animates between real
   // navigations. Only the at-rule form with navigation:auto is cross-document;
   // document.startViewTransition() (the SPA form) leaves no static marker.
-  const crossDocVT = /@view-transition\s*\{[^}]*navigation\s*:\s*(auto|same-origin)/i.test(rawSource);
+  const crossDocVT = /@view-transition\s*\{[^}]*navigation\s*:\s*(auto|same-origin)/i.test(rawStyles);
   if (crossDocVT) {
     ssrScore += config.scoring.crossDocViewTransition;
     indicators.push('@view-transition navigation rule - cross-document transitions (SSR/MPA)');
@@ -53,8 +64,11 @@ function detectPlatformSignals(rawDocument, rawHTML) {
   // --- Declarative partial updates: out-of-order HTML streaming with no JS
   // at all. DOMParser turns the processing instructions into bogus comments,
   // so the raw source is the only reliable place to look for them.
-  const hasPartialMarkers = /<\?(start|end|marker)[\s?>]/.test(rawSource);
-  const hasTemplateFor = /<template[^>]*\sfor\s*=/.test(rawSource);
+  const hasPartialMarkers = /<\?(start|end|marker)[\s?>]/.test(rawMarkup);
+  // Structural check: a template[for] element, not the text of one.
+  const hasTemplateFor = rawDocument
+    ? rawDocument.querySelector('template[for]') !== null
+    : /<template[^>]*\sfor\s*=/.test(rawMarkup);
   if (hasPartialMarkers && hasTemplateFor) {
     ssrScore += config.scoring.declarativePartialUpdate;
     indicators.push('declarative partial updates - JS-free streaming SSR');
