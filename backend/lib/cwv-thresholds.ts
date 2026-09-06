@@ -10,7 +10,8 @@
 export const CWV = {
   lcp:  { good: 2500,  poor: 4000  },  // ms
   cls:  { good: 0.1,   poor: 0.25  },  // unitless
-  fid:  { good: 100,   poor: 300   },  // ms
+  inp:  { good: 200,   poor: 500   },  // ms — replaced FID as a Core Web Vital in March 2024
+  fid:  { good: 100,   poor: 300   },  // ms — legacy rows only; the extension stopped sending it in v3.11.0
   ttfb: { good: 800,   poor: 1800  },  // ms
 } as const;
 
@@ -20,6 +21,10 @@ export type CWVRating = 'good' | 'needs-improvement' | 'poor';
 
 export function classifyMetric(metric: CWVMetric, value: number): CWVRating {
   const t = CWV[metric];
+  // Bounds are exclusive by deliberate project convention (locked in by
+  // cwv-thresholds.test.ts), applied uniformly to every metric. web.dev
+  // defines them inclusively; switching would reclassify historical rows for
+  // all metrics at once, so it is not something a feature change should do.
   if (value < t.good) return 'good';
   if (value < t.poor) return 'needs-improvement';
   return 'poor';

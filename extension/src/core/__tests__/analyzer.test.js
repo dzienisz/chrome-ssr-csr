@@ -15,6 +15,7 @@ function stubDetectors(overrides = {}) {
   window.detectHybridPatterns = vi.fn(
     () => overrides.hybrid || { hybridScore: 0, indicators: [], details: {} }
   );
+  window.detectPlatformSignals = vi.fn(() => overrides.platform || emptyResult);
   window.compareInitialVsRendered = vi.fn(async () =>
     'comparison' in overrides ? overrides.comparison : null
   );
@@ -88,27 +89,29 @@ describe('pageAnalyzer', () => {
     });
   });
 
-  it('should pass the parsed raw document to detectFrameworks', async () => {
+  it('should pass the raw document to detectFrameworks and the source to platform signals', async () => {
     const rawDocument = document.implementation.createHTMLDocument();
     stubDetectors({
       comparison: {
         rawLength: 500, renderedLength: 600, contentRatio: 0.83,
         isLikelyCSR: false, isLikelySSR: true, isDecisiveCSR: false,
-        rawDocument
+        rawDocument, rawHTML: '<html><body>raw</body></html>'
       }
     });
 
     await window.pageAnalyzer();
 
     expect(window.detectFrameworks).toHaveBeenCalledWith(rawDocument);
+    expect(window.detectPlatformSignals).toHaveBeenCalledWith(rawDocument, '<html><body>raw</body></html>');
   });
 
-  it('should keep the raw document out of the returned result', async () => {
+  it('should keep the raw document and source out of the returned result', async () => {
     stubDetectors({
       comparison: {
         rawLength: 500, renderedLength: 600, contentRatio: 0.83,
         isLikelyCSR: false, isLikelySSR: true, isDecisiveCSR: false,
-        rawDocument: document.implementation.createHTMLDocument()
+        rawDocument: document.implementation.createHTMLDocument(),
+        rawHTML: '<html><body>raw</body></html>'
       }
     });
 
@@ -120,6 +123,7 @@ describe('pageAnalyzer', () => {
       renderedLength: 600,
       ratio: 0.83
     });
+    expect(JSON.stringify(result)).not.toContain('<html>');
     expect(JSON.parse(JSON.stringify(result))).toBeTruthy();
   });
 });

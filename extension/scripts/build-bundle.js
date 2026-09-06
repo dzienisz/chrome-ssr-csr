@@ -16,6 +16,7 @@ const detectorFiles = [
   'src/detectors/comparison-detector.js',
   'src/detectors/csr-pattern-detector.js',
   'src/detectors/hybrid-detector.js',
+  'src/detectors/platform-detector.js',
   'src/detectors/content-detector.js',
   'src/detectors/framework-detector.js',
   'src/detectors/meta-detector.js',

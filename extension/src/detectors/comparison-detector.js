@@ -75,7 +75,10 @@ async function compareInitialVsRendered() {
       isDecisiveCSR,
       // Parsed raw document, so other detectors can check pre-JS markers.
       // Not serializable — must not be copied into analyzer output.
-      rawDocument: rawDoc
+      rawDocument: rawDoc,
+      // Raw source for markers no CSS selector can reach (script contents,
+      // processing instructions). Same rule: never copy into the output.
+      rawHTML
     };
   } catch (e) {
     // Fetch failed (CORS, network error, etc.) - can't determine

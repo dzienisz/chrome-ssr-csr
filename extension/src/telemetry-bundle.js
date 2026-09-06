@@ -68,26 +68,101 @@ function getCumulativeLayoutShift() {
 }
 
 /**
- * Get First Input Delay (FID)
- * Target: < 100ms (Good), < 300ms (Needs Improvement), >= 300ms (Poor)
+ * Get Interaction to Next Paint (INP)
+ * Target: < 200ms (Good), < 500ms (Needs Improvement), >= 500ms (Poor)
+ * (exclusive bounds match the project-wide convention in cwv-thresholds.ts)
+ *
+ * Replaces FID, which stopped being a Core Web Vital in March 2024. Like the
+ * FID collector before it, this can only report interactions the user already
+ * made before opening the popup — clicking the extension icon is not a page
+ * interaction — so null is a normal result on a freshly loaded page.
+ *
+ * Follows Google's rule: the worst interaction, minus one dropped outlier per
+ * 50 interactions (the 98th percentile). Note the buffer only holds events of
+ * 104ms or longer — the Event Timing spec's fixed buffered threshold, which a
+ * lower durationThreshold cannot retroactively lower — so faster interactions
+ * are invisible here. That only hides interactions already in the "good"
+ * range, which is why no threshold is requested.
  */
-function getFirstInputDelay() {
+function getInteractionToNextPaint() {
   return new Promise((resolve) => {
     try {
+      // An interaction spans several events (pointerdown, pointerup, click);
+      // its latency is the longest of them, so group by interactionId.
+      const interactions = new Map();
       const observer = new PerformanceObserver((list) => {
-        const firstInput = list.getEntries()[0];
-        observer.disconnect();
-        resolve(firstInput.processingStart - firstInput.startTime);
+        for (const entry of list.getEntries()) {
+          // interactionId 0 means the event was not part of a discrete
+          // interaction (e.g. a scroll-driven event) and is out of scope.
+          if (!entry.interactionId) continue;
+          const previous = interactions.get(entry.interactionId) || 0;
+          if (entry.duration > previous) {
+            interactions.set(entry.interactionId, entry.duration);
+          }
+        }
       });
-      observer.observe({ type: 'first-input', buffered: true });
+      observer.observe({ type: 'event', buffered: true });
 
-      // Only a buffered entry can exist (icon click isn't a page interaction)
+      // Buffered entries arrive almost immediately
       setTimeout(() => {
         observer.disconnect();
-        resolve(null);
+        if (interactions.size === 0) {
+          resolve(null);
+          return;
+        }
+        const sorted = Array.from(interactions.values()).sort((a, b) => b - a);
+        const index = Math.floor(sorted.length / 50);
+        resolve(sorted[index]);
       }, 300);
     } catch (error) {
-      console.error('[Performance] FID error:', error);
+      console.error('[Performance] INP error:', error);
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get Long Animation Frame stats (Chrome 123+)
+ *
+ * LoAF supersedes the Long Tasks API used for TBT: it measures whole janky
+ * frames rather than single tasks, which is what a booting client-rendered
+ * app actually produces. Only aggregate numbers are kept — LoAF entries carry
+ * script sourceURLs, and the telemetry payload is anonymized to origin.
+ */
+function getLongAnimationFrames() {
+  return new Promise((resolve) => {
+    const supported = typeof PerformanceObserver !== 'undefined' &&
+      Array.isArray(PerformanceObserver.supportedEntryTypes) &&
+      PerformanceObserver.supportedEntryTypes.includes('long-animation-frame');
+
+    if (!supported) {
+      resolve(null);
+      return;
+    }
+
+    try {
+      let count = 0;
+      let blockingDuration = 0;
+      let longestFrame = 0;
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          count++;
+          blockingDuration += entry.blockingDuration || 0;
+          if (entry.duration > longestFrame) longestFrame = entry.duration;
+        }
+      });
+      observer.observe({ type: 'long-animation-frame', buffered: true });
+
+      setTimeout(() => {
+        observer.disconnect();
+        resolve({
+          count,
+          blockingDuration: Math.round(blockingDuration),
+          longestFrame: Math.round(longestFrame)
+        });
+      }, 300);
+    } catch (error) {
+      console.error('[Performance] LoAF error:', error);
       resolve(null);
     }
   });
@@ -200,11 +275,12 @@ function getResourceMetrics() {
  * This is the main function to call
  */
 async function collectCoreWebVitals() {
-  const [lcp, cls, fid, tbt] = await Promise.all([
+  const [lcp, cls, inp, tbt, loaf] = await Promise.all([
     getLargestContentfulPaint(),
     getCumulativeLayoutShift(),
-    getFirstInputDelay(),
-    getTotalBlockingTime()
+    getInteractionToNextPaint(),
+    getTotalBlockingTime(),
+    getLongAnimationFrames()
   ]);
   
   const ttfb = getTimeToFirstByte();
@@ -215,7 +291,7 @@ async function collectCoreWebVitals() {
   const metrics = {
     lcp: lcp ? Math.round(lcp) : null,
     cls: cls != null ? Math.round(cls * 1000) / 1000 : null,
-    fid: fid != null ? Math.round(fid) : null,
+    inp: inp != null ? Math.round(inp) : null,
     ttfb: ttfb ? Math.round(ttfb) : null,
     tti: tti ? Math.round(tti) : null,
     tbt: tbt ? Math.round(tbt) : null,
@@ -225,7 +301,10 @@ async function collectCoreWebVitals() {
     cachedResources: resourceMetrics.cachedResources,
     cacheHitRate: resourceMetrics.resourceCount > 0 
       ? Math.round((resourceMetrics.cachedResources / resourceMetrics.resourceCount) * 100) 
-      : null
+      : null,
+    loafCount: loaf ? loaf.count : null,
+    loafBlockingDuration: loaf ? loaf.blockingDuration : null,
+    loafLongestFrame: loaf ? loaf.longestFrame : null
   };
 
   return metrics;
@@ -238,7 +317,7 @@ function evaluateCoreWebVitals(metrics) {
   const passes = {
     lcp: metrics.lcp && metrics.lcp < 2500,
     cls: metrics.cls && metrics.cls < 0.1,
-    fid: metrics.fid && metrics.fid < 100
+    inp: metrics.inp && metrics.inp < 200
   };
   
   const passCount = Object.values(passes).filter(Boolean).length;
@@ -254,6 +333,7 @@ function evaluateCoreWebVitals(metrics) {
 // Export for use in other modules
 if (typeof window !== 'undefined') {
   window.collectCoreWebVitals = collectCoreWebVitals;
+  window.getLongAnimationFrames = getLongAnimationFrames;
   window.evaluateCoreWebVitals = evaluateCoreWebVitals;
 }
 
@@ -1130,12 +1210,16 @@ if (typeof module !== 'undefined' && module.exports) {
 const NavigationDetector = {
   detect: function() {
     const probeData = window.HydrationDetector ? window.HydrationDetector.getProbeData() : null;
+    const softNav = this.detectSoftNavigations();
+    const navApi = this.readNavigationApi();
 
     if (!probeData) {
       // Fallback detection if probe isn't ready
       return {
-        isSPA: this.detectSPA(),
-        clientRoutes: 0
+        isSPA: softNav.count > 0 || navApi.clientEntries > 0 || this.detectSPA(),
+        clientRoutes: softNav.count,
+        softNavigations: softNav,
+        navigationApi: navApi
       };
     }
 
@@ -1143,10 +1227,93 @@ const NavigationDetector = {
     const clientRoutes = navigations.length;
 
     return {
-      isSPA: clientRoutes > 0 || this.detectSPA(),
+      // Browser-verified soft navigations are the strongest evidence: unlike a
+      // patched pushState they require a real interaction, a URL change *and*
+      // a paint, so a router that only rewrites the URL no longer counts.
+      isSPA: softNav.count > 0 || clientRoutes > 0 || navApi.clientEntries > 0 || this.detectSPA(),
       clientRoutes,
-      routes: navigations.slice(-5) // Last 5 routes
+      // Timing only: the privacy policy lists page paths as not collected, so
+      // the probe's pathnames stay in the page and never reach the payload.
+      routes: navigations.slice(-5).map(nav => ({
+        type: nav.type,
+        time: nav.time,
+        source: nav.source
+      })),
+      softNavigations: softNav,
+      navigationApi: navApi
     };
+  },
+
+  /**
+   * Soft Navigations API — stable in Chrome 151 (July 2026), Chromium-only.
+   * Gives per-route paint timing that no amount of history patching can:
+   * interaction-contentful-paint is the LCP equivalent for a route change.
+   */
+  detectSoftNavigations: function() {
+    const supported = typeof PerformanceObserver !== 'undefined' &&
+      Array.isArray(PerformanceObserver.supportedEntryTypes) &&
+      PerformanceObserver.supportedEntryTypes.includes('soft-navigation');
+
+    if (!supported) {
+      return { supported: false, count: 0, entries: [] };
+    }
+
+    try {
+      const entries = performance.getEntriesByType('soft-navigation') || [];
+
+      return {
+        supported: true,
+        count: entries.length,
+        entries: entries.slice(-5).map(entry => {
+          let icp = null;
+          try {
+            const largest = typeof entry.getLargestInteractionContentfulPaint === 'function'
+              ? entry.getLargestInteractionContentfulPaint()
+              : null;
+            // Timings are relative to the original hard navigation, so the
+            // route's own cost is the delta from where it started.
+            if (largest) icp = Math.round(largest.startTime - entry.startTime);
+          } catch (e) {}
+
+          // entry.name is the route's full URL and is deliberately dropped:
+          // the payload carries timing, never where the user went.
+          return {
+            startTime: Math.round(entry.startTime),
+            paintTime: entry.paintTime ? Math.round(entry.paintTime - entry.startTime) : null,
+            interactionContentfulPaint: icp
+          };
+        })
+      };
+    } catch (e) {
+      return { supported: true, count: 0, entries: [] };
+    }
+  },
+
+  /**
+   * Navigation API — Baseline since Firefox 147. entries() is a static record
+   * of same-document history for this page, so it reports client-side routing
+   * that happened before the extension ever ran.
+   */
+  readNavigationApi: function() {
+    try {
+      if (!window.navigation || typeof window.navigation.entries !== 'function') {
+        return { supported: false, clientEntries: 0 };
+      }
+      // entries() also contains contiguous same-origin entries from real
+      // document navigations, so an ordinary MPA visit would otherwise read
+      // as client-side routing. Only same-document entries belong to this
+      // document's own routing.
+      const sameDocument = window.navigation.entries()
+        .filter(entry => entry.sameDocument);
+      return {
+        supported: true,
+        // The initial entry is the page load itself; anything beyond it is a
+        // client-side route change.
+        clientEntries: Math.max(0, sameDocument.length - 1)
+      };
+    } catch (e) {
+      return { supported: false, clientEntries: 0 };
+    }
   },
 
   // Fallback static analysis if no history events yet

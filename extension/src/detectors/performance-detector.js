@@ -25,7 +25,33 @@ function analyzePerformance() {
     const navTiming = performanceEntries[0];
     const domContentLoadedTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
     const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint')[0];
-    const fcpTime = firstContentfulPaint ? firstContentfulPaint.startTime : null;
+
+    // A prerendered document's timings are measured from when the prerender
+    // started, not from when the user navigated: paint often lands *before*
+    // activation, so raw FCP reads as impossibly fast. Rebase on
+    // activationStart, the way the Paint Timing spec prescribes.
+    const navContext = typeof window.getNavigationContext === 'function'
+      ? window.getNavigationContext()
+      : { activationStart: 0, deliveryType: '', timingIsReliable: true };
+    const rawFcp = firstContentfulPaint ? firstContentfulPaint.startTime : null;
+    const fcpTime = rawFcp != null
+      ? Math.max(0, rawFcp - navContext.activationStart)
+      : null;
+
+    // A prefetched navigation paid its network cost earlier, so both the
+    // "fast DOM" and "fast FCP" branches below would fire on architecture
+    // that has nothing to do with where the HTML was rendered. Skip the
+    // timing heuristics entirely rather than score them wrong.
+    if (!navContext.timingIsReliable) {
+      indicators.push('speculative navigation - timing signals skipped');
+      detailedInfo.timing = {
+        domContentLoaded: Math.round(domContentLoadedTime),
+        firstContentfulPaint: fcpTime != null ? Math.round(fcpTime) : null,
+        adjustedForActivation: navContext.activationStart > 0,
+        deliveryType: navContext.deliveryType
+      };
+      return { ssrScore, csrScore, indicators, details: detailedInfo };
+    }
 
     // Key CSR indicator: Fast DOM ready + slow FCP
     // This means the initial HTML loaded quickly (because it's minimal),
@@ -54,7 +80,9 @@ function analyzePerformance() {
 
     detailedInfo.timing = {
       domContentLoaded: Math.round(domContentLoadedTime),
-      firstContentfulPaint: fcpTime ? Math.round(fcpTime) : null
+      firstContentfulPaint: fcpTime != null ? Math.round(fcpTime) : null,
+      adjustedForActivation: navContext.activationStart > 0,
+      deliveryType: navContext.deliveryType
     };
   }
 

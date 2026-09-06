@@ -34,7 +34,7 @@ Firefox loads the copy in `dist/firefox/`, not your live `src/` edits — re-run
 - **📊 Detailed Analysis**: Confidence score, performance metrics, detection indicators
 
 ### Performance Insights (v3.3.0+)
-- **📈 Core Web Vitals**: LCP, CLS, FID, TTFB measurements
+- **📈 Core Web Vitals**: LCP, CLS, INP, TTFB measurements (plus Long Animation Frame stats)
 - **📱 Device Context**: Device type, screen size, connection quality
 - **📄 Page Classification**: Auto-detect page type (blog, ecommerce, docs, app, etc.)
 

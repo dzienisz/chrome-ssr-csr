@@ -43,24 +43,52 @@
     }
   };
 
-  // 2. Intercept History API (Soft Navigations)
+  // 2. Record client-side route changes.
+  // Two sources, because neither covers everything: the Navigation API sees
+  // routers that never touch history.*, and the history patch still works in
+  // engines that ship no Navigation API. Whether pushState() also surfaces as
+  // a navigate event differs by engine, so record() dedupes instead of
+  // assuming either way.
+  function record(type, source, viewOverride) {
+    try {
+      // The navigate event fires *before* the URL changes, so its destination
+      // is the only correct view for that source.
+      const view = viewOverride || window.location.pathname;
+      const time = Date.now() - STORE.startTime;
+      const last = STORE.navigations[STORE.navigations.length - 1];
+      if (last && last.view === view && time - last.time < 50) return;
+      STORE.navigations.push({ type, view, time, source });
+    } catch (e) {}
+  }
+
   function proxyHistory(method) {
     const original = history[method];
     history[method] = function(...args) {
       const result = original.apply(history, args);
-      try {
-        STORE.navigations.push({
-          type: method,
-          view: window.location.pathname,
-          time: Date.now() - STORE.startTime
-        });
-      } catch (e) {}
+      record(method, 'history');
       return result;
     };
   }
 
   proxyHistory('pushState');
   proxyHistory('replaceState');
+
+  // Navigation API — Baseline since Firefox 147 (Jan 2026), so this is the
+  // cross-browser path now, not a Chromium-only extra.
+  if (window.navigation && typeof window.navigation.addEventListener === 'function') {
+    try {
+      window.navigation.addEventListener('navigate', function(event) {
+        // Same-document only: a full document load ends this probe anyway.
+        if (event.destination && event.destination.sameDocument === false) return;
+        let view;
+        try {
+          view = new URL(event.destination.url).pathname;
+        } catch (e) {}
+        record(event.navigationType || 'navigate', 'navigation-api', view);
+      });
+      STORE.hasNavigationApi = true;
+    } catch (e) {}
+  }
 
   // 3. Listen for Data Request from Isolated World
   window.addEventListener('ssr-detector-request-data', function() {

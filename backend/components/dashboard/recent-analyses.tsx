@@ -16,7 +16,8 @@ interface Analysis {
   core_web_vitals?: {
     lcp?: number | null;
     cls?: number | null;
-    fid?: number | null;
+    inp?: number | null;
+    fid?: number | null;  // legacy rows only
     ttfb?: number | null;
   };
   hydration_stats?: {

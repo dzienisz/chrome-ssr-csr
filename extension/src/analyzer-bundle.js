@@ -37,7 +37,11 @@ const CONFIG = {
     spaRootPattern: 20,        // #root/#app with data attributes = CSR
     noscriptFallback: 15,      // "JavaScript required" message = CSR
     fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
-    decisiveCsrSsrCap: 10      // Max SSR score when raw HTML is near-empty vs rendered
+    decisiveCsrSsrCap: 10,     // Max SSR score when raw HTML is near-empty vs rendered
+    // Modern platform signals (see platform-detector.js)
+    speculationRules: 15,      // <script type="speculationrules"> in raw HTML = MPA
+    crossDocViewTransition: 15,// @view-transition{navigation:auto} = MPA that animates
+    declarativePartialUpdate: 20 // <?start/?end + <template for> = JS-free streaming SSR
   },
 
   // Classification thresholds
@@ -97,17 +101,22 @@ const CONFIG = {
   frameworks: {
     // React ecosystem
     react: '[data-reactroot], [data-reactid], [data-react-checksum]',
+    // #__next / #__NEXT_DATA__ are Pages Router only; the App Router (default
+    // since Next 13) emits neither — it streams the RSC payload through
+    // self.__next_f, caught by frameworkContentPatterns below.
     nextjs: '#__next, #__NEXT_DATA__',
     gatsby: '#___gatsby',
-    remix: '[data-remix-run]',
+    // data-remix-run is Remix v1; v2 and React Router 7 emit the
+    // data-remix-managed-head / data-remix-stylesheet pair instead.
+    remix: '[data-remix-run], [data-remix-managed-head], [data-remix-stylesheet]',
     // Vue ecosystem
     vue: '[data-v-app], [data-v]',
-    nuxt: '#__nuxt, #__NUXT__',
+    nuxt: '#__nuxt, #__NUXT__, #__NUXT_DATA__',
     // Svelte ecosystem
     svelte: '[class*="svelte-"]',
-    sveltekit: '#svelte',
-    // Angular
-    angular: '[ng-version], [_nghost], [_ngcontent]',
+    sveltekit: '#svelte, [data-sveltekit-preload-data], [data-sveltekit-preload-code]',
+    // Angular — ngh is the hydration annotation emitted by Angular SSR (v16+)
+    angular: '[ng-version], [_nghost], [_ngcontent], [ngh]',
     // Other frameworks
     astro: '[data-astro-cid], [data-astro-island]',
     qwik: '[q\\:container]',
@@ -123,6 +132,18 @@ const CONFIG = {
     webflow: 'html[data-wf-site], script[src*="webflow"]',
     wix: 'meta[name="generator"][content*="Wix"]',
     squarespace: 'script[src*="squarespace"]'
+  },
+
+  // Framework markers that live in script contents rather than the DOM.
+  // Matched against raw/rendered HTML source, so they also work for
+  // frameworks that stopped emitting identifiable elements.
+  frameworkContentPatterns: {
+    nextjs: ['self.__next_f', '__next_f.push'],
+    remix: ['__reactRouterContext', '__remixContext'],
+    nuxt: ['window.__NUXT__', '__NUXT_DATA__'],
+    gatsby: ['window.___gatsby', 'window.page.staticQueryHashes'],
+    solidjs: ['_$HY.'],
+    qwik: ['qwikloader']
   },
 
   // Static site generator detection
@@ -250,7 +271,10 @@ async function compareInitialVsRendered() {
       isDecisiveCSR,
       // Parsed raw document, so other detectors can check pre-JS markers.
       // Not serializable — must not be copied into analyzer output.
-      rawDocument: rawDoc
+      rawDocument: rawDoc,
+      // Raw source for markers no CSS selector can reach (script contents,
+      // processing instructions). Same rule: never copy into the output.
+      rawHTML
     };
   } catch (e) {
     // Fetch failed (CORS, network error, etc.) - can't determine
@@ -442,6 +466,151 @@ if (typeof window !== 'undefined') {
 
 
 /**
+ * src/detectors/platform-detector.js
+ */
+
+/**
+ * Modern Platform Detector Module
+ *
+ * Signals from web-platform features that postdate the original scoring model
+ * (2026): the Speculation Rules API, cross-document view transitions and
+ * declarative partial updates. All three say something about a page's
+ * rendering architecture that no framework marker does.
+ *
+ * Every signal is credited from the RAW HTML only. Speculation rules and
+ * partial-update templates injected by JS after boot describe what the client
+ * did, not what the server sent — the same rule framework-detector applies to
+ * hydration markers.
+ */
+
+/**
+ * @param {Document|null} rawDocument - Parsed raw (pre-JS) HTML document
+ * @param {string|null} rawHTML - Raw HTML source for the same fetch
+ * @returns {Object} Detection results with score and indicators
+ */
+function detectPlatformSignals(rawDocument, rawHTML) {
+  const config = window.DETECTOR_CONFIG;
+  const indicators = [];
+  let ssrScore = 0;
+  let csrScore = 0;
+  const details = {};
+
+  const rawSource = rawHTML ||
+    (rawDocument && rawDocument.documentElement
+      ? rawDocument.documentElement.outerHTML
+      : '');
+
+  // Script bodies are excluded from every structural check below. A bundle
+  // that merely contains the string "@view-transition { navigation: auto }"
+  // (CSS-in-JS is full of them) is not a page using cross-document
+  // transitions, and these branches move the SSR score.
+  const rawMarkup = rawSource.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  const rawStyles = rawDocument
+    ? Array.from(rawDocument.querySelectorAll('style'))
+        .map(el => el.textContent || '')
+        .join('\n')
+    : rawMarkup;
+
+  // --- Speculation Rules: prerendering/prefetching whole documents only
+  // makes sense when navigations *are* document loads, i.e. an MPA.
+  if (rawDocument) {
+    const specRules = rawDocument.querySelectorAll('script[type="speculationrules"]');
+    if (specRules.length > 0) {
+      ssrScore += config.scoring.speculationRules;
+      indicators.push(`speculation rules in raw HTML (${specRules.length}) - multi-page architecture (SSR)`);
+      details.speculationRules = specRules.length;
+    }
+  }
+
+  // --- Cross-document view transitions: an MPA that animates between real
+  // navigations. Only the at-rule form with navigation:auto is cross-document;
+  // document.startViewTransition() (the SPA form) leaves no static marker.
+  const crossDocVT = /@view-transition\s*\{[^}]*navigation\s*:\s*(auto|same-origin)/i.test(rawStyles);
+  if (crossDocVT) {
+    ssrScore += config.scoring.crossDocViewTransition;
+    indicators.push('@view-transition navigation rule - cross-document transitions (SSR/MPA)');
+    details.crossDocumentViewTransitions = true;
+  }
+
+  // --- Declarative partial updates: out-of-order HTML streaming with no JS
+  // at all. DOMParser turns the processing instructions into bogus comments,
+  // so the raw source is the only reliable place to look for them.
+  const hasPartialMarkers = /<\?(start|end|marker)[\s?>]/.test(rawMarkup);
+  // Structural check: a template[for] element, not the text of one.
+  const hasTemplateFor = rawDocument
+    ? rawDocument.querySelector('template[for]') !== null
+    : /<template[^>]*\sfor\s*=/.test(rawMarkup);
+  if (hasPartialMarkers && hasTemplateFor) {
+    ssrScore += config.scoring.declarativePartialUpdate;
+    indicators.push('declarative partial updates - JS-free streaming SSR');
+    details.declarativePartialUpdates = true;
+  }
+
+  // --- Navigation context. Not scored here: performance-detector needs it to
+  // decide whether the timing signals are trustworthy at all, and it is worth
+  // reporting either way.
+  const navContext = window.getNavigationContext();
+  if (navContext.wasPrerendered) {
+    indicators.push('page was prerendered before activation - timing signals adjusted');
+  } else if (navContext.wasPrefetched) {
+    indicators.push('navigation served from a prefetch - timing signals adjusted');
+  }
+  details.navigationContext = navContext;
+
+  return { ssrScore, csrScore, indicators, details };
+}
+
+/**
+ * How this document arrived, so timing-based signals can be corrected or
+ * discarded. A prerendered document starts its clock long before the user
+ * sees it (activationStart), and a prefetched one has a near-zero TTFB it
+ * never actually paid — both distort the SSR/CSR timing heuristics.
+ *
+ * @returns {{wasPrerendered: boolean, wasPrefetched: boolean,
+ *            activationStart: number, deliveryType: string,
+ *            timingIsReliable: boolean}}
+ */
+function getNavigationContext() {
+  const fallback = {
+    wasPrerendered: false,
+    wasPrefetched: false,
+    activationStart: 0,
+    deliveryType: '',
+    timingIsReliable: true
+  };
+
+  try {
+    const navTiming = performance.getEntriesByType('navigation')[0];
+    if (!navTiming) return fallback;
+
+    // activationStart is 0 for normal navigations, > 0 once a prerendered
+    // document is activated. document.prerendering only covers the window
+    // where prerendering is still in flight.
+    const activationStart = navTiming.activationStart || 0;
+    const deliveryType = navTiming.deliveryType || '';
+    const wasPrerendered = activationStart > 0 || document.prerendering === true;
+    const wasPrefetched = deliveryType === 'navigational-prefetch';
+
+    return {
+      wasPrerendered,
+      wasPrefetched,
+      activationStart: Math.round(activationStart),
+      deliveryType,
+      timingIsReliable: !wasPrerendered && !wasPrefetched
+    };
+  } catch (e) {
+    return fallback;
+  }
+}
+
+// Export for use in other modules
+if (typeof window !== 'undefined') {
+  window.detectPlatformSignals = detectPlatformSignals;
+  window.getNavigationContext = getNavigationContext;
+}
+
+
+/**
  * src/detectors/content-detector.js
  */
 
@@ -531,6 +700,33 @@ if (typeof window !== 'undefined') {
  */
 
 /**
+ * Concatenate the inline script contents of a document, skipping this
+ * extension's own bundles. The analyzer normally runs as a content script and
+ * never lands in the DOM, but the validation harness injects it as a script
+ * tag — without this guard it would detect the framework names in its own
+ * config as if they were the page's.
+ *
+ * @param {Document|null} doc
+ * @returns {string}
+ */
+function collectScriptSource(doc) {
+  if (!doc) return '';
+  try {
+    const parts = [];
+    doc.querySelectorAll('script').forEach(script => {
+      const text = script.textContent || '';
+      if (!text) return;
+      if (text.includes('__SSR_CSR_ANALYZER_LOADED__') ||
+          text.includes('__SSR_CSR_TELEMETRY_LOADED__')) return;
+      parts.push(text);
+    });
+    return parts.join('\n');
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
  * Detect frameworks and their rendering patterns
  * @param {Document|null} rawDocument - Parsed raw (pre-JS) HTML document, when
  *   the comparison fetch succeeded. Framework markers only count as hydration
@@ -544,6 +740,22 @@ function detectFrameworks(rawDocument) {
   let ssrScore = 0;
   let csrScore = 0;
   const detailedInfo = {};
+
+  // Script-content markers: frameworks that ship no identifiable element.
+  // Scoped to script contents rather than the whole serialized document, so a
+  // docs page that merely *writes about* __next_f is not a Next.js app — and
+  // so this detector never matches its own bundle when it is injected as a
+  // script tag rather than as a content script.
+  const renderedSource = collectScriptSource(document);
+  const rawSource = collectScriptSource(rawDocument);
+
+  const contentPatterns = config.frameworkContentPatterns || {};
+  const contentMarkers = {};
+  const rawContentMarkers = {};
+  for (const [framework, patterns] of Object.entries(contentPatterns)) {
+    contentMarkers[framework] = patterns.some(pat => renderedSource.includes(pat));
+    rawContentMarkers[framework] = patterns.some(pat => rawSource.includes(pat));
+  }
 
   // Detect framework hydration markers
   const frameworkMarkers = {};
@@ -564,6 +776,12 @@ function detectFrameworks(rawDocument) {
       frameworkMarkers[framework] = false;
       rawFrameworkMarkers[framework] = false;
     }
+  }
+
+  // Merge selector hits with script-content hits, on both sides
+  for (const framework of Object.keys(contentPatterns)) {
+    frameworkMarkers[framework] = frameworkMarkers[framework] || contentMarkers[framework];
+    rawFrameworkMarkers[framework] = rawFrameworkMarkers[framework] || rawContentMarkers[framework];
   }
 
   const foundFrameworks = Object.entries(frameworkMarkers)
@@ -779,7 +997,33 @@ function analyzePerformance() {
     const navTiming = performanceEntries[0];
     const domContentLoadedTime = navTiming.domContentLoadedEventEnd - navTiming.domContentLoadedEventStart;
     const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint')[0];
-    const fcpTime = firstContentfulPaint ? firstContentfulPaint.startTime : null;
+
+    // A prerendered document's timings are measured from when the prerender
+    // started, not from when the user navigated: paint often lands *before*
+    // activation, so raw FCP reads as impossibly fast. Rebase on
+    // activationStart, the way the Paint Timing spec prescribes.
+    const navContext = typeof window.getNavigationContext === 'function'
+      ? window.getNavigationContext()
+      : { activationStart: 0, deliveryType: '', timingIsReliable: true };
+    const rawFcp = firstContentfulPaint ? firstContentfulPaint.startTime : null;
+    const fcpTime = rawFcp != null
+      ? Math.max(0, rawFcp - navContext.activationStart)
+      : null;
+
+    // A prefetched navigation paid its network cost earlier, so both the
+    // "fast DOM" and "fast FCP" branches below would fire on architecture
+    // that has nothing to do with where the HTML was rendered. Skip the
+    // timing heuristics entirely rather than score them wrong.
+    if (!navContext.timingIsReliable) {
+      indicators.push('speculative navigation - timing signals skipped');
+      detailedInfo.timing = {
+        domContentLoaded: Math.round(domContentLoadedTime),
+        firstContentfulPaint: fcpTime != null ? Math.round(fcpTime) : null,
+        adjustedForActivation: navContext.activationStart > 0,
+        deliveryType: navContext.deliveryType
+      };
+      return { ssrScore, csrScore, indicators, details: detailedInfo };
+    }
 
     // Key CSR indicator: Fast DOM ready + slow FCP
     // This means the initial HTML loaded quickly (because it's minimal),
@@ -808,7 +1052,9 @@ function analyzePerformance() {
 
     detailedInfo.timing = {
       domContentLoaded: Math.round(domContentLoadedTime),
-      firstContentfulPaint: fcpTime ? Math.round(fcpTime) : null
+      firstContentfulPaint: fcpTime != null ? Math.round(fcpTime) : null,
+      adjustedForActivation: navContext.activationStart > 0,
+      deliveryType: navContext.deliveryType
     };
   }
 
@@ -924,6 +1170,7 @@ async function pageAnalyzer() {
     // for accuracy, and detectors below need the parsed raw document)
     const comparisonResults = await window.compareInitialVsRendered();
     const rawDocument = comparisonResults?.rawDocument || null;
+    const rawHTML = comparisonResults?.rawHTML || null;
 
     // Collect results from all detector modules (sync)
     const contentResults = window.analyzeContent();
@@ -932,6 +1179,7 @@ async function pageAnalyzer() {
     const performanceResults = window.analyzePerformance();
     const csrPatternResults = window.detectCSRPatterns();
     const hybridResults = window.detectHybridPatterns();
+    const platformResults = window.detectPlatformSignals(rawDocument, rawHTML);
 
     // Combine all scores
     let ssrScore = 0;
@@ -989,6 +1237,13 @@ async function pageAnalyzer() {
     csrScore += performanceResults.csrScore;
     indicators.push(...performanceResults.indicators);
     Object.assign(detailedInfo, performanceResults.details);
+
+    // Add modern platform signals (speculation rules, view transitions,
+    // declarative partial updates)
+    ssrScore += platformResults.ssrScore;
+    csrScore += platformResults.csrScore;
+    indicators.push(...platformResults.indicators);
+    Object.assign(detailedInfo, platformResults.details);
 
     // Decisive CSR: the server sent almost none of the visible text. Every
     // SSR signal above reads the post-JS DOM, where a booted CSR app looks
