@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { unstable_noStore as noStore } from 'next/cache';
+import { NextRequest, NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
 import {
   getTotalStats,
   getTopFrameworks,
@@ -9,16 +9,16 @@ import {
   getLatestAnalysisTime,
   getContentComparisonStats,
   getCoreWebVitalsByRenderType,
-} from '@/lib/db';
-import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
-import { getNavigationByRenderType } from '@/lib/db-phase3';
+} from "@/lib/db";
+import { getTechStackStats, getSEOStats } from "@/lib/db-phase2";
+import { getNavigationByRenderType } from "@/lib/db-phase3";
 
 // Mark as dynamic to prevent static optimization errors
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const cacheHeaders = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate',
+  "Cache-Control": "no-store, no-cache, must-revalidate",
 };
 
 export async function GET(request: NextRequest) {
@@ -26,44 +26,69 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get('type') || 'all';
+    const type = searchParams.get("type") || "all";
+    for (const [key, min, max] of [
+      ["limit", 1, 100],
+      ["offset", 0, 100000],
+      ["days", 1, 365],
+    ] as const) {
+      const value = searchParams.get(key);
+      if (
+        value !== null &&
+        (!/^\d+$/.test(value) ||
+          !Number.isSafeInteger(Number(value)) ||
+          Number(value) < min ||
+          Number(value) > max)
+      ) {
+        return NextResponse.json(
+          { success: false, error: "Invalid query parameters" },
+          { status: 400, headers: cacheHeaders },
+        );
+      }
+    }
 
     switch (type) {
-      case 'total':
+      case "total":
         const totalStats = await getTotalStats();
         return NextResponse.json(totalStats, { headers: cacheHeaders });
 
-      case 'frameworks':
-        const limit = parseInt(searchParams.get('limit') || '10');
+      case "frameworks":
+        const limit = parseInt(searchParams.get("limit") || "10");
         const frameworks = await getTopFrameworks(limit);
         return NextResponse.json(frameworks, { headers: cacheHeaders });
 
-      case 'domains':
-        const domainLimit = parseInt(searchParams.get('limit') || '20');
+      case "domains":
+        const domainLimit = parseInt(searchParams.get("limit") || "20");
         const domains = await getTopDomains(domainLimit);
         return NextResponse.json(domains, { headers: cacheHeaders });
 
-      case 'timeline':
-        const days = parseInt(searchParams.get('days') || '30');
+      case "timeline":
+        const days = parseInt(searchParams.get("days") || "30");
         const timeline = await getAnalysesByDate(days);
         return NextResponse.json(timeline, { headers: cacheHeaders });
 
-      case 'recent':
-        const recentLimit = parseInt(searchParams.get('limit') || '20');
-        const offset = parseInt(searchParams.get('offset') || '0');
+      case "recent":
+        const recentLimit = parseInt(searchParams.get("limit") || "20");
+        const offset = parseInt(searchParams.get("offset") || "0");
         const recent = await getRecentAnalyses(recentLimit, offset);
         return NextResponse.json(recent, { headers: cacheHeaders });
 
-      case 'contentComparison':
+      case "contentComparison":
         const contentStats = await getContentComparisonStats();
         return NextResponse.json(contentStats, { headers: cacheHeaders });
 
-      case 'all':
+      case "all":
       default:
         const [
-          total, topFrameworks, topDomains, timelineData, recentAnalyses,
-          latestTime, contentComparison,
-          techStack, seoStats,
+          total,
+          topFrameworks,
+          topDomains,
+          timelineData,
+          recentAnalyses,
+          latestTime,
+          contentComparison,
+          techStack,
+          seoStats,
           coreWebVitals,
           navigationByRenderType,
         ] = await Promise.all([
@@ -80,25 +105,28 @@ export async function GET(request: NextRequest) {
           getNavigationByRenderType(),
         ]);
 
-        return NextResponse.json({
-          total,
-          frameworks: topFrameworks,
-          domains: topDomains,
-          timeline: timelineData,
-          recent: recentAnalyses,
-          latestTime,
-          contentComparison,
-          techStack,
-          seoStats,
-          coreWebVitals,
-          navigationByRenderType,
-        }, { headers: cacheHeaders });
+        return NextResponse.json(
+          {
+            total,
+            frameworks: topFrameworks,
+            domains: topDomains,
+            timeline: timelineData,
+            recent: recentAnalyses,
+            latestTime,
+            contentComparison,
+            techStack,
+            seoStats,
+            coreWebVitals,
+            navigationByRenderType,
+          },
+          { headers: cacheHeaders },
+        );
     }
   } catch (error) {
-    console.error('Stats query error:', error);
+    console.error("Stats query error:", error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500, headers: cacheHeaders }
+      { success: false, error: "Internal server error" },
+      { status: 500, headers: cacheHeaders },
     );
   }
 }

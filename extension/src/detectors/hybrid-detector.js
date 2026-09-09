@@ -13,25 +13,32 @@ function detectHybridPatterns() {
   const details = {};
 
   // Detect Astro islands architecture
-  const astroIslands = document.querySelectorAll('[data-astro-island], astro-island');
+  const astroIslands = document.querySelectorAll(
+    "[data-astro-island], astro-island",
+  );
   if (astroIslands.length > 0) {
     hybridScore += 30;
-    indicators.push(`Astro islands architecture (${astroIslands.length} islands)`);
+    indicators.push(
+      `Astro islands architecture (${astroIslands.length} islands)`,
+    );
     details.astroIslands = astroIslands.length;
   }
 
   // Detect multiple hydration targets (common in partial hydration)
   const hydrationTargets = document.querySelectorAll(
-    '[data-hydrate], [data-island], [data-client], [client\\:load], [client\\:idle], [client\\:visible]'
+    "[data-hydrate], [data-island], [data-client], [client\\:load], [client\\:idle], [client\\:visible]",
   );
   if (hydrationTargets.length > 1) {
     hybridScore += 25;
-    indicators.push(`Partial hydration pattern (${hydrationTargets.length} targets)`);
+    indicators.push(
+      `Partial hydration pattern (${hydrationTargets.length} targets)`,
+    );
     details.hydrationTargets = hydrationTargets.length;
   }
 
   // Detect React Server Components patterns
-  const hasServerComponents = document.querySelector('[data-rsc], [data-server-component]') !== null;
+  const hasServerComponents =
+    document.querySelector("[data-rsc], [data-server-component]") !== null;
   if (hasServerComponents) {
     hybridScore += 20;
     indicators.push("React Server Components detected");
@@ -39,9 +46,12 @@ function detectHybridPatterns() {
   }
 
   // Detect streaming markers (Suspense boundaries)
-  const suspenseBoundaries = document.querySelectorAll('template[data-suspense], [data-suspense-boundary]');
-  const streamingComments = document.body.innerHTML.includes('<!--$-->') ||
-                            document.body.innerHTML.includes('<!--/$-->');
+  const suspenseBoundaries = document.querySelectorAll(
+    "template[data-suspense], [data-suspense-boundary]",
+  );
+  const bodyHTML = window.getDetectionBodyHTML();
+  const streamingComments =
+    bodyHTML.includes("<!--$-->") || bodyHTML.includes("<!--/$-->");
   if (suspenseBoundaries.length > 0 || streamingComments) {
     hybridScore += 15;
     indicators.push("Streaming SSR with Suspense boundaries");
@@ -50,7 +60,7 @@ function detectHybridPatterns() {
 
   // Detect progressive enhancement patterns
   const enhancementMarkers = document.querySelectorAll(
-    '[data-enhance], [data-progressive], [data-turbo], [data-turbolinks]'
+    "[data-enhance], [data-progressive], [data-turbo], [data-turbolinks]",
   );
   if (enhancementMarkers.length > 0) {
     hybridScore += 15;
@@ -59,7 +69,7 @@ function detectHybridPatterns() {
   }
 
   // Detect Qwik's resumability (hybrid by design)
-  const qwikContainer = document.querySelector('[q\\:container]');
+  const qwikContainer = document.querySelector("[q\\:container]");
   if (qwikContainer) {
     hybridScore += 25;
     indicators.push("Qwik resumability (hybrid architecture)");
@@ -67,11 +77,13 @@ function detectHybridPatterns() {
   }
 
   // Check for mixed content patterns (rich SSR content + client interactivity)
-  const hasRichContent = document.querySelectorAll('article, main, [role="main"]').length > 0 &&
-                         document.body.innerText.trim().length > 500;
-  const hasClientInteractivity = document.querySelectorAll(
-    '[onclick], [onchange], button[type="submit"], form[action], [data-action]'
-  ).length > 3;
+  const hasRichContent =
+    document.querySelectorAll('article, main, [role="main"]').length > 0 &&
+    document.body.innerText.trim().length > 500;
+  const hasClientInteractivity =
+    document.querySelectorAll(
+      '[onclick], [onchange], button[type="submit"], form[action], [data-action]',
+    ).length > 3;
 
   if (hasRichContent && hasClientInteractivity) {
     hybridScore += 10;
@@ -81,11 +93,11 @@ function detectHybridPatterns() {
   return {
     hybridScore,
     indicators,
-    details
+    details,
   };
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.detectHybridPatterns = detectHybridPatterns;
 }

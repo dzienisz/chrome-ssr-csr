@@ -1,4 +1,18 @@
-import { sql } from '@vercel/postgres';
+import { sql } from "@vercel/postgres";
+import { TECH_LABELS, aggregateNumber } from "./telemetry-schema";
+
+function categoryCounts(
+  rows: { name: unknown; count: string }[],
+  labels: string[],
+) {
+  return Object.fromEntries(
+    rows
+      .filter(
+        (row) => typeof row.name === "string" && labels.includes(row.name),
+      )
+      .map((row) => [row.name, aggregateNumber(row.count)]),
+  );
+}
 
 export async function getTechStackStats() {
   try {
@@ -7,7 +21,7 @@ export async function getTechStackStats() {
         tech_stack->>'cssFramework' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'cssFramework' IS NOT NULL
+      WHERE tech_stack->>'cssFramework' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.cssFramework)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;
@@ -18,7 +32,7 @@ export async function getTechStackStats() {
         tech_stack->>'buildTool' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'buildTool' IS NOT NULL
+      WHERE tech_stack->>'buildTool' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.buildTool)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;
@@ -29,19 +43,28 @@ export async function getTechStackStats() {
         tech_stack->>'hosting' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'hosting' IS NOT NULL
+      WHERE tech_stack->>'hosting' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.hosting)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;
     `;
 
     return {
-      cssFrameworks: Object.fromEntries(cssFrameworks.rows.map(r => [r.name, parseInt(r.count)])),
-      buildTools: Object.fromEntries(buildTools.rows.map(r => [r.name, parseInt(r.count)])),
-      hosting: Object.fromEntries(hosting.rows.map(r => [r.name, parseInt(r.count)]))
+      cssFrameworks: categoryCounts(
+        cssFrameworks.rows as { name: unknown; count: string }[],
+        TECH_LABELS.cssFramework,
+      ),
+      buildTools: categoryCounts(
+        buildTools.rows as { name: unknown; count: string }[],
+        TECH_LABELS.buildTool,
+      ),
+      hosting: categoryCounts(
+        hosting.rows as { name: unknown; count: string }[],
+        TECH_LABELS.hosting,
+      ),
     };
   } catch (error) {
-    console.error('Error fetching tech stack stats:', error);
+    console.error("Error fetching tech stack stats:", error);
     return { cssFrameworks: {}, buildTools: {}, hosting: {} };
   }
 }
@@ -51,12 +74,15 @@ export async function getSEOStats() {
     const result = await sql`
       SELECT
         COUNT(*) as total,
-        COUNT(CASE WHEN (seo_accessibility->'seo'->>'hasMetaDescription')::boolean THEN 1 END) as has_desc,
-        COUNT(CASE WHEN (seo_accessibility->'seo'->>'hasOGTags')::boolean THEN 1 END) as has_og,
-        COUNT(CASE WHEN (seo_accessibility->'seo'->>'hasTwitterCard')::boolean THEN 1 END) as has_twitter,
-        COUNT(CASE WHEN (seo_accessibility->'accessibility'->>'altTextCoverage')::int > 80 THEN 1 END) as has_alt_text,
-        COUNT(CASE WHEN (seo_accessibility->'accessibility'->>'hasAriaLabels')::boolean THEN 1 END) as has_aria,
-        COUNT(CASE WHEN (seo_accessibility->'accessibility'->>'hasLandmarks')::boolean THEN 1 END) as has_landmarks
+        COUNT(CASE WHEN seo_accessibility->'seo'->'hasMetaDescription' = 'true'::jsonb THEN 1 END) as has_desc,
+        COUNT(CASE WHEN seo_accessibility->'seo'->'hasOGTags' = 'true'::jsonb THEN 1 END) as has_og,
+        COUNT(CASE WHEN seo_accessibility->'seo'->'hasTwitterCard' = 'true'::jsonb THEN 1 END) as has_twitter,
+        COUNT(CASE WHEN CASE WHEN jsonb_typeof(seo_accessibility->'accessibility'->'altTextCoverage') = 'number'
+          THEN (seo_accessibility->'accessibility'->>'altTextCoverage')::numeric BETWEEN 0 AND 100
+            AND (seo_accessibility->'accessibility'->>'altTextCoverage')::numeric > 80
+          ELSE false END THEN 1 END) as has_alt_text,
+        COUNT(CASE WHEN seo_accessibility->'accessibility'->'hasAriaLabels' = 'true'::jsonb THEN 1 END) as has_aria,
+        COUNT(CASE WHEN seo_accessibility->'accessibility'->'hasLandmarks' = 'true'::jsonb THEN 1 END) as has_landmarks
       FROM analyses
       WHERE seo_accessibility IS NOT NULL;
     `;
@@ -69,16 +95,16 @@ export async function getSEOStats() {
       metaTags: {
         hasDescription: parseInt(row.has_desc),
         hasOGTags: parseInt(row.has_og),
-        hasTwitterCard: parseInt(row.has_twitter)
+        hasTwitterCard: parseInt(row.has_twitter),
       },
       accessibility: {
         hasAltText: parseInt(row.has_alt_text),
         hasAriaLabels: parseInt(row.has_aria),
-        hasLandmarks: parseInt(row.has_landmarks)
-      }
+        hasLandmarks: parseInt(row.has_landmarks),
+      },
     };
   } catch (error) {
-    console.error('Error fetching SEO stats:', error);
+    console.error("Error fetching SEO stats:", error);
     return null;
   }
 }

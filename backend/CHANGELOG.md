@@ -2,9 +2,23 @@
 
 All notable changes to the SSR/CSR Analytics Dashboard will be documented in this file.
 
+## [Unreleased]
+
+### Security and privacy
+
+- Disable analysis deletion with an unconditional 403 and remove public dashboard deletion controls.
+- Validate and project telemetry at ingress with a streamed 64 KiB body cap, URL-origin/hostname normalization, numeric bounds and closed-vocabulary labels.
+- Exclude raw hydration messages, route details, free-form indicators, user-agent values and SEO text from new stored records.
+- Project recent records through an explicit public allowlist for both API and server-rendered dashboard, including historical rows; validate aggregate categories and guard historical JSONB metric casts.
+- Bound stats pagination/date parameters and reject malformed values with 400.
+- Merge canonical framework/domain categories before selecting top results, preserve weighted domain confidence and render modes, and group unknown page/device categories consistently.
+- Apply technology allowlists before top-ten limits, read current connection metadata with a legacy fallback, and preserve server-derived country when device details are absent.
+- Clarify public telemetry exposure and disabled deletion. No historical cleanup, migration, consent-default change or deployment is included.
+
 ## [1.6.0] - 2026-07-08
 
 ### Added
+
 - **SPA vs MPA Navigation card**: Phase 3 navigation telemetry (collected since
   v3.5.0 but displayed nowhere since `user-journey-analysis.tsx` was removed in
   v1.4.0) now surfaces as a dashboard card — SPA share and average client-side
@@ -17,6 +31,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.5.1] - 2026-07-07
 
 ### Fixed
+
 - **JSON `null` stored instead of SQL `NULL`**: `insertAnalysis` used
   `JSON.stringify(x) || null`, and `JSON.stringify(null)` is the truthy string
   `"null"` — so absent telemetry (CWV, device info, tech stack, SEO, hydration,
@@ -31,6 +46,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.5.0] - 2026-07-07
 
 ### Added
+
 - **Core Web Vitals by Render Type**: New dashboard card comparing real-world
   LCP, CLS, TTFB and CWV pass rate across SSR / CSR / Hybrid sites, using the
   previously unconsumed `getCoreWebVitalsByRenderType()` aggregation. FID is
@@ -39,6 +55,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.4.0] - 2026-02-18
 
 ### Added
+
 - **Country detection**: `/api/analyze` now reads Vercel's geo header (`request.geo.country`)
   and stores the 2-letter country code inside the existing `device_info` JSONB — no schema
   migration required; old rows degrade gracefully to `—`
@@ -50,6 +67,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
   link; Timestamp box now shows country flag + code when available
 
 ### Changed
+
 - **PlatformBreakdown**: Replaced Tremor `ProgressBar`/`Color` with custom `h-2` div bars
   matching the style of `RenderTypeDistribution` and `TechStackTrends`; `Lightweight` now
   correctly maps to `amber-500` instead of Tremor's inconsistent `yellow`
@@ -62,6 +80,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.3.0] - 2026-02-18
 
 ### Fixed
+
 - **Initial load completeness**: Phase 1 (Core Web Vitals, page types, device) and Phase 3
   (hydration, navigation) now fetched server-side on initial render — previously blank until
   the first 30-second client-side refresh
@@ -79,6 +98,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - **Type safety**: Exported `DashboardData` interface; replaced `data as any` with explicit cast
 
 ### Changed
+
 - **`/api/stats?type=all`**: Now returns Phase 2 (tech stack, SEO) and Phase 3 (hydration,
   navigation) data alongside Phase 1 — single endpoint covers everything the dashboard needs
 - **CWV thresholds**: Extracted to `lib/cwv-thresholds.ts` as single source of truth;
@@ -88,6 +108,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.2.0] - 2026-01-28
 
 ### Added - Phase 2 & 3 Analytics
+
 - **Core Web Vitals**: LCP, CLS, FID, TTFB, TTI tracking and analytics
 - **Page Type Detection**: E-commerce, blog, docs, app, homepage classification
 - **Device Analytics**: Mobile/tablet/desktop and browser tracking
@@ -97,6 +118,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - **Navigation Analytics**: BFCache, SPA transitions, INP precursors
 
 ### Changed
+
 - **Infinite Scroll**: Seamlessly browse historical analyses
 - **Standardized UI**: Full migration to customized Tremor design system
 - **Record Management**: Added ability to delete stale or unwanted analysis records
@@ -105,6 +127,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 ## [1.1.0] - 2026-01-27
 
 ### Added
+
 - **Content Comparison Analytics**: New dashboard section showing v3.2.0+ metrics
   - Average content ratio (raw HTML / rendered)
   - High ratio count (SSR indicator)
@@ -115,12 +138,14 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - **Extended Metrics Storage**: Now stores contentRatio, hybridScore, rawHtmlLength, renderedLength
 
 ### Changed
+
 - Dashboard interface updated with content comparison card
 - API now returns contentComparison stats in `?type=all` response
 
 ## [1.0.0] - 2026-01-26
 
 ### Added
+
 - **Live Dashboard**: Real-time analytics with auto-refresh
   - Live countdown timer showing seconds until next refresh
   - "Refreshing..." indicator during data fetch
@@ -139,6 +164,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - **Vercel Analytics**: Visitor tracking integration
 
 ### Technical
+
 - Next.js 14 with App Router
 - Vercel Postgres (Neon) database
 - Tremor UI components for charts

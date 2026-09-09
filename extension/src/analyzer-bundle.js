@@ -208,10 +208,14 @@ if (typeof module !== 'undefined' && module.exports) {
  * @returns {string} Normalized visible text
  */
 function extractVisibleText(body) {
-  if (!body) return '';
+  if (!body) return "";
   const clone = body.cloneNode(true);
-  clone.querySelectorAll('script, style, noscript, template').forEach(el => el.remove());
-  return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  clone
+    .querySelectorAll(
+      "script, style, noscript, template, #ssr-detector-probe-data",
+    )
+    .forEach((el) => el.remove());
+  return (clone.textContent || "").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -225,8 +229,8 @@ async function compareInitialVsRendered() {
   try {
     // Fetch raw HTML (before JS execution)
     const response = await fetch(window.location.href, {
-      credentials: 'same-origin',
-      headers: { 'Accept': 'text/html' }
+      credentials: "same-origin",
+      headers: { Accept: "text/html" },
     });
 
     if (!response.ok) {
@@ -237,7 +241,7 @@ async function compareInitialVsRendered() {
 
     // Parse raw HTML
     const parser = new DOMParser();
-    const rawDoc = parser.parseFromString(rawHTML, 'text/html');
+    const rawDoc = parser.parseFromString(rawHTML, "text/html");
     const rawBodyText = extractVisibleText(rawDoc.body);
 
     // Get current rendered DOM text, measured the same way
@@ -253,14 +257,16 @@ async function compareInitialVsRendered() {
     // Determine if CSR or SSR based on ratio.
     // Both branches require enough real text to judge (symmetric guards).
     const minLength = config.contentComparison.minRenderedLength;
-    const isLikelyCSR = contentRatio < config.contentComparison.csrRatio &&
-                        renderedLength > minLength;
-    const isLikelySSR = contentRatio > config.contentComparison.ssrRatio &&
-                        rawLength > minLength;
+    const isLikelyCSR =
+      contentRatio < config.contentComparison.csrRatio &&
+      renderedLength > minLength;
+    const isLikelySSR =
+      contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
 
     // Server sent almost none of the visible text: near-conclusive CSR
-    const isDecisiveCSR = contentRatio < config.contentComparison.decisiveCsrRatio &&
-                          renderedLength > minLength;
+    const isDecisiveCSR =
+      contentRatio < config.contentComparison.decisiveCsrRatio &&
+      renderedLength > minLength;
 
     return {
       rawLength,
@@ -274,17 +280,29 @@ async function compareInitialVsRendered() {
       rawDocument: rawDoc,
       // Raw source for markers no CSS selector can reach (script contents,
       // processing instructions). Same rule: never copy into the output.
-      rawHTML
+      rawHTML,
     };
   } catch (e) {
     // Fetch failed (CORS, network error, etc.) - can't determine
-    console.debug('CSR/SSR Detector: Raw HTML fetch failed', e.message);
+    console.debug("CSR/SSR Detector: Raw HTML fetch failed", e.message);
     return null;
   }
 }
 
+function getDetectionBodyHTML() {
+  const body = document.body;
+  if (!body) return "";
+  if (!body.querySelector("#ssr-detector-probe-data")) return body.innerHTML;
+  const clone = body.cloneNode(true);
+  clone
+    .querySelectorAll("#ssr-detector-probe-data")
+    .forEach((el) => el.remove());
+  return clone.innerHTML;
+}
+
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
+  window.getDetectionBodyHTML = getDetectionBodyHTML;
   window.extractVisibleText = extractVisibleText;
   window.compareInitialVsRendered = compareInitialVsRendered;
 }
@@ -387,25 +405,32 @@ function detectHybridPatterns() {
   const details = {};
 
   // Detect Astro islands architecture
-  const astroIslands = document.querySelectorAll('[data-astro-island], astro-island');
+  const astroIslands = document.querySelectorAll(
+    "[data-astro-island], astro-island",
+  );
   if (astroIslands.length > 0) {
     hybridScore += 30;
-    indicators.push(`Astro islands architecture (${astroIslands.length} islands)`);
+    indicators.push(
+      `Astro islands architecture (${astroIslands.length} islands)`,
+    );
     details.astroIslands = astroIslands.length;
   }
 
   // Detect multiple hydration targets (common in partial hydration)
   const hydrationTargets = document.querySelectorAll(
-    '[data-hydrate], [data-island], [data-client], [client\\:load], [client\\:idle], [client\\:visible]'
+    "[data-hydrate], [data-island], [data-client], [client\\:load], [client\\:idle], [client\\:visible]",
   );
   if (hydrationTargets.length > 1) {
     hybridScore += 25;
-    indicators.push(`Partial hydration pattern (${hydrationTargets.length} targets)`);
+    indicators.push(
+      `Partial hydration pattern (${hydrationTargets.length} targets)`,
+    );
     details.hydrationTargets = hydrationTargets.length;
   }
 
   // Detect React Server Components patterns
-  const hasServerComponents = document.querySelector('[data-rsc], [data-server-component]') !== null;
+  const hasServerComponents =
+    document.querySelector("[data-rsc], [data-server-component]") !== null;
   if (hasServerComponents) {
     hybridScore += 20;
     indicators.push("React Server Components detected");
@@ -413,9 +438,12 @@ function detectHybridPatterns() {
   }
 
   // Detect streaming markers (Suspense boundaries)
-  const suspenseBoundaries = document.querySelectorAll('template[data-suspense], [data-suspense-boundary]');
-  const streamingComments = document.body.innerHTML.includes('<!--$-->') ||
-                            document.body.innerHTML.includes('<!--/$-->');
+  const suspenseBoundaries = document.querySelectorAll(
+    "template[data-suspense], [data-suspense-boundary]",
+  );
+  const bodyHTML = window.getDetectionBodyHTML();
+  const streamingComments =
+    bodyHTML.includes("<!--$-->") || bodyHTML.includes("<!--/$-->");
   if (suspenseBoundaries.length > 0 || streamingComments) {
     hybridScore += 15;
     indicators.push("Streaming SSR with Suspense boundaries");
@@ -424,7 +452,7 @@ function detectHybridPatterns() {
 
   // Detect progressive enhancement patterns
   const enhancementMarkers = document.querySelectorAll(
-    '[data-enhance], [data-progressive], [data-turbo], [data-turbolinks]'
+    "[data-enhance], [data-progressive], [data-turbo], [data-turbolinks]",
   );
   if (enhancementMarkers.length > 0) {
     hybridScore += 15;
@@ -433,7 +461,7 @@ function detectHybridPatterns() {
   }
 
   // Detect Qwik's resumability (hybrid by design)
-  const qwikContainer = document.querySelector('[q\\:container]');
+  const qwikContainer = document.querySelector("[q\\:container]");
   if (qwikContainer) {
     hybridScore += 25;
     indicators.push("Qwik resumability (hybrid architecture)");
@@ -441,11 +469,13 @@ function detectHybridPatterns() {
   }
 
   // Check for mixed content patterns (rich SSR content + client interactivity)
-  const hasRichContent = document.querySelectorAll('article, main, [role="main"]').length > 0 &&
-                         document.body.innerText.trim().length > 500;
-  const hasClientInteractivity = document.querySelectorAll(
-    '[onclick], [onchange], button[type="submit"], form[action], [data-action]'
-  ).length > 3;
+  const hasRichContent =
+    document.querySelectorAll('article, main, [role="main"]').length > 0 &&
+    document.body.innerText.trim().length > 500;
+  const hasClientInteractivity =
+    document.querySelectorAll(
+      '[onclick], [onchange], button[type="submit"], form[action], [data-action]',
+    ).length > 3;
 
   if (hasRichContent && hasClientInteractivity) {
     hybridScore += 10;
@@ -455,12 +485,12 @@ function detectHybridPatterns() {
   return {
     hybridScore,
     indicators,
-    details
+    details,
   };
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.detectHybridPatterns = detectHybridPatterns;
 }
 
@@ -629,14 +659,18 @@ function analyzeContent() {
   let ssrScore = 0;
   let csrScore = 0;
 
-  const bodyHTML = document.body.innerHTML;
+  const bodyHTML = window.getDetectionBodyHTML();
+  const childrenCount = Array.from(document.body.children).filter(
+    (el) => el.id !== "ssr-detector-probe-data",
+  ).length;
   const bodyText = document.body.innerText.trim();
 
   // Check for rich initial content
   const hasRichInitialContent =
-    document.body.children.length > config.content.minChildren &&
+    childrenCount > config.content.minChildren &&
     bodyText.length > config.content.minTextLength &&
-    document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, article, section').length > config.content.minSemanticElements;
+    document.querySelectorAll("p, h1, h2, h3, h4, h5, h6, article, section")
+      .length > config.content.minSemanticElements;
 
   if (hasRichInitialContent) {
     ssrScore += config.scoring.richContent;
@@ -649,19 +683,26 @@ function analyzeContent() {
   // Check for loading states
   const loadingIndicators = bodyHTML.toLowerCase();
   const hasLoadingStates =
-    loadingIndicators.includes('loading') ||
-    loadingIndicators.includes('spinner') ||
-    loadingIndicators.includes('skeleton') ||
-    document.querySelector('.loading, .spinner, .skeleton') !== null;
+    loadingIndicators.includes("loading") ||
+    loadingIndicators.includes("spinner") ||
+    loadingIndicators.includes("skeleton") ||
+    document.querySelector(".loading, .spinner, .skeleton") !== null;
 
-  if (hasLoadingStates && bodyText.length < config.content.minLoadingStateText) {
+  if (
+    hasLoadingStates &&
+    bodyText.length < config.content.minLoadingStateText
+  ) {
     csrScore += config.scoring.loadingStates;
     indicators.push("loading states with minimal content (CSR)");
   }
 
   // Content-to-script ratio analysis
-  const allElements = document.querySelectorAll('*').length;
-  const scriptElements = document.querySelectorAll('script').length;
+  const allElements =
+    document.querySelectorAll("*").length -
+    document.querySelectorAll(
+      "#ssr-detector-probe-data, #ssr-detector-probe-data *",
+    ).length;
+  const scriptElements = document.querySelectorAll("script").length;
   const scriptRatio = scriptElements / allElements;
 
   if (scriptRatio > config.scriptRatio.high) {
@@ -678,14 +719,14 @@ function analyzeContent() {
     indicators,
     details: {
       contentLength: bodyText.length,
-      childrenCount: document.body.children.length,
-      scriptRatio: Math.round(scriptRatio * 100) / 100
-    }
+      childrenCount: childrenCount,
+      scriptRatio: Math.round(scriptRatio * 100) / 100,
+    },
   };
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.analyzeContent = analyzeContent;
 }
 
@@ -710,19 +751,22 @@ if (typeof window !== 'undefined') {
  * @returns {string}
  */
 function collectScriptSource(doc) {
-  if (!doc) return '';
+  if (!doc) return "";
   try {
     const parts = [];
-    doc.querySelectorAll('script').forEach(script => {
-      const text = script.textContent || '';
+    doc.querySelectorAll("script").forEach((script) => {
+      const text = script.textContent || "";
       if (!text) return;
-      if (text.includes('__SSR_CSR_ANALYZER_LOADED__') ||
-          text.includes('__SSR_CSR_TELEMETRY_LOADED__')) return;
+      if (
+        text.includes("__SSR_CSR_ANALYZER_LOADED__") ||
+        text.includes("__SSR_CSR_TELEMETRY_LOADED__")
+      )
+        return;
       parts.push(text);
     });
-    return parts.join('\n');
+    return parts.join("\n");
   } catch (e) {
-    return '';
+    return "";
   }
 }
 
@@ -753,8 +797,12 @@ function detectFrameworks(rawDocument) {
   const contentMarkers = {};
   const rawContentMarkers = {};
   for (const [framework, patterns] of Object.entries(contentPatterns)) {
-    contentMarkers[framework] = patterns.some(pat => renderedSource.includes(pat));
-    rawContentMarkers[framework] = patterns.some(pat => rawSource.includes(pat));
+    contentMarkers[framework] = patterns.some((pat) =>
+      renderedSource.includes(pat),
+    );
+    rawContentMarkers[framework] = patterns.some((pat) =>
+      rawSource.includes(pat),
+    );
   }
 
   // Detect framework hydration markers
@@ -762,16 +810,17 @@ function detectFrameworks(rawDocument) {
   const rawFrameworkMarkers = {};
   for (const [framework, selector] of Object.entries(config.frameworks)) {
     try {
-      if (framework === 'react') {
+      if (framework === "react") {
         // Special handling for React
         frameworkMarkers[framework] =
           document.querySelector(selector) !== null ||
-          document.getElementById('root')?._reactRootContainer !== undefined;
+          document.getElementById("root")?._reactRootContainer !== undefined;
       } else {
         frameworkMarkers[framework] = document.querySelector(selector) !== null;
       }
-      rawFrameworkMarkers[framework] =
-        rawDocument ? rawDocument.querySelector(selector) !== null : false;
+      rawFrameworkMarkers[framework] = rawDocument
+        ? rawDocument.querySelector(selector) !== null
+        : false;
     } catch (e) {
       frameworkMarkers[framework] = false;
       rawFrameworkMarkers[framework] = false;
@@ -780,8 +829,10 @@ function detectFrameworks(rawDocument) {
 
   // Merge selector hits with script-content hits, on both sides
   for (const framework of Object.keys(contentPatterns)) {
-    frameworkMarkers[framework] = frameworkMarkers[framework] || contentMarkers[framework];
-    rawFrameworkMarkers[framework] = rawFrameworkMarkers[framework] || rawContentMarkers[framework];
+    frameworkMarkers[framework] =
+      frameworkMarkers[framework] || contentMarkers[framework];
+    rawFrameworkMarkers[framework] =
+      rawFrameworkMarkers[framework] || rawContentMarkers[framework];
   }
 
   const foundFrameworks = Object.entries(frameworkMarkers)
@@ -791,12 +842,18 @@ function detectFrameworks(rawDocument) {
   if (foundFrameworks.length > 0) {
     detailedInfo.frameworks = foundFrameworks;
 
-    const hydratedFrameworks = foundFrameworks.filter(f => rawFrameworkMarkers[f]);
+    const hydratedFrameworks = foundFrameworks.filter(
+      (f) => rawFrameworkMarkers[f],
+    );
     if (hydratedFrameworks.length > 0) {
       ssrScore += config.scoring.frameworkMarkers;
-      indicators.push(`${hydratedFrameworks.join(', ')} hydration markers in raw HTML (SSR)`);
+      indicators.push(
+        `${hydratedFrameworks.join(", ")} hydration markers in raw HTML (SSR)`,
+      );
     } else {
-      indicators.push(`${foundFrameworks.join(', ')} markers only in rendered DOM (not SSR evidence)`);
+      indicators.push(
+        `${foundFrameworks.join(", ")} markers only in rendered DOM (not SSR evidence)`,
+      );
     }
   }
 
@@ -804,7 +861,8 @@ function detectFrameworks(rawDocument) {
   const staticGeneratorMarkers = {};
   for (const [generator, selector] of Object.entries(config.staticGenerators)) {
     try {
-      staticGeneratorMarkers[generator] = document.querySelector(selector) !== null;
+      staticGeneratorMarkers[generator] =
+        document.querySelector(selector) !== null;
     } catch (e) {
       staticGeneratorMarkers[generator] = false;
     }
@@ -816,15 +874,18 @@ function detectFrameworks(rawDocument) {
 
   if (foundGenerators.length > 0) {
     ssrScore += config.scoring.staticGenerator;
-    indicators.push(`${foundGenerators.join(', ')} static site generator detected (SSR)`);
+    indicators.push(
+      `${foundGenerators.join(", ")} static site generator detected (SSR)`,
+    );
     detailedInfo.generators = foundGenerators;
   }
 
   // Check for serialized data (strong SSR indicator)
-  const bodyHTML = document.body.innerHTML;
-  const hasInlineData = config.serializedDataPatterns.some(pattern =>
-    bodyHTML.includes(pattern)
-  ) || /window\.__[\w_]+__\s*=/.test(bodyHTML);
+  const bodyHTML = window.getDetectionBodyHTML();
+  const hasInlineData =
+    config.serializedDataPatterns.some((pattern) =>
+      bodyHTML.includes(pattern),
+    ) || /window\.__[\w_]+__\s*=/.test(bodyHTML);
 
   if (hasInlineData) {
     ssrScore += config.scoring.serializedData;
@@ -832,24 +893,33 @@ function detectFrameworks(rawDocument) {
   }
 
   // Analyze script patterns
-  const scripts = document.querySelectorAll('script[src]');
+  const scripts = document.querySelectorAll("script[src]");
   let frameworkScriptCount = 0;
   let hasLazyChunks = false;
   let hasHydrationScripts = false;
 
-  scripts.forEach(script => {
+  scripts.forEach((script) => {
     const src = script.src.toLowerCase();
 
-    if (src.includes('react') || src.includes('vue') || src.includes('angular') ||
-        src.includes('svelte') || src.includes('solid')) {
+    if (
+      src.includes("react") ||
+      src.includes("vue") ||
+      src.includes("angular") ||
+      src.includes("svelte") ||
+      src.includes("solid")
+    ) {
       frameworkScriptCount++;
     }
 
-    if (src.includes('chunk') || src.includes('_next/static') || src.includes('_nuxt/')) {
+    if (
+      src.includes("chunk") ||
+      src.includes("_next/static") ||
+      src.includes("_nuxt/")
+    ) {
       hasLazyChunks = true;
     }
 
-    if (src.includes('hydrat') || src.includes('client')) {
+    if (src.includes("hydrat") || src.includes("client")) {
       hasHydrationScripts = true;
     }
   });
@@ -865,7 +935,7 @@ function detectFrameworks(rawDocument) {
   }
 
   // Check for client-side routing
-  const hasClientRouting = config.routerSelectors.some(selector => {
+  const hasClientRouting = config.routerSelectors.some((selector) => {
     try {
       return document.querySelector(selector) !== null;
     } catch (e) {
@@ -882,12 +952,12 @@ function detectFrameworks(rawDocument) {
     ssrScore,
     csrScore,
     indicators,
-    details: detailedInfo
+    details: detailedInfo,
   };
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.detectFrameworks = detectFrameworks;
 }
 

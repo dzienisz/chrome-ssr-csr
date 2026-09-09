@@ -12,10 +12,14 @@
  * @returns {string} Normalized visible text
  */
 function extractVisibleText(body) {
-  if (!body) return '';
+  if (!body) return "";
   const clone = body.cloneNode(true);
-  clone.querySelectorAll('script, style, noscript, template').forEach(el => el.remove());
-  return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  clone
+    .querySelectorAll(
+      "script, style, noscript, template, #ssr-detector-probe-data",
+    )
+    .forEach((el) => el.remove());
+  return (clone.textContent || "").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -29,8 +33,8 @@ async function compareInitialVsRendered() {
   try {
     // Fetch raw HTML (before JS execution)
     const response = await fetch(window.location.href, {
-      credentials: 'same-origin',
-      headers: { 'Accept': 'text/html' }
+      credentials: "same-origin",
+      headers: { Accept: "text/html" },
     });
 
     if (!response.ok) {
@@ -41,7 +45,7 @@ async function compareInitialVsRendered() {
 
     // Parse raw HTML
     const parser = new DOMParser();
-    const rawDoc = parser.parseFromString(rawHTML, 'text/html');
+    const rawDoc = parser.parseFromString(rawHTML, "text/html");
     const rawBodyText = extractVisibleText(rawDoc.body);
 
     // Get current rendered DOM text, measured the same way
@@ -57,14 +61,16 @@ async function compareInitialVsRendered() {
     // Determine if CSR or SSR based on ratio.
     // Both branches require enough real text to judge (symmetric guards).
     const minLength = config.contentComparison.minRenderedLength;
-    const isLikelyCSR = contentRatio < config.contentComparison.csrRatio &&
-                        renderedLength > minLength;
-    const isLikelySSR = contentRatio > config.contentComparison.ssrRatio &&
-                        rawLength > minLength;
+    const isLikelyCSR =
+      contentRatio < config.contentComparison.csrRatio &&
+      renderedLength > minLength;
+    const isLikelySSR =
+      contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
 
     // Server sent almost none of the visible text: near-conclusive CSR
-    const isDecisiveCSR = contentRatio < config.contentComparison.decisiveCsrRatio &&
-                          renderedLength > minLength;
+    const isDecisiveCSR =
+      contentRatio < config.contentComparison.decisiveCsrRatio &&
+      renderedLength > minLength;
 
     return {
       rawLength,
@@ -78,17 +84,29 @@ async function compareInitialVsRendered() {
       rawDocument: rawDoc,
       // Raw source for markers no CSS selector can reach (script contents,
       // processing instructions). Same rule: never copy into the output.
-      rawHTML
+      rawHTML,
     };
   } catch (e) {
     // Fetch failed (CORS, network error, etc.) - can't determine
-    console.debug('CSR/SSR Detector: Raw HTML fetch failed', e.message);
+    console.debug("CSR/SSR Detector: Raw HTML fetch failed", e.message);
     return null;
   }
 }
 
+function getDetectionBodyHTML() {
+  const body = document.body;
+  if (!body) return "";
+  if (!body.querySelector("#ssr-detector-probe-data")) return body.innerHTML;
+  const clone = body.cloneNode(true);
+  clone
+    .querySelectorAll("#ssr-detector-probe-data")
+    .forEach((el) => el.remove());
+  return clone.innerHTML;
+}
+
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
+  window.getDetectionBodyHTML = getDetectionBodyHTML;
   window.extractVisibleText = extractVisibleText;
   window.compareInitialVsRendered = compareInitialVsRendered;
 }

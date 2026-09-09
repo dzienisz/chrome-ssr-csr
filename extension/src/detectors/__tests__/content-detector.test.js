@@ -1,15 +1,29 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 
 // Import the detector module
-import '../content-detector.js';
+import "../content-detector.js";
 
-describe('analyzeContent', () => {
+describe("analyzeContent", () => {
+  it("excludes the reserved bridge descendants from element counts without detaching them", () => {
+    document.body.innerHTML = "<script></script><div>Article</div>";
+    const baseline = window.analyzeContent();
+    const bridge = document.createElement("div");
+    bridge.id = "ssr-detector-probe-data";
+    bridge.style.display = "none";
+    bridge
+      .appendChild(document.createElement("span"))
+      .appendChild(document.createElement("b"));
+    document.body.appendChild(bridge);
+    expect(window.analyzeContent()).toEqual(baseline);
+    expect(bridge.isConnected).toBe(true);
+    expect(bridge.querySelectorAll("*")).toHaveLength(2);
+  });
   beforeEach(() => {
-    document.body.innerHTML = '';
+    document.body.innerHTML = "";
   });
 
-  describe('rich content detection', () => {
-    it('should detect rich initial content as SSR indicator', () => {
+  describe("rich content detection", () => {
+    it("should detect rich initial content as SSR indicator", () => {
       document.body.innerHTML = `
         <header>
           <h1>Welcome to Our Site</h1>
@@ -38,10 +52,12 @@ describe('analyzeContent', () => {
       const result = window.analyzeContent();
 
       expect(result.ssrScore).toBeGreaterThan(0);
-      expect(result.indicators.some(i => i.includes('rich') || i.includes('SSR'))).toBe(true);
+      expect(
+        result.indicators.some((i) => i.includes("rich") || i.includes("SSR")),
+      ).toBe(true);
     });
 
-    it('should include content details', () => {
+    it("should include content details", () => {
       document.body.innerHTML = `
         <div>
           <p>Some content</p>
@@ -52,26 +68,28 @@ describe('analyzeContent', () => {
 
       const result = window.analyzeContent();
 
-      expect(result.details).toHaveProperty('contentLength');
-      expect(result.details).toHaveProperty('childrenCount');
-      expect(result.details).toHaveProperty('scriptRatio');
-      expect(typeof result.details.contentLength).toBe('number');
+      expect(result.details).toHaveProperty("contentLength");
+      expect(result.details).toHaveProperty("childrenCount");
+      expect(result.details).toHaveProperty("scriptRatio");
+      expect(typeof result.details.contentLength).toBe("number");
     });
   });
 
-  describe('minimal content detection', () => {
-    it('should detect minimal content as CSR indicator', () => {
+  describe("minimal content detection", () => {
+    it("should detect minimal content as CSR indicator", () => {
       document.body.innerHTML = '<div id="root"></div>';
 
       const result = window.analyzeContent();
 
       expect(result.csrScore).toBeGreaterThan(0);
-      expect(result.indicators.some(i =>
-        i.includes('minimal') || i.includes('CSR')
-      )).toBe(true);
+      expect(
+        result.indicators.some(
+          (i) => i.includes("minimal") || i.includes("CSR"),
+        ),
+      ).toBe(true);
     });
 
-    it('should detect app shell pattern', () => {
+    it("should detect app shell pattern", () => {
       document.body.innerHTML = `
         <div id="app">
           <div class="loading">Loading...</div>
@@ -85,8 +103,8 @@ describe('analyzeContent', () => {
     });
   });
 
-  describe('loading states detection', () => {
-    it('should detect loading text as CSR indicator', () => {
+  describe("loading states detection", () => {
+    it("should detect loading text as CSR indicator", () => {
       document.body.innerHTML = `
         <div id="root">
           <div class="loading">Loading...</div>
@@ -98,7 +116,7 @@ describe('analyzeContent', () => {
       expect(result.csrScore).toBeGreaterThan(0);
     });
 
-    it('should detect spinner class as loading indicator', () => {
+    it("should detect spinner class as loading indicator", () => {
       document.body.innerHTML = `
         <div id="root">
           <div class="spinner"></div>
@@ -110,7 +128,7 @@ describe('analyzeContent', () => {
       expect(result.csrScore).toBeGreaterThan(0);
     });
 
-    it('should detect skeleton screens', () => {
+    it("should detect skeleton screens", () => {
       document.body.innerHTML = `
         <div id="root">
           <div class="skeleton">
@@ -125,8 +143,8 @@ describe('analyzeContent', () => {
     });
   });
 
-  describe('script ratio analysis', () => {
-    it('should detect high script ratio as CSR indicator', () => {
+  describe("script ratio analysis", () => {
+    it("should detect high script ratio as CSR indicator", () => {
       // Create many script elements relative to content
       document.body.innerHTML = `
         <div>A</div>
@@ -142,7 +160,7 @@ describe('analyzeContent', () => {
       expect(result.details.scriptRatio).toBeGreaterThan(0.15);
     });
 
-    it('should detect low script ratio as SSR indicator', () => {
+    it("should detect low script ratio as SSR indicator", () => {
       document.body.innerHTML = `
         <article>
           <h1>Title</h1>
@@ -165,8 +183,8 @@ describe('analyzeContent', () => {
     });
   });
 
-  describe('semantic elements', () => {
-    it('should count semantic elements', () => {
+  describe("semantic elements", () => {
+    it("should count semantic elements", () => {
       document.body.innerHTML = `
         <article>
           <h1>Main Title</h1>
@@ -186,35 +204,35 @@ describe('analyzeContent', () => {
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle empty body', () => {
-      document.body.innerHTML = '';
+  describe("edge cases", () => {
+    it("should handle empty body", () => {
+      document.body.innerHTML = "";
 
       const result = window.analyzeContent();
 
-      expect(result).toHaveProperty('ssrScore');
-      expect(result).toHaveProperty('csrScore');
-      expect(result).toHaveProperty('indicators');
-      expect(result).toHaveProperty('details');
+      expect(result).toHaveProperty("ssrScore");
+      expect(result).toHaveProperty("csrScore");
+      expect(result).toHaveProperty("indicators");
+      expect(result).toHaveProperty("details");
     });
 
-    it('should handle whitespace-only content', () => {
-      document.body.innerHTML = '   \n\t   ';
+    it("should handle whitespace-only content", () => {
+      document.body.innerHTML = "   \n\t   ";
 
       const result = window.analyzeContent();
 
       expect(result.details.contentLength).toBe(0);
     });
 
-    it('should return all expected properties', () => {
-      document.body.innerHTML = '<div>Test</div>';
+    it("should return all expected properties", () => {
+      document.body.innerHTML = "<div>Test</div>";
 
       const result = window.analyzeContent();
 
-      expect(result).toHaveProperty('ssrScore');
-      expect(result).toHaveProperty('csrScore');
-      expect(result).toHaveProperty('indicators');
-      expect(result).toHaveProperty('details');
+      expect(result).toHaveProperty("ssrScore");
+      expect(result).toHaveProperty("csrScore");
+      expect(result).toHaveProperty("indicators");
+      expect(result).toHaveProperty("details");
       expect(Array.isArray(result.indicators)).toBe(true);
     });
   });

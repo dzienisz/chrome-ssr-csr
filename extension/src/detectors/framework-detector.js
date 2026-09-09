@@ -14,19 +14,22 @@
  * @returns {string}
  */
 function collectScriptSource(doc) {
-  if (!doc) return '';
+  if (!doc) return "";
   try {
     const parts = [];
-    doc.querySelectorAll('script').forEach(script => {
-      const text = script.textContent || '';
+    doc.querySelectorAll("script").forEach((script) => {
+      const text = script.textContent || "";
       if (!text) return;
-      if (text.includes('__SSR_CSR_ANALYZER_LOADED__') ||
-          text.includes('__SSR_CSR_TELEMETRY_LOADED__')) return;
+      if (
+        text.includes("__SSR_CSR_ANALYZER_LOADED__") ||
+        text.includes("__SSR_CSR_TELEMETRY_LOADED__")
+      )
+        return;
       parts.push(text);
     });
-    return parts.join('\n');
+    return parts.join("\n");
   } catch (e) {
-    return '';
+    return "";
   }
 }
 
@@ -57,8 +60,12 @@ function detectFrameworks(rawDocument) {
   const contentMarkers = {};
   const rawContentMarkers = {};
   for (const [framework, patterns] of Object.entries(contentPatterns)) {
-    contentMarkers[framework] = patterns.some(pat => renderedSource.includes(pat));
-    rawContentMarkers[framework] = patterns.some(pat => rawSource.includes(pat));
+    contentMarkers[framework] = patterns.some((pat) =>
+      renderedSource.includes(pat),
+    );
+    rawContentMarkers[framework] = patterns.some((pat) =>
+      rawSource.includes(pat),
+    );
   }
 
   // Detect framework hydration markers
@@ -66,16 +73,17 @@ function detectFrameworks(rawDocument) {
   const rawFrameworkMarkers = {};
   for (const [framework, selector] of Object.entries(config.frameworks)) {
     try {
-      if (framework === 'react') {
+      if (framework === "react") {
         // Special handling for React
         frameworkMarkers[framework] =
           document.querySelector(selector) !== null ||
-          document.getElementById('root')?._reactRootContainer !== undefined;
+          document.getElementById("root")?._reactRootContainer !== undefined;
       } else {
         frameworkMarkers[framework] = document.querySelector(selector) !== null;
       }
-      rawFrameworkMarkers[framework] =
-        rawDocument ? rawDocument.querySelector(selector) !== null : false;
+      rawFrameworkMarkers[framework] = rawDocument
+        ? rawDocument.querySelector(selector) !== null
+        : false;
     } catch (e) {
       frameworkMarkers[framework] = false;
       rawFrameworkMarkers[framework] = false;
@@ -84,8 +92,10 @@ function detectFrameworks(rawDocument) {
 
   // Merge selector hits with script-content hits, on both sides
   for (const framework of Object.keys(contentPatterns)) {
-    frameworkMarkers[framework] = frameworkMarkers[framework] || contentMarkers[framework];
-    rawFrameworkMarkers[framework] = rawFrameworkMarkers[framework] || rawContentMarkers[framework];
+    frameworkMarkers[framework] =
+      frameworkMarkers[framework] || contentMarkers[framework];
+    rawFrameworkMarkers[framework] =
+      rawFrameworkMarkers[framework] || rawContentMarkers[framework];
   }
 
   const foundFrameworks = Object.entries(frameworkMarkers)
@@ -95,12 +105,18 @@ function detectFrameworks(rawDocument) {
   if (foundFrameworks.length > 0) {
     detailedInfo.frameworks = foundFrameworks;
 
-    const hydratedFrameworks = foundFrameworks.filter(f => rawFrameworkMarkers[f]);
+    const hydratedFrameworks = foundFrameworks.filter(
+      (f) => rawFrameworkMarkers[f],
+    );
     if (hydratedFrameworks.length > 0) {
       ssrScore += config.scoring.frameworkMarkers;
-      indicators.push(`${hydratedFrameworks.join(', ')} hydration markers in raw HTML (SSR)`);
+      indicators.push(
+        `${hydratedFrameworks.join(", ")} hydration markers in raw HTML (SSR)`,
+      );
     } else {
-      indicators.push(`${foundFrameworks.join(', ')} markers only in rendered DOM (not SSR evidence)`);
+      indicators.push(
+        `${foundFrameworks.join(", ")} markers only in rendered DOM (not SSR evidence)`,
+      );
     }
   }
 
@@ -108,7 +124,8 @@ function detectFrameworks(rawDocument) {
   const staticGeneratorMarkers = {};
   for (const [generator, selector] of Object.entries(config.staticGenerators)) {
     try {
-      staticGeneratorMarkers[generator] = document.querySelector(selector) !== null;
+      staticGeneratorMarkers[generator] =
+        document.querySelector(selector) !== null;
     } catch (e) {
       staticGeneratorMarkers[generator] = false;
     }
@@ -120,15 +137,18 @@ function detectFrameworks(rawDocument) {
 
   if (foundGenerators.length > 0) {
     ssrScore += config.scoring.staticGenerator;
-    indicators.push(`${foundGenerators.join(', ')} static site generator detected (SSR)`);
+    indicators.push(
+      `${foundGenerators.join(", ")} static site generator detected (SSR)`,
+    );
     detailedInfo.generators = foundGenerators;
   }
 
   // Check for serialized data (strong SSR indicator)
-  const bodyHTML = document.body.innerHTML;
-  const hasInlineData = config.serializedDataPatterns.some(pattern =>
-    bodyHTML.includes(pattern)
-  ) || /window\.__[\w_]+__\s*=/.test(bodyHTML);
+  const bodyHTML = window.getDetectionBodyHTML();
+  const hasInlineData =
+    config.serializedDataPatterns.some((pattern) =>
+      bodyHTML.includes(pattern),
+    ) || /window\.__[\w_]+__\s*=/.test(bodyHTML);
 
   if (hasInlineData) {
     ssrScore += config.scoring.serializedData;
@@ -136,24 +156,33 @@ function detectFrameworks(rawDocument) {
   }
 
   // Analyze script patterns
-  const scripts = document.querySelectorAll('script[src]');
+  const scripts = document.querySelectorAll("script[src]");
   let frameworkScriptCount = 0;
   let hasLazyChunks = false;
   let hasHydrationScripts = false;
 
-  scripts.forEach(script => {
+  scripts.forEach((script) => {
     const src = script.src.toLowerCase();
 
-    if (src.includes('react') || src.includes('vue') || src.includes('angular') ||
-        src.includes('svelte') || src.includes('solid')) {
+    if (
+      src.includes("react") ||
+      src.includes("vue") ||
+      src.includes("angular") ||
+      src.includes("svelte") ||
+      src.includes("solid")
+    ) {
       frameworkScriptCount++;
     }
 
-    if (src.includes('chunk') || src.includes('_next/static') || src.includes('_nuxt/')) {
+    if (
+      src.includes("chunk") ||
+      src.includes("_next/static") ||
+      src.includes("_nuxt/")
+    ) {
       hasLazyChunks = true;
     }
 
-    if (src.includes('hydrat') || src.includes('client')) {
+    if (src.includes("hydrat") || src.includes("client")) {
       hasHydrationScripts = true;
     }
   });
@@ -169,7 +198,7 @@ function detectFrameworks(rawDocument) {
   }
 
   // Check for client-side routing
-  const hasClientRouting = config.routerSelectors.some(selector => {
+  const hasClientRouting = config.routerSelectors.some((selector) => {
     try {
       return document.querySelector(selector) !== null;
     } catch (e) {
@@ -186,11 +215,11 @@ function detectFrameworks(rawDocument) {
     ssrScore,
     csrScore,
     indicators,
-    details: detailedInfo
+    details: detailedInfo,
   };
 }
 
 // Export for use in other modules
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.detectFrameworks = detectFrameworks;
 }

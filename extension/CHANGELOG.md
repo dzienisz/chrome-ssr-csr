@@ -5,6 +5,29 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] - 2026-09-09
+
+### Privacy
+
+- Return only hydration error count and health score from telemetry collection, with a defensive projection at the collector boundary; raw hydration messages are no longer forwarded.
+- Clarify local history versus optional telemetry, public dashboard fields and backend minimization of historical/public records. No historical database cleanup is performed.
+- Keep sharing defaults, detection weights, local history/exports and feedback behavior unchanged.
+
+### Fixed
+
+- Exclude the reserved probe bridge from raw/rendered text comparison, body-HTML pattern checks and content element counts without mutating the live page or changing detection weights.
+- Keep only 100 recent navigation records and five hydration error samples locally, while separate totals preserve route/error counts and hydration health across trimming. Collectors remain compatible with legacy snapshots and retain privacy-safe telemetry output.
+- Add real-module isolation regressions and fresh-realm probe tests; verify unchanged SSR/CSR results across repeated probe writes in a controlled browser fixture.
+- Store probe snapshots in a non-rendered attribute so page CSS cannot expose telemetry as page text; keep legacy snapshots readable. Already-open pages may need a reload after updating to receive the new probe.
+- Exclude probe metadata from hosting detection so local diagnostic strings cannot create false Vercel or Netlify matches.
+
+### Added
+
+- **Feedback survey** — a "Give feedback · 1 min" link in the popup footer
+  opens a short Google Form in a new tab. Sharing feedback is optional; the
+  link does not attach the analyzed page URL, analysis results, or a referrer.
+  The form does not require Google sign-in or collect email addresses.
+
 ## [3.11.1] - 2026-09-07
 
 ### Fixed
@@ -55,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Soft Navigations API** (`soft-navigation` + `interaction-contentful-paint`,
   stable in Chrome 151): browser-verified SPA route changes with per-route
   paint timing. Unlike the patched `history.pushState`, these require a real
-  interaction, a URL change *and* a paint — a router that only rewrites the
+  interaction, a URL change _and_ a paint — a router that only rewrites the
   URL no longer counts as a route change. Chromium-only; the history patch
   stays as the fallback.
 - **Navigation API** support in the probe (`navigate` events) and in the
@@ -68,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `<script type="speculationrules">` — prerendering whole documents only
     makes sense in a multi-page architecture (+15 SSR)
   - `@view-transition { navigation: auto }` — an MPA that animates between
-    real navigations, which otherwise *looks* like an SPA (+15 SSR)
+    real navigations, which otherwise _looks_ like an SPA (+15 SSR)
   - declarative partial updates (`<?start>`/`<?end>` + `<template for>`) —
     JS-free out-of-order streaming, a rendering strategy the taxonomy had no
     name for (+20 SSR)
@@ -276,11 +299,13 @@ Validated against the 22-site ground-truth harness
   - Performance optimized for rich telemetry data
 
 ### Changed
+
 - **Dashboard**: Added visual charts for most popular CSS frameworks and build tools
 - **Telemetry**: Extended payload to include deep technical architecture data
 - **Database**: optimized indexing for JSONB queries on tech stack fields
 
 ## [3.3.1] - 2026-01-27
+
 - Fix: Critical telemetry bug where Phase 1 data (Core Web Vitals, Page Type) was collected but not sent to backend
 - Fix: Analysis timeout issues by optimizing collection thresholds
 - Fix: Results display issue by ensuring UI renderers are bundled correctly
@@ -320,6 +345,7 @@ Validated against the 22-site ground-truth harness
   - Build documentation in `BUILD.md`
 
 ### Changed
+
 - **Telemetry**: Updated payload to include Phase 1 data
   - `coreWebVitals` object with all metrics
   - `pageType` field for page classification
@@ -330,6 +356,7 @@ Validated against the 22-site ground-truth harness
 - **Version**: Bumped to 3.3.0 across all files
 
 ### Technical
+
 - Modular detector architecture in `src/detectors/`
 - Build script concatenates 13 modules into single bundle
 - Bundle size: 50.54 KB (from 49.93 KB)
@@ -339,6 +366,7 @@ Validated against the 22-site ground-truth harness
 ## [3.2.1] - 2026-01-27
 
 ### Added
+
 - **More Framework Detection**: Added support for 15+ new frameworks and platforms:
   - Frameworks: Angular, Vue (standalone), Svelte, Preact, Lit, HTMX, Alpine.js
   - CMS: WordPress, Shopify, Webflow, Wix, Squarespace
@@ -359,6 +387,7 @@ Validated against the 22-site ground-truth harness
 - **Hybrid Score Display**: Shows hybrid detection score when detected
 
 ### Changed
+
 - **Improved Classification**: Now detects "Hybrid/Islands Architecture" for strong hybrid signals
 - **Backend Dashboard**: Added Content Comparison Analysis section with new metrics
 - **Telemetry**: Now sends contentRatio, hybridScore to backend for analytics
@@ -366,6 +395,7 @@ Validated against the 22-site ground-truth harness
 ## [3.2.0] - 2026-01-27
 
 ### Fixed
+
 - **CSR Detection Algorithm**: Major fix for accurate CSR detection
   - Previously, analyzer ran on live DOM after JavaScript executed, making CSR apps look like SSR
   - Now fetches raw HTML and compares to rendered DOM for accurate detection
@@ -373,6 +403,7 @@ Validated against the 22-site ground-truth harness
   - Raw HTML matches rendered content = SSR indicator (+30 points)
 
 ### Added
+
 - **Raw HTML Comparison**: New `compareInitialVsRendered()` async function
   - Fetches page's raw HTML before JS execution
   - Compares text content ratio between raw and rendered DOM
@@ -384,6 +415,7 @@ Validated against the 22-site ground-truth harness
   - Detects dynamic body classes (js-loaded, app-loaded, hydrated)
 
 ### Changed
+
 - **Performance Timing Logic**: Fixed backwards logic
   - Before: Fast DOMContentLoaded = SSR (incorrect!)
   - After: Fast DOMContentLoaded + slow FCP = CSR (content loaded via JS)
@@ -399,6 +431,7 @@ Validated against the 22-site ground-truth harness
 ## [3.1.2] - 2026-01-26
 
 ### Added
+
 - **Badge on icon**: Shows SSR/CSR/MIX directly on extension icon after analysis
   - Green badge for SSR
   - Red badge for CSR
@@ -408,12 +441,14 @@ Validated against the 22-site ground-truth harness
 ## [3.1.1] - 2026-01-26
 
 ### Changed
+
 - **Telemetry opt-out**: Changed from opt-in to opt-out (enabled by default)
   - Users can disable anytime in Settings → "Share anonymous data"
 
 ## [3.1.0] - 2026-01-26
 
 ### Added
+
 - **Analytics Backend**: New Next.js backend for anonymous telemetry
   - Dashboard at https://backend-mauve-beta-88.vercel.app/dashboard
   - Tracks render type distribution, top frameworks, analyzed domains
@@ -422,6 +457,7 @@ Validated against the 22-site ground-truth harness
   - Top Domains component showing most analyzed sites
 
 ### Changed
+
 - **Telemetry Integration**: Extension sends anonymous data (opt-out)
   - Enabled by default, can be disabled in settings
   - Data sent: domain (not full URL), render type, confidence, frameworks
@@ -432,6 +468,7 @@ Validated against the 22-site ground-truth harness
   - Cleaner permission model for Chrome Web Store
 
 ### Security
+
 - **Removed hardcoded API keys**: API authentication made optional
   - Backend relies on CORS headers for protection
   - No sensitive data in extension source code
@@ -439,6 +476,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0.5] - 2025-10-21
 
 ### Fixed
+
 - **Critical Hotfix**: Fixed missing `src/analyzer-bundle.js` in production build
   - v3.0.4 was missing the analyzer bundle file due to incorrect zip exclusion pattern
   - Extension would show "Cannot access this page" error when analyzing
@@ -448,6 +486,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0.4] - 2025-10-20
 
 ### Fixed
+
 - **Complete Dropdown Styling Fix**: All dropdown elements now properly styled in both themes
   - Fixed select element text color in dark mode (white text instead of dark)
   - Fixed dropdown options with explicit colors for both light and dark modes
@@ -460,6 +499,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0.3] - 2025-10-20
 
 ### Fixed
+
 - **Initial Dropdown Styling**: First attempt at fixing dropdown visibility
   - Added basic styling for dropdown options
   - Discovered CSS variable limitations with native controls
@@ -467,6 +507,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0.2] - 2025-10-20
 
 ### Added
+
 - **System Dark Mode Detection**: Theme now syncs with system preferences
   - New "Auto (System)" option in settings (default)
   - Automatically detects `prefers-color-scheme` media query
@@ -475,6 +516,7 @@ Validated against the 22-site ground-truth harness
   - Works seamlessly across popup and settings pages
 
 ### Changed
+
 - **Dynamic Version Display**: Version now read from manifest.json
   - Removed hardcoded version strings from all HTML/JS files
   - Uses `chrome.runtime.getManifest().version` for consistency
@@ -482,6 +524,7 @@ Validated against the 22-site ground-truth harness
   - Auto-updates in popup footer and settings footer
 
 ### Fixed
+
 - **CSP Compliance**: Removed inline scripts from HTML files
   - Fixed Content Security Policy violations
   - Moved version injection code to JavaScript files
@@ -489,6 +532,7 @@ Validated against the 22-site ground-truth harness
 - **Theme Dropdown Default**: "Auto (System)" now properly selected by default
 
 ### Technical
+
 - Modified `options.js` and `popup.js` for system theme detection
 - Updated `options.html` to use select dropdown instead of toggle
 - Added `window.matchMedia('(prefers-color-scheme: dark)')` detection
@@ -498,6 +542,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0.1] - 2025-10-20
 
 ### Fixed
+
 - **Dark Mode Styling**: Fixed indicator badge styling in dark mode
   - Badges now show proper contrast (gray background with white text)
   - Fixed confidence bar background color for dark theme
@@ -512,6 +557,7 @@ Validated against the 22-site ground-truth harness
   - Beautiful error screen with clear instructions
 
 ### Technical
+
 - Updated `src/ui/components/results-renderer.js` with theme detection
 - Rebuilt `src/analyzer-bundle.js` with injection guard wrapper
 - Added URL validation and error handling in popup.js
@@ -519,6 +565,7 @@ Validated against the 22-site ground-truth harness
 ## [3.0] - 2025-10-20
 
 ### Added
+
 - **⚙️ Settings Page**: Full-featured options page (`options.html`)
   - Dark mode toggle with smooth theme transitions
   - Configurable history limit (5, 10, 25, 50, 100, or unlimited)
@@ -547,12 +594,14 @@ Validated against the 22-site ground-truth harness
   - Improved dark mode compatibility
 
 ### Changed
+
 - Updated popup UI with settings access
 - History limit now respects user preference from settings
 - All UI elements support both light and dark themes
 - Improved loading state animations with theme awareness
 
 ### Technical
+
 - Added `options_page` to manifest.json
 - Created `options.html` and `options.js` for settings management
 - Completely rewrote `popup.js` with dark mode, export, and settings integration
@@ -563,6 +612,7 @@ Validated against the 22-site ground-truth harness
 ## [2.3] - 2025-10-20
 
 ### Changed
+
 - **Internal code refactoring**: Split monolithic `analyzer.js` (350+ lines) into modular architecture
   - Created `src/core/` folder with config, analyzer, and scoring modules
   - Created `src/detectors/` folder with 4 specialized detector modules
@@ -572,6 +622,7 @@ Validated against the 22-site ground-truth harness
 - Fixed script injection guard to prevent redeclaration errors
 
 ### Technical Notes
+
 - No user-facing changes - functionality remains identical to v2.2
 - Better organized codebase makes future feature development easier
 - Foundation for v3.0 features (settings page, dark mode, export functionality)
@@ -579,6 +630,7 @@ Validated against the 22-site ground-truth harness
 ## [2.2] - 2024-10-14
 
 ### Added
+
 - Try-catch error handling in `pageAnalyzer()` function for better stability
 - Additional React detection selectors for modern React 18+ applications
 - Better error reporting with fallback analysis results
@@ -586,34 +638,40 @@ Validated against the 22-site ground-truth harness
 - Comprehensive documentation (CHANGELOG.md, ROADMAP.md, enhanced README.md)
 
 ### Fixed
+
 - Function call argument order in `popup.js:60` (history saving bug)
 - React detection for applications without legacy `[data-reactroot]` attribute
 - Privacy policy date correction (2025 → 2024)
 - Improved error handling for DOM operations on restricted pages
 
 ### Changed
+
 - Enhanced README.md with better structure, badges, and detailed sections
 - Updated documentation with clear installation, usage, and contributing guidelines
 
 ## [2.1] - 2024-07-03
 
 ### Added
+
 - Privacy policy documentation
 - Sequence diagram illustrating detection flow
 - Improved UI with modern design system
 
 ### Changed
+
 - Enhanced detection algorithm with weighted scoring
 - Better confidence calculation based on indicator count
 - Improved visual feedback with confidence bars
 
 ### Fixed
+
 - Performance timing analysis edge cases
 - History display formatting
 
 ## [2.0] - 2024-05-26
 
 ### Added
+
 - Complete UI/UX redesign with modern interface
 - Enhanced analysis engine with more accurate detection
 - History tracking feature (stores last 10 analyses)
@@ -628,6 +686,7 @@ Validated against the 22-site ground-truth harness
 - Help section explaining SSR vs CSR differences
 
 ### Changed
+
 - Migrated to Chrome Manifest V3
 - Improved scoring algorithm with multiple weighted indicators:
   - HTML content analysis
@@ -648,6 +707,7 @@ Validated against the 22-site ground-truth harness
 - Improved extension popup design
 
 ### Fixed
+
 - Validation rules for SSR and CSR detection
 - Script injection reliability
 - Performance on complex web applications
@@ -655,6 +715,7 @@ Validated against the 22-site ground-truth harness
 ## [1.0] - Initial Release
 
 ### Added
+
 - Basic SSR vs CSR detection functionality
 - Simple popup interface
 - Chrome extension with basic analysis
