@@ -358,6 +358,11 @@ export function parseTelemetry(value: unknown, country?: unknown) {
   const domain = normalizeHostname(url.hostname);
   if (!domain) return invalid();
   const device = deviceSchema(value.deviceInfo);
+  const validatedCountry = normalizeCountry(country);
+  const enrichedDevice: (NonNullable<typeof device> & { country: string | null }) | null =
+    device !== null || validatedCountry !== null
+      ? Object.assign(device ?? {}, { country: validatedCountry })
+      : null;
   return {
     url: url.origin,
     domain,
@@ -374,10 +379,7 @@ export function parseTelemetry(value: unknown, country?: unknown) {
         : PAGE_TYPES.includes(text(value.pageType))
           ? (value.pageType as string)
           : "other",
-    device_info:
-      device === null
-        ? null
-        : Object.assign(device, { country: normalizeCountry(country) }),
+    device_info: enrichedDevice,
     tech_stack: techSchema(value.techStack),
     seo_accessibility: seoSchema(value.seoAccessibility),
     hydration_stats: hydrationSchema(value.hydrationData),

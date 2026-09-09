@@ -9,6 +9,16 @@ const base = {
 };
 
 describe("telemetry ingress projection", () => {
+  it.each([undefined, null])('retains server country without deviceInfo %s', deviceInfo => {
+    expect(parseTelemetry({ ...base, deviceInfo }, 'pl').device_info).toEqual({ country: 'PL' });
+  });
+  it.each([undefined, null, 'bad', 'P1'])('keeps device info null without valid server country %s', country => {
+    expect(parseTelemetry(base, country).device_info).toBeNull();
+  });
+  it('ignores submitted country regardless of server enrichment', () => {
+    expect(parseTelemetry({ ...base, deviceInfo: { country: 'US' } }, 'PL').device_info).toEqual({ country: 'PL' });
+    expect(parseTelemetry({ ...base, deviceInfo: { country: 'US' } }).device_info).toEqual({ country: null });
+  });
   it.each([0, 101, 140, 140.5, Number.MAX_SAFE_INTEGER])(
     "preserves unnormalized hybrid points %s",
     (hybridScore) => {

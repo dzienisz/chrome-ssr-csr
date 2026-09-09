@@ -213,16 +213,16 @@ export async function getTopFrameworks(limit: number = 10) {
       FROM analyses,
       LATERAL jsonb_array_elements_text(CASE WHEN jsonb_typeof(frameworks::jsonb) = 'array' THEN frameworks::jsonb ELSE '[]'::jsonb END) as framework
       WHERE frameworks::jsonb != '[]'::jsonb
-      GROUP BY framework
-      ORDER BY count DESC
-      LIMIT ${limit};
+      GROUP BY framework;
     `;
-    return result.rows.flatMap((row) => {
+    const counts = new Map<string, number>();
+    for (const row of result.rows) {
       const framework = normalizeFramework(row.framework);
-      return framework
-        ? [{ framework, count: aggregateNumber(row.count) }]
-        : [];
-    });
+      if (framework) counts.set(framework, (counts.get(framework) ?? 0) + aggregateNumber(row.count));
+    }
+    return Array.from(counts, ([framework, count]) => ({ framework, count }))
+      .sort((a, b) => b.count - a.count || a.framework.localeCompare(b.framework))
+      .slice(0, limit);
   } catch (error) {
     console.error("Database query error:", error);
     throw error;
@@ -232,29 +232,38 @@ export async function getTopFrameworks(limit: number = 10) {
 export async function getTopDomains(limit: number = 20) {
   try {
     const result = await sql`
-      SELECT
-        domain,
-        COUNT(*) as count,
-        AVG(confidence) as avg_confidence,
-        MODE() WITHIN GROUP (ORDER BY render_type) as most_common_type
+      SELECT domain, render_type, COUNT(*) as count,
+        SUM(confidence) as confidence_sum, COUNT(confidence) as confidence_count
       FROM analyses
-      GROUP BY domain
-      ORDER BY count DESC
-      LIMIT ${limit};
+      GROUP BY domain, render_type;
     `;
-    return result.rows.flatMap((row) => {
+    const groups = new Map<string, {
+      count: number;
+      confidenceSum: number;
+      confidenceCount: number;
+      renderCounts: Map<string, number>;
+    }>();
+    for (const row of result.rows) {
       const domain = normalizeHostname(row.domain);
-      return domain
-        ? [
-            {
-              domain,
-              count: aggregateNumber(row.count),
-              avg_confidence: aggregateNumber(row.avg_confidence),
-              most_common_type: publicRenderType(row.most_common_type),
-            },
-          ]
-        : [];
-    });
+      if (!domain) continue;
+      const group = groups.get(domain) ?? { count: 0, confidenceSum: 0, confidenceCount: 0, renderCounts: new Map<string, number>() };
+      const count = aggregateNumber(row.count);
+      const renderType = publicRenderType(row.render_type);
+      group.count += count;
+      group.confidenceSum += aggregateNumber(row.confidence_sum);
+      group.confidenceCount += aggregateNumber(row.confidence_count);
+      group.renderCounts.set(renderType, (group.renderCounts.get(renderType) ?? 0) + count);
+      groups.set(domain, group);
+    }
+    return Array.from(groups, ([domain, group]) => ({
+      domain,
+      count: group.count,
+      avg_confidence: group.confidenceCount ? group.confidenceSum / group.confidenceCount : 0,
+      most_common_type: Array.from(group.renderCounts)
+        .sort(([a, aCount], [b, bCount]) => bCount - aCount || a.localeCompare(b))[0]?.[0] ?? 'Other',
+    }))
+      .sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain))
+      .slice(0, limit);
   } catch (error) {
     console.error("Database query error:", error);
     throw error;
@@ -403,6 +412,12 @@ export async function getCoreWebVitalsByRenderType() {
 export async function getPageTypeDistribution() {
   try {
     const result = await sql`
+      WITH categorized_analyses AS (
+        SELECT CASE WHEN page_type IN (SELECT jsonb_array_elements_text(${JSON.stringify(PAGE_TYPES)}::jsonb))
+          THEN page_type ELSE 'other' END AS page_type, render_type
+        FROM analyses
+        WHERE page_type IS NOT NULL
+      )
       SELECT
         page_type,
         COUNT(*) as total_count,
@@ -412,8 +427,7 @@ export async function getPageTypeDistribution() {
         ROUND((COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as ssr_percentage,
         ROUND((COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as csr_percentage,
         ROUND((COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100) as hybrid_percentage
-      FROM analyses
-      WHERE page_type IS NOT NULL
+      FROM categorized_analyses
       GROUP BY page_type
       ORDER BY total_count DESC
       LIMIT 10;
@@ -447,8 +461,12 @@ export async function getDevicePerformance() {
         FROM analyses
       )
       SELECT
-        device_info->>'deviceType' as device_type,
-        device_info->'connection'->>'effectiveType' as connection_type,
+        CASE WHEN device_info->>'deviceType' IN (SELECT jsonb_array_elements_text(${JSON.stringify(DEVICE_TYPES)}::jsonb))
+          THEN device_info->>'deviceType' ELSE 'unknown' END AS device_type,
+        CASE WHEN device_info->>'effectiveType' IN (SELECT jsonb_array_elements_text(${JSON.stringify(EFFECTIVE_TYPES)}::jsonb))
+          THEN device_info->>'effectiveType'
+          WHEN device_info->'connection'->>'effectiveType' IN (SELECT jsonb_array_elements_text(${JSON.stringify(EFFECTIVE_TYPES)}::jsonb))
+          THEN device_info->'connection'->>'effectiveType' ELSE 'unknown' END AS connection_type,
         COUNT(*) as sample_count,
         ROUND(AVG((core_web_vitals->>'lcp')::numeric)) as avg_lcp,
         ROUND(AVG((core_web_vitals->>'cls')::numeric), 3) as avg_cls,
@@ -490,7 +508,8 @@ export async function getDeviceTypeSummary() {
   try {
     const result = await sql`
       SELECT
-        device_info->>'deviceType' as device_type,
+        CASE WHEN device_info->>'deviceType' IN (SELECT jsonb_array_elements_text(${JSON.stringify(DEVICE_TYPES)}::jsonb))
+          THEN device_info->>'deviceType' ELSE 'unknown' END AS device_type,
         COUNT(*) as count,
         ROUND((COUNT(*)::numeric / (SELECT COUNT(*) FROM analyses WHERE device_info IS NOT NULL)) * 100) as percentage
       FROM analyses

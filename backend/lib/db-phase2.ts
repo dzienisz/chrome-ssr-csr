@@ -21,7 +21,7 @@ export async function getTechStackStats() {
         tech_stack->>'cssFramework' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'cssFramework' IS NOT NULL
+      WHERE tech_stack->>'cssFramework' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.cssFramework)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;
@@ -32,7 +32,7 @@ export async function getTechStackStats() {
         tech_stack->>'buildTool' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'buildTool' IS NOT NULL
+      WHERE tech_stack->>'buildTool' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.buildTool)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;
@@ -43,7 +43,7 @@ export async function getTechStackStats() {
         tech_stack->>'hosting' as name,
         COUNT(*) as count
       FROM analyses
-      WHERE tech_stack->>'hosting' IS NOT NULL
+      WHERE tech_stack->>'hosting' IN (SELECT jsonb_array_elements_text(${JSON.stringify(TECH_LABELS.hosting)}::jsonb))
       GROUP BY name
       ORDER BY count DESC
       LIMIT 10;

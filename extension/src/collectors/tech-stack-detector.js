@@ -107,7 +107,12 @@ const TechStackDetector = {
   },
 
   detectHosting: function() {
-    const headers = document.head.innerHTML;
+    let head = document.head;
+    if (head.querySelector('#ssr-detector-probe-data')) {
+      head = head.cloneNode(true);
+      head.querySelectorAll('#ssr-detector-probe-data').forEach(el => el.remove());
+    }
+    const headers = head.innerHTML;
     
     // Vercel
     if (headers.includes('fl=vercel') || window.location.hostname.includes('.vercel.app')) return 'Vercel';

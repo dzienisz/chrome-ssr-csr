@@ -11,6 +11,8 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - Exclude raw hydration messages, route details, free-form indicators, user-agent values and SEO text from new stored records.
 - Project recent records through an explicit public allowlist for both API and server-rendered dashboard, including historical rows; validate aggregate categories and guard historical JSONB metric casts.
 - Bound stats pagination/date parameters and reject malformed values with 400.
+- Merge canonical framework/domain categories before selecting top results, preserve weighted domain confidence and render modes, and group unknown page/device categories consistently.
+- Apply technology allowlists before top-ten limits, read current connection metadata with a legacy fallback, and preserve server-derived country when device details are absent.
 - Clarify public telemetry exposure and disabled deletion. No historical cleanup, migration, consent-default change or deployment is included.
 
 ## [1.6.0] - 2026-07-08

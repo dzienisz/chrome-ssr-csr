@@ -184,6 +184,55 @@ describe('TechStackDetector', () => {
   });
 
   describe('detectHosting', () => {
+    function publishProbe(marker) {
+      const bridge = document.createElement('meta');
+      bridge.id = 'ssr-detector-probe-data';
+      bridge.setAttribute('data-ssr-detector-snapshot', JSON.stringify({ navigations: [{ view: '/docs/' + marker }], hydrationErrors: [{ msg: 'Hydration failed ' + marker }] }));
+      document.head.appendChild(bridge);
+      return bridge;
+    }
+
+    it.each(['netlify', 'fl=vercel'])('ignores probe-only hosting marker %s without mutating the live head', marker => {
+      expect(window.TechStackDetector.detectHosting()).toBeNull();
+      const bridge = publishProbe(marker);
+      const headHTML = document.head.innerHTML;
+      expect(window.TechStackDetector.detectHosting()).toBeNull();
+      expect(document.head.innerHTML).toBe(headHTML);
+      expect(document.getElementById('ssr-detector-probe-data')).toBe(bridge);
+      expect(bridge.isConnected).toBe(true);
+    });
+
+    for (const withProbe of [false, true]) {
+      it.each([
+        { marker: 'netlify', expected: 'Netlify', probeMarker: 'fl=vercel' },
+        { marker: 'fl=vercel', expected: 'Vercel', probeMarker: 'netlify' }
+      ])(`preserves genuine $expected metadata with probe=${withProbe}`, ({ marker, expected, probeMarker }) => {
+        const metadata = document.createElement('meta');
+        metadata.name = 'deployment';
+        metadata.content = marker;
+        document.head.appendChild(metadata);
+        if (withProbe) publishProbe(probeMarker);
+        const headHTML = document.head.innerHTML;
+        expect(window.TechStackDetector.detectHosting()).toBe(expected);
+        expect(document.head.innerHTML).toBe(headHTML);
+        expect(metadata.isConnected).toBe(true);
+      });
+    }
+
+    it.each([
+      { hostname: 'myapp.netlify.app', expected: 'Netlify' },
+      { hostname: 'username.github.io', expected: 'GitHub Pages' }
+    ])('preserves hostname detection for $hostname despite conflicting probe data', ({ hostname, expected }) => {
+      const originalLocation = window.location;
+      delete window.location;
+      window.location = { hostname };
+      try {
+        publishProbe('fl=vercel');
+        expect(window.TechStackDetector.detectHosting()).toBe(expected);
+      } finally {
+        window.location = originalLocation;
+      }
+    });
     it('should detect Vercel', () => {
       const originalLocation = window.location;
       delete window.location;

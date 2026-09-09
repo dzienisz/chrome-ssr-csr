@@ -10,7 +10,8 @@ let originalError;
 let originalPush;
 function snapshot() {
   page.dispatchEvent(new page.Event('ssr-detector-request-data'));
-  return JSON.parse(page.document.getElementById('ssr-detector-probe-data').textContent);
+  const node = page.document.getElementById('ssr-detector-probe-data');
+  return JSON.parse(node.getAttribute('data-ssr-detector-snapshot') ?? node.textContent);
 }
 function navigate(path, sameDocument = true) {
   const event = new page.Event('navigate');
@@ -31,6 +32,46 @@ beforeEach(() => {
 afterEach(() => realm.window.close());
 
 describe('probe bounded retention in a fresh realm', () => {
+  it('publishes JSON only in a namespaced attribute on a head meta bridge', () => {
+    const bodyHTML = page.document.body.innerHTML;
+    const data = snapshot();
+    const node = page.document.getElementById('ssr-detector-probe-data');
+    expect(node.tagName).toBe('META');
+    expect(node.parentElement).toBe(page.document.head);
+    expect(node.textContent).toBe('');
+    expect(JSON.parse(node.getAttribute('data-ssr-detector-snapshot'))).toEqual(data);
+    expect(node.hasAttribute('name')).toBe(false);
+    expect(node.hasAttribute('property')).toBe(false);
+    expect(node.hasAttribute('content')).toBe(false);
+    expect(page.document.body.innerHTML).toBe(bodyHTML);
+  });
+  it('falls back to the document element when head is absent', () => {
+    page.document.head.remove();
+    const bodyHTML = page.document.body.innerHTML;
+    snapshot();
+    const node = page.document.getElementById('ssr-detector-probe-data');
+    expect(node.tagName).toBe('META');
+    expect(node.parentElement).toBe(page.document.documentElement);
+    expect(node.textContent).toBe('');
+    expect(page.document.body.innerHTML).toBe(bodyHTML);
+  });
+  it('migrates only the existing reserved bridge on publication, preserving its identity', () => {
+    const legacy = page.document.createElement('div');
+    legacy.id = 'ssr-detector-probe-data';
+    legacy.textContent = JSON.stringify({ navigationCount: 99, legacy: true });
+    page.document.body.appendChild(legacy);
+    const article = page.document.querySelector('article');
+    const articleHTML = article.outerHTML;
+    page.history.pushState(null, '', '/new');
+    expect(legacy.textContent).toContain('legacy');
+    expect(snapshot().navigationCount).toBe(1);
+    expect(page.document.getElementById('ssr-detector-probe-data')).toBe(legacy);
+    expect(legacy.textContent).toBe('');
+    expect(legacy.hasAttribute('data-ssr-detector-snapshot')).toBe(true);
+    expect(article.outerHTML).toBe(articleHTML);
+    snapshot();
+    expect(page.document.getElementById('ssr-detector-probe-data')).toBe(legacy);
+  });
   it('starts empty and reuses one bridge across requests', () => {
     expect(snapshot()).toMatchObject({ navigationCount: 0, hydrationErrorCount: 0, navigations: [], hydrationErrors: [] });
     const node = page.document.getElementById('ssr-detector-probe-data');

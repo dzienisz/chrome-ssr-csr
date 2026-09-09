@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { JSDOM } from 'jsdom';
+import probeSource from '../../probe.js?raw';
+import analyzerSource from '../../analyzer-bundle.js?raw';
 import '../../detectors/comparison-detector.js';
 import '../../detectors/content-detector.js';
 import '../../detectors/framework-detector.js';
@@ -53,6 +56,56 @@ afterEach(() => {
 });
 
 describe('real analyzer probe isolation', () => {
+  for (const mode of ['author-important', 'display-mutation']) {
+    it.each([49, 99, 199, 499])(`keeps ${mode} producer snapshots out of visible-text thresholds at %i characters`, async length => {
+      const html = `<!doctype html><html><head>${mode === 'author-important' ? '<style>#ssr-detector-probe-data { display: block !important; }</style>' : ''}</head><body><article>${'a'.repeat(length)}</article><span style="display:none">HIDDEN_APPLICATION_TEXT</span>${'<button type="submit"></button>'.repeat(4)}</body></html>`;
+      const realm = new JSDOM(html, { url: 'https://probe.test/', runScripts: 'outside-only' });
+      const page = realm.window;
+      try {
+        page.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => html });
+        page.performance.getEntriesByType = () => [];
+        page.console.error = vi.fn();
+        Object.defineProperty(page.document.body, 'innerText', { configurable: true, get: () => {
+          const bridge = page.document.getElementById('ssr-detector-probe-data');
+          const visibleBridge = bridge && page.document.body.contains(bridge) && (mode === 'author-important' || bridge.style.display === 'block');
+          return 'a'.repeat(length) + (visibleBridge && bridge.textContent ? '\n' + bridge.textContent : '');
+        } });
+        page.eval(analyzerSource);
+        page.eval(probeSource);
+        const bodyHTML = page.document.body.innerHTML;
+        const baseline = stable(await page.pageAnalyzer());
+        expect(baseline.renderType).not.toBe('Analysis Error');
+        expect(baseline.detailedInfo.contentLength).toBe(length);
+        for (let i = 0; i < 150; i++) page.history.pushState(null, '', '/route-' + i);
+        for (let i = 0; i < 9; i++) page.console.error('Hydration failed __NEXT_DATA__ spinner <!--$--> ' + 'x'.repeat(300));
+        page.dispatchEvent(new page.Event('ssr-detector-request-data'));
+        const bridge = page.document.getElementById('ssr-detector-probe-data');
+        if (mode === 'display-mutation') bridge.style.display = 'block';
+        const snapshot = bridge.outerHTML;
+        expect(stable(await page.pageAnalyzer())).toEqual(baseline);
+        expect(page.document.body.innerHTML).toBe(bodyHTML);
+        expect(bridge.outerHTML).toBe(snapshot);
+        expect(bridge.parentElement).toBe(page.document.head);
+        expect(bridge.textContent).toBe('');
+        const data = JSON.parse(bridge.getAttribute('data-ssr-detector-snapshot'));
+        expect(data.navigationCount).toBe(150);
+        expect(data.navigations).toHaveLength(100);
+        expect(data.hydrationErrorCount).toBe(9);
+        expect(data.hydrationErrors).toHaveLength(5);
+        page.dispatchEvent(new page.Event('ssr-detector-request-data'));
+        expect(page.document.getElementById('ssr-detector-probe-data')).toBe(bridge);
+        expect(stable(await page.pageAnalyzer())).toEqual(baseline);
+      } finally { page.close(); }
+    });
+  }
+  it('preserves application text identical to normally hidden probe text', async () => {
+    const json = JSON.stringify({ message: 'Application text' });
+    fixture(`<article>${json}</article>`);
+    const baseline = stable(await window.pageAnalyzer());
+    const bridge = bridgeWith(0);
+    bridge.textContent = json;
+    expect(stable(await window.pageAnalyzer())).toEqual(baseline);
+  });
   it('keeps SSR measurements, scores and verdict stable through bridge writes', async () => {
     fixture(`<article>${article}</article>`);
     await assertIsolated('Server-Side Rendered (SSR)');

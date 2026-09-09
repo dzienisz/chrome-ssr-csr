@@ -315,7 +315,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-400">
           <p>
-            SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes
+            SSR/CSR Detector Analytics • Public data is minimized • Auto-refreshes
             every 30s
           </p>
           <p className="mt-2">

@@ -106,18 +106,17 @@
 
   // 3. Listen for Data Request from Isolated World
   window.addEventListener("ssr-detector-request-data", function () {
-    const dataDisplay = document.getElementById("ssr-detector-probe-data");
-    if (dataDisplay) {
-      dataDisplay.textContent = JSON.stringify(STORE);
-      dataDisplay.dataset.status = "ready";
-    } else {
-      // Create if missing (should be created by analyzer, but fallback here)
-      const div = document.createElement("div");
-      div.id = "ssr-detector-probe-data";
-      div.style.display = "none";
-      div.textContent = JSON.stringify(STORE);
-      div.dataset.status = "ready";
-      document.body.appendChild(div);
+    let dataDisplay = document.getElementById("ssr-detector-probe-data");
+    if (!dataDisplay) {
+      const parent = document.head || document.documentElement;
+      if (!parent) return;
+      dataDisplay = document.createElement("meta");
+      dataDisplay.id = "ssr-detector-probe-data";
+      parent.appendChild(dataDisplay);
     }
+    dataDisplay.setAttribute("data-ssr-detector-snapshot", JSON.stringify(STORE));
+    dataDisplay.textContent = "";
+    dataDisplay.style.display = "none";
+    dataDisplay.dataset.status = "ready";
   });
 })();

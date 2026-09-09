@@ -940,7 +940,12 @@ const TechStackDetector = {
   },
 
   detectHosting: function() {
-    const headers = document.head.innerHTML;
+    let head = document.head;
+    if (head.querySelector('#ssr-detector-probe-data')) {
+      head = head.cloneNode(true);
+      head.querySelectorAll('#ssr-detector-probe-data').forEach(el => el.remove());
+    }
+    const headers = head.innerHTML;
     
     // Vercel
     if (headers.includes('fl=vercel') || window.location.hostname.includes('.vercel.app')) return 'Vercel';
@@ -1186,7 +1191,8 @@ const HydrationDetector = {
     if (!dataElement) return null;
 
     try {
-      return JSON.parse(dataElement.textContent);
+      const snapshot = dataElement.getAttribute("data-ssr-detector-snapshot");
+      return JSON.parse(snapshot ?? dataElement.textContent);
     } catch (e) {
       return null;
     }

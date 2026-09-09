@@ -42,7 +42,8 @@ const HydrationDetector = {
     if (!dataElement) return null;
 
     try {
-      return JSON.parse(dataElement.textContent);
+      const snapshot = dataElement.getAttribute("data-ssr-detector-snapshot");
+      return JSON.parse(snapshot ?? dataElement.textContent);
     } catch (e) {
       return null;
     }

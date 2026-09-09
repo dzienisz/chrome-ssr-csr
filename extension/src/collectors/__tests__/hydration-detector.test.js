@@ -2,6 +2,45 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import "../hydration-detector.js";
 
 afterEach(() => vi.restoreAllMocks());
+
+describe('probe snapshot reader', () => {
+  function bridge(attribute, legacy) {
+    const node = document.createElement('div');
+    node.id = 'ssr-detector-probe-data';
+    if (attribute !== null) node.setAttribute('data-ssr-detector-snapshot', attribute);
+    node.textContent = legacy;
+    document.body.appendChild(node);
+    return node;
+  }
+  it('prefers an attribute snapshot and keeps hydration output aggregate-only', () => {
+    bridge(JSON.stringify({ hydrationErrorCount: 9, hydrationErrors: [{ msg: 'PRIVATE_SENTINEL' }] }), JSON.stringify({ hydrationErrorCount: 1 }));
+    expect(window.HydrationDetector.getProbeData().hydrationErrorCount).toBe(9);
+    expect(window.HydrationDetector.detect()).toEqual({ errorCount: 9, score: 55 });
+    expect(JSON.stringify(window.HydrationDetector.detect())).not.toContain('PRIVATE_SENTINEL');
+  });
+  it('accepts attribute-only metadata bridges', () => {
+    const node = document.createElement('meta');
+    node.id = 'ssr-detector-probe-data';
+    node.setAttribute('data-ssr-detector-snapshot', JSON.stringify({ navigationCount: 150, hydrationErrorCount: 0 }));
+    document.head.appendChild(node);
+    expect(window.HydrationDetector.getProbeData()).toEqual({ navigationCount: 150, hydrationErrorCount: 0 });
+  });
+  it('reads legacy text only when the attribute is absent', () => {
+    bridge(null, JSON.stringify({ hydrationErrors: [{}, {}], navigations: [] }));
+    expect(window.HydrationDetector.detect()).toEqual({ errorCount: 2, score: 90 });
+  });
+  it.each(['', '{invalid'])('returns null for malformed attribute %j without legacy fallback', attribute => {
+    bridge(attribute, JSON.stringify({ hydrationErrorCount: 1 }));
+    expect(window.HydrationDetector.getProbeData()).toBeNull();
+  });
+  it('returns null for malformed legacy text', () => {
+    bridge(null, '{invalid');
+    expect(window.HydrationDetector.getProbeData()).toBeNull();
+  });
+  it('returns null when no bridge exists', () => {
+    expect(window.HydrationDetector.getProbeData()).toBeNull();
+  });
+});
 describe("hydration telemetry", () => {
   it.each([0, 9, 150, Number.MAX_SAFE_INTEGER])(
     "uses total %s instead of retained samples",

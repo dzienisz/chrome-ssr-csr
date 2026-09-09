@@ -11,13 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Return only hydration error count and health score from telemetry collection, with a defensive projection at the collector boundary; raw hydration messages are no longer forwarded.
 - Clarify local history versus optional telemetry, public dashboard fields and backend minimization of historical/public records. No historical database cleanup is performed.
-- Keep sharing defaults, detection, local history/exports and feedback behavior unchanged.
+- Keep sharing defaults, detection weights, local history/exports and feedback behavior unchanged.
 
 ### Fixed
 
 - Exclude the reserved probe bridge from raw/rendered text comparison, body-HTML pattern checks and content element counts without mutating the live page or changing detection weights.
 - Keep only 100 recent navigation records and five hydration error samples locally, while separate totals preserve route/error counts and hydration health across trimming. Collectors remain compatible with legacy snapshots and retain privacy-safe telemetry output.
 - Add real-module isolation regressions and fresh-realm probe tests; verify unchanged SSR/CSR results across repeated probe writes in a controlled browser fixture.
+- Store probe snapshots in a non-rendered attribute so page CSS cannot expose telemetry as page text; keep legacy snapshots readable. Already-open pages may need a reload after updating to receive the new probe.
+- Exclude probe metadata from hosting detection so local diagnostic strings cannot create false Vercel or Netlify matches.
 
 ### Added
 

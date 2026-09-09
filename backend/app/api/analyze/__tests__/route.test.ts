@@ -269,6 +269,11 @@ describe("POST /api/analyze", () => {
   });
 
   describe("privacy boundary", () => {
+    it('stores country-only enrichment for a client without device information', async () => {
+      const response = await POST(createRequest({ url: 'https://example.test', domain: 'example.test', renderType: 'SSR', confidence: 90 }, { 'x-vercel-ip-country': 'pl' }));
+      expect(response.status).toBe(200);
+      expect(mockInsertAnalysis).toHaveBeenCalledWith(expect.objectContaining({ device_info: { country: 'PL' } }));
+    });
     it.each([101, 140])(
       "inserts hybrid points %s without clamping",
       async (hybridScore) => {
