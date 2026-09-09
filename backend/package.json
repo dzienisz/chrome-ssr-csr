@@ -11,6 +11,7 @@
     "db:migrate": "node scripts/migrate-db.js",
     "test": "vitest",
     "test:run": "vitest run",
+    "typecheck": "tsc --noEmit --incremental false",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {

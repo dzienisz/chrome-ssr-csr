@@ -1,18 +1,27 @@
-import { sql } from '@vercel/postgres';
+import { sql } from "@vercel/postgres";
 
 export async function getHydrationStats() {
   try {
     const result = await sql`
+      WITH safe_analyses AS (
+        SELECT (SELECT jsonb_object_agg(key, value)
+          FROM jsonb_each(CASE WHEN jsonb_typeof(hydration_stats) = 'object' THEN hydration_stats ELSE '{}'::jsonb END)
+          WHERE CASE WHEN jsonb_typeof(value) = 'number'
+            THEN value::numeric BETWEEN 0 AND 9007199254740991
+              AND ((key = 'score' AND value::numeric <= 100) OR (key = 'errorCount' AND mod(value::numeric, 1) = 0))
+            ELSE false END) AS hydration_stats
+        FROM analyses
+      )
       SELECT
-        AVG((hydration_stats::jsonb->>'score')::numeric) as avg_score,
-        COUNT(CASE WHEN (hydration_stats::jsonb->>'errorCount')::numeric > 0 THEN 1 END) as sites_with_errors,
-        SUM((hydration_stats::jsonb->>'errorCount')::numeric) as total_errors
-      FROM analyses
+        AVG((hydration_stats->>'score')::numeric) as avg_score,
+        COUNT(CASE WHEN (hydration_stats->>'errorCount')::numeric > 0 THEN 1 END) as sites_with_errors,
+        SUM((hydration_stats->>'errorCount')::numeric) as total_errors
+      FROM safe_analyses
       WHERE hydration_stats IS NOT NULL;
     `;
     return result.rows[0];
   } catch (error) {
-    console.error('getHydrationStats error:', error);
+    console.error("getHydrationStats error:", error);
     return null;
   }
 }
@@ -21,14 +30,17 @@ export async function getNavigationStats() {
   try {
     const result = await sql`
       SELECT
-        COUNT(CASE WHEN (navigation_stats::jsonb->>'isSPA')::boolean = true THEN 1 END) as spa_count,
-        SUM((navigation_stats::jsonb->>'clientRoutes')::numeric) as total_client_routes
+        COUNT(CASE WHEN navigation_stats->'isSPA' = 'true'::jsonb THEN 1 END) as spa_count,
+        SUM(CASE WHEN jsonb_typeof(navigation_stats->'clientRoutes') = 'number'
+          THEN CASE WHEN (navigation_stats->>'clientRoutes')::numeric BETWEEN 0 AND 9007199254740991
+            AND mod((navigation_stats->>'clientRoutes')::numeric, 1) = 0
+            THEN (navigation_stats->>'clientRoutes')::numeric END END) as total_client_routes
       FROM analyses
       WHERE navigation_stats IS NOT NULL;
     `;
     return result.rows[0];
   } catch (error) {
-    console.error('getNavigationStats error:', error);
+    console.error("getNavigationStats error:", error);
     return null;
   }
 }
@@ -47,19 +59,22 @@ export async function getNavigationByRenderType() {
           ELSE 'Other'
         END as render_category,
         COUNT(*) as sample_count,
-        COUNT(CASE WHEN (navigation_stats->>'isSPA')::boolean = true THEN 1 END) as spa_count,
-        ROUND(AVG(CASE WHEN (navigation_stats->>'isSPA')::boolean = true
-          THEN (navigation_stats->>'clientRoutes')::numeric END), 1) as avg_client_routes
+        COUNT(CASE WHEN navigation_stats->'isSPA' = 'true'::jsonb THEN 1 END) as spa_count,
+        ROUND(AVG(CASE WHEN navigation_stats->'isSPA' = 'true'::jsonb
+          THEN CASE WHEN jsonb_typeof(navigation_stats->'clientRoutes') = 'number'
+            THEN CASE WHEN (navigation_stats->>'clientRoutes')::numeric BETWEEN 0 AND 9007199254740991
+              AND mod((navigation_stats->>'clientRoutes')::numeric, 1) = 0
+              THEN (navigation_stats->>'clientRoutes')::numeric END END END), 1) as avg_client_routes
       FROM analyses
       -- jsonb_typeof excludes legacy rows storing JSON null (pre-v1.5.1 insert bug)
       WHERE jsonb_typeof(navigation_stats) = 'object'
-        AND navigation_stats->>'isSPA' IS NOT NULL
+        AND jsonb_typeof(navigation_stats->'isSPA') = 'boolean'
       GROUP BY render_category
       ORDER BY sample_count DESC;
     `;
     return result.rows;
   } catch (error) {
-    console.error('getNavigationByRenderType error:', error);
+    console.error("getNavigationByRenderType error:", error);
     return [];
   }
 }

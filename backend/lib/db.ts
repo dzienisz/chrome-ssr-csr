@@ -1,10 +1,21 @@
-import { sql } from '@vercel/postgres';
+import { sql } from "@vercel/postgres";
+import {
+  toPublicAnalysis,
+  aggregateNumber,
+  normalizeHostname,
+  normalizeFramework,
+  publicRenderType,
+  PAGE_TYPES,
+  DEVICE_TYPES,
+  EFFECTIVE_TYPES,
+  type TelemetryRecord,
+} from "./telemetry-schema";
 
 export interface CoreWebVitals {
   lcp?: number | null;
   cls?: number | null;
   inp?: number | null;
-  fid?: number | null;  // legacy rows only (pre-v3.11.0 extensions)
+  fid?: number | null; // legacy rows only (pre-v3.11.0 extensions)
   ttfb?: number | null;
   tti?: number | null;
   tbt?: number | null;
@@ -120,7 +131,7 @@ export interface AnalysisRecord {
   navigation_stats?: NavigationStats | null;
 }
 
-export async function insertAnalysis(data: AnalysisRecord) {
+export async function insertAnalysis(data: AnalysisRecord | TelemetryRecord) {
   try {
     const result = await sql`
       INSERT INTO analyses (
@@ -137,7 +148,7 @@ export async function insertAnalysis(data: AnalysisRecord) {
         ${JSON.stringify(data.performance_metrics)},
         ${JSON.stringify(data.indicators)},
         ${data.extension_version},
-        ${data.user_agent || null},
+        ${("user_agent" in data ? data.user_agent : null) || null},
         ${data.core_web_vitals ? JSON.stringify(data.core_web_vitals) : null},
         ${data.page_type || null},
         ${data.device_info ? JSON.stringify(data.device_info) : null},
@@ -151,21 +162,26 @@ export async function insertAnalysis(data: AnalysisRecord) {
 
     return result.rows[0];
   } catch (error) {
-    console.error('Database insertion error:', error);
+    console.error("Database insertion error:", error);
     throw error;
   }
 }
 
-export async function getRecentAnalyses(limit: number = 20, offset: number = 0) {
+export async function getRecentAnalyses(
+  limit: number = 20,
+  offset: number = 0,
+) {
   try {
     const result = await sql`
-      SELECT * FROM analyses
+      SELECT id, domain, render_type, confidence, timestamp, frameworks,
+        core_web_vitals, tech_stack, hydration_stats, navigation_stats, device_info
+      FROM analyses
       ORDER BY timestamp DESC
       LIMIT ${limit} OFFSET ${offset};
     `;
-    return result.rows;
+    return result.rows.map(toPublicAnalysis);
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -183,7 +199,7 @@ export async function getTotalStats() {
     `;
     return result.rows[0];
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -195,15 +211,20 @@ export async function getTopFrameworks(limit: number = 10) {
         framework,
         COUNT(*) as count
       FROM analyses,
-      LATERAL jsonb_array_elements_text(frameworks::jsonb) as framework
+      LATERAL jsonb_array_elements_text(CASE WHEN jsonb_typeof(frameworks::jsonb) = 'array' THEN frameworks::jsonb ELSE '[]'::jsonb END) as framework
       WHERE frameworks::jsonb != '[]'::jsonb
       GROUP BY framework
       ORDER BY count DESC
       LIMIT ${limit};
     `;
-    return result.rows;
+    return result.rows.flatMap((row) => {
+      const framework = normalizeFramework(row.framework);
+      return framework
+        ? [{ framework, count: aggregateNumber(row.count) }]
+        : [];
+    });
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -221,9 +242,21 @@ export async function getTopDomains(limit: number = 20) {
       ORDER BY count DESC
       LIMIT ${limit};
     `;
-    return result.rows;
+    return result.rows.flatMap((row) => {
+      const domain = normalizeHostname(row.domain);
+      return domain
+        ? [
+            {
+              domain,
+              count: aggregateNumber(row.count),
+              avg_confidence: aggregateNumber(row.avg_confidence),
+              most_common_type: publicRenderType(row.most_common_type),
+            },
+          ]
+        : [];
+    });
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -237,7 +270,7 @@ export async function getLatestAnalysisTime() {
     `;
     return result.rows[0]?.timestamp || null;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     return null;
   }
 }
@@ -262,7 +295,7 @@ export async function getAnalysesByDate(days: number = 30) {
     `;
     return result.rows;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -270,6 +303,14 @@ export async function getAnalysesByDate(days: number = 30) {
 export async function getContentComparisonStats() {
   try {
     const result = await sql`
+      WITH safe_analyses AS (
+        SELECT (SELECT jsonb_object_agg(key, value)
+          FROM jsonb_each(CASE WHEN jsonb_typeof(performance_metrics::jsonb) = 'object' THEN performance_metrics::jsonb ELSE '{}'::jsonb END)
+          WHERE CASE WHEN jsonb_typeof(value) = 'number'
+            THEN value::numeric BETWEEN 0 AND 9007199254740991
+            ELSE false END) AS performance_metrics
+        FROM analyses
+      )
       SELECT
         AVG((performance_metrics::jsonb->>'contentRatio')::numeric) as avg_content_ratio,
         AVG((performance_metrics::jsonb->>'hybridScore')::numeric) as avg_hybrid_score,
@@ -278,12 +319,12 @@ export async function getContentComparisonStats() {
         COUNT(CASE WHEN (performance_metrics::jsonb->>'contentRatio')::numeric BETWEEN 0.2 AND 0.7 THEN 1 END) as mid_ratio_count,
         COUNT(CASE WHEN (performance_metrics::jsonb->>'hybridScore')::numeric > 0 THEN 1 END) as hybrid_detected_count,
         COUNT(*) as total_with_metrics
-      FROM analyses
+      FROM safe_analyses
       WHERE performance_metrics::jsonb->>'contentRatio' IS NOT NULL;
     `;
     return result.rows[0];
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     // Return empty stats if query fails (e.g., no data with new metrics yet)
     return {
       avg_content_ratio: null,
@@ -292,7 +333,7 @@ export async function getContentComparisonStats() {
       high_ratio_count: 0,
       mid_ratio_count: 0,
       hybrid_detected_count: 0,
-      total_with_metrics: 0
+      total_with_metrics: 0,
     };
   }
 }
@@ -301,6 +342,14 @@ export async function getContentComparisonStats() {
 export async function getCoreWebVitalsByRenderType() {
   try {
     const result = await sql`
+      WITH safe_analyses AS (
+        SELECT render_type, (SELECT jsonb_object_agg(key, value)
+          FROM jsonb_each(CASE WHEN jsonb_typeof(core_web_vitals) = 'object' THEN core_web_vitals ELSE '{}'::jsonb END)
+          WHERE CASE WHEN jsonb_typeof(value) = 'number'
+            THEN value::numeric BETWEEN 0 AND 9007199254740991
+            ELSE false END) AS core_web_vitals
+        FROM analyses
+      )
       SELECT
         CASE
           WHEN render_type ILIKE '%SSR%' THEN 'SSR'
@@ -331,7 +380,7 @@ export async function getCoreWebVitalsByRenderType() {
             (core_web_vitals->>'cls')::numeric < 0.1
           THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
         ) as pass_rate
-      FROM analyses
+      FROM safe_analyses
       -- jsonb_typeof excludes legacy rows storing JSON null (pre-v1.5.1 insert bug);
       -- the metric check keeps sample_count honest for all-null objects
       WHERE jsonb_typeof(core_web_vitals) = 'object'
@@ -345,7 +394,7 @@ export async function getCoreWebVitalsByRenderType() {
     `;
     return result.rows;
   } catch (error) {
-    console.error('getCoreWebVitalsByRenderType error:', error);
+    console.error("getCoreWebVitalsByRenderType error:", error);
     return [];
   }
 }
@@ -369,9 +418,18 @@ export async function getPageTypeDistribution() {
       ORDER BY total_count DESC
       LIMIT 10;
     `;
-    return result.rows;
+    return result.rows.map((row) => ({
+      page_type: PAGE_TYPES.includes(row.page_type) ? row.page_type : "other",
+      total_count: aggregateNumber(row.total_count),
+      ssr_count: aggregateNumber(row.ssr_count),
+      csr_count: aggregateNumber(row.csr_count),
+      hybrid_count: aggregateNumber(row.hybrid_count),
+      ssr_percentage: aggregateNumber(row.ssr_percentage),
+      csr_percentage: aggregateNumber(row.csr_percentage),
+      hybrid_percentage: aggregateNumber(row.hybrid_percentage),
+    }));
   } catch (error) {
-    console.error('getPageTypeDistribution error:', error);
+    console.error("getPageTypeDistribution error:", error);
     return [];
   }
 }
@@ -380,6 +438,14 @@ export async function getPageTypeDistribution() {
 export async function getDevicePerformance() {
   try {
     const result = await sql`
+      WITH safe_analyses AS (
+        SELECT device_info, (SELECT jsonb_object_agg(key, value)
+          FROM jsonb_each(CASE WHEN jsonb_typeof(core_web_vitals) = 'object' THEN core_web_vitals ELSE '{}'::jsonb END)
+          WHERE CASE WHEN jsonb_typeof(value) = 'number'
+            THEN value::numeric BETWEEN 0 AND 9007199254740991
+            ELSE false END) AS core_web_vitals
+        FROM analyses
+      )
       SELECT
         device_info->>'deviceType' as device_type,
         device_info->'connection'->>'effectiveType' as connection_type,
@@ -393,16 +459,28 @@ export async function getDevicePerformance() {
             (core_web_vitals->>'cls')::numeric < 0.1
           THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
         ) as pass_rate
-      FROM analyses
+      FROM safe_analyses
       WHERE device_info IS NOT NULL AND core_web_vitals IS NOT NULL
       GROUP BY device_type, connection_type
       HAVING COUNT(*) >= 5
       ORDER BY sample_count DESC
       LIMIT 20;
     `;
-    return result.rows;
+    return result.rows.map((row) => ({
+      device_type: DEVICE_TYPES.includes(row.device_type)
+        ? row.device_type
+        : "unknown",
+      connection_type: EFFECTIVE_TYPES.includes(row.connection_type)
+        ? row.connection_type
+        : "unknown",
+      sample_count: aggregateNumber(row.sample_count),
+      avg_lcp: row.avg_lcp == null ? null : aggregateNumber(row.avg_lcp),
+      avg_cls: row.avg_cls == null ? null : aggregateNumber(row.avg_cls),
+      avg_ttfb: row.avg_ttfb == null ? null : aggregateNumber(row.avg_ttfb),
+      pass_rate: aggregateNumber(row.pass_rate),
+    }));
   } catch (error) {
-    console.error('getDevicePerformance error:', error);
+    console.error("getDevicePerformance error:", error);
     return [];
   }
 }
@@ -420,9 +498,15 @@ export async function getDeviceTypeSummary() {
       GROUP BY device_type
       ORDER BY count DESC;
     `;
-    return result.rows;
+    return result.rows.map((row) => ({
+      device_type: DEVICE_TYPES.includes(row.device_type)
+        ? row.device_type
+        : "unknown",
+      count: aggregateNumber(row.count),
+      percentage: aggregateNumber(row.percentage),
+    }));
   } catch (error) {
-    console.error('getDeviceTypeSummary error:', error);
+    console.error("getDeviceTypeSummary error:", error);
     return [];
   }
 }
@@ -435,7 +519,7 @@ export async function deleteAnalysis(id: number) {
     `;
     return result.rows[0];
   } catch (error) {
-    console.error('Database deletion error:', error);
+    console.error("Database deletion error:", error);
     throw error;
   }
 }

@@ -1,17 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { FrameworkChart, RenderTypeDistribution, TimelineChart } from './charts';
-import { RecentAnalyses } from './recent-analyses';
-import { TopDomains } from './top-domains';
-import { LastUpdated } from './last-updated';
-import { PlatformBreakdown } from './platform-breakdown';
-import { HybridInsights } from './hybrid-insights';
-import { TechStackTrends } from './tech-stack-trends';
-import { SEOInsights } from './seo-insights';
-import { StatsCard } from './stats-card';
-import { CWVInsights, CWVByRenderType } from './cwv-insights';
-import { NavigationInsights, NavigationByRenderType } from './navigation-insights';
+import { useState, useEffect, useCallback } from "react";
+import {
+  FrameworkChart,
+  RenderTypeDistribution,
+  TimelineChart,
+} from "./charts";
+import { RecentAnalyses } from "./recent-analyses";
+import { TopDomains } from "./top-domains";
+import { LastUpdated } from "./last-updated";
+import { PlatformBreakdown } from "./platform-breakdown";
+import { HybridInsights } from "./hybrid-insights";
+import { TechStackTrends } from "./tech-stack-trends";
+import { SEOInsights } from "./seo-insights";
+import { StatsCard } from "./stats-card";
+import { CWVInsights, CWVByRenderType } from "./cwv-insights";
+import {
+  NavigationInsights,
+  NavigationByRenderType,
+} from "./navigation-insights";
 
 interface TotalStats {
   total_analyses: string | number;
@@ -41,18 +48,7 @@ interface TimelineData {
   hybrid_count: number;
 }
 
-interface RecentAnalysis {
-  id: number;
-  domain: string;
-  render_type: string;
-  confidence: number;
-  timestamp: string;
-  frameworks: string[];
-  core_web_vitals?: Record<string, number | null>;
-  tech_stack?: Record<string, string | string[] | null>;
-  hydration_stats?: { score?: number; errorCount?: number };
-  navigation_stats?: { isSPA?: boolean; clientRoutes?: number };
-}
+import type { PublicAnalysis as RecentAnalysis } from "@/lib/telemetry-schema";
 
 interface TechStackStats {
   cssFrameworks: Record<string, number>;
@@ -107,7 +103,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
-  
+
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialData.recent.length >= 20);
 
@@ -116,30 +112,33 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
       setIsRefreshing(true);
       setError(null);
 
-      const res = await fetch('/api/stats?type=all', { headers: { 'Cache-Control': 'no-cache' } });
+      const res = await fetch("/api/stats?type=all", {
+        headers: { "Cache-Control": "no-cache" },
+      });
 
       if (res.ok) {
         const newData = await res.json();
         if (newData && newData.total) {
-          setData(prev => ({
+          setData((prev) => ({
             ...newData,
             techStack: newData.techStack || prev.techStack,
             seoStats: newData.seoStats || prev.seoStats,
-            navigationByRenderType: newData.navigationByRenderType || prev.navigationByRenderType,
+            navigationByRenderType:
+              newData.navigationByRenderType || prev.navigationByRenderType,
           }));
           setHasMore(newData.recent.length >= 20);
           setCountdown(REFRESH_INTERVAL);
         } else {
-          console.error('Invalid data structure:', newData);
-          setError('Invalid data');
+          console.error("Invalid data structure:", newData);
+          setError("Invalid data");
         }
       } else {
         setError(`HTTP ${res.status}`);
       }
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.error("Failed to fetch data:", error);
       setCountdown(REFRESH_INTERVAL);
-      setError('Network error');
+      setError("Network error");
     } finally {
       setIsRefreshing(false);
     }
@@ -147,52 +146,26 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
 
   const loadMore = async () => {
     if (isLoadingMore || !hasMore) return;
-    
+
     try {
       setIsLoadingMore(true);
-      const res = await fetch(`/api/stats?type=recent&limit=20&offset=${data.recent.length}`);
+      const res = await fetch(
+        `/api/stats?type=recent&limit=20&offset=${data.recent.length}`,
+      );
       if (res.ok) {
         const newRecent = await res.json();
         if (newRecent.length < 20) {
           setHasMore(false);
         }
-        setData(prev => ({
+        setData((prev) => ({
           ...prev,
-          recent: [...prev.recent, ...newRecent]
+          recent: [...prev.recent, ...newRecent],
         }));
       }
     } catch (err) {
-      console.error('Failed to load more:', err);
+      console.error("Failed to load more:", err);
     } finally {
       setIsLoadingMore(false);
-    }
-  };
-
-  const handleDeleteAnalysis = async (id: number) => {
-    try {
-      const res = await fetch(`/api/analyze/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete');
-      }
-
-      // Update local state immediately for snappy UI
-      setData(prev => ({
-        ...prev,
-        recent: prev.recent.filter(a => a.id !== id),
-        total: {
-          ...prev.total,
-          total_analyses: parseInt(String(prev.total.total_analyses)) - 1
-        }
-      }));
-    } catch (err) {
-      console.error('Delete error:', err);
-      throw err;
     }
   };
 
@@ -215,7 +188,8 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
   const ssrCount = parseInt(String(data.total?.ssr_count ?? 0)) || 0;
   const csrCount = parseInt(String(data.total?.csr_count ?? 0)) || 0;
   const hybridCount = parseInt(String(data.total?.hybrid_count ?? 0)) || 0;
-  const avgConfidence = parseFloat(String(data.total?.avg_confidence ?? 0)) || 0;
+  const avgConfidence =
+    parseFloat(String(data.total?.avg_confidence ?? 0)) || 0;
 
   return (
     <>
@@ -228,17 +202,25 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
                 <span className="text-3xl">📊</span>
                 SSR/CSR Analytics
                 {isRefreshing && (
-                  <span className="ml-2 text-sm font-normal text-gray-400">updating...</span>
+                  <span className="ml-2 text-sm font-normal text-gray-400">
+                    updating...
+                  </span>
                 )}
               </h1>
               <p className="text-gray-500 mt-1">
                 Chrome Extension Usage Dashboard
                 {error ? (
-                  <span className="ml-2 text-xs text-red-500">● Error: {error}</span>
+                  <span className="ml-2 text-xs text-red-500">
+                    ● Error: {error}
+                  </span>
                 ) : isRefreshing ? (
-                  <span className="ml-2 text-xs text-blue-500">● Refreshing...</span>
+                  <span className="ml-2 text-xs text-blue-500">
+                    ● Refreshing...
+                  </span>
                 ) : (
-                  <span className="ml-2 text-xs text-emerald-600">● Live · {countdown}s</span>
+                  <span className="ml-2 text-xs text-emerald-600">
+                    ● Live · {countdown}s
+                  </span>
                 )}
               </p>
             </div>
@@ -321,9 +303,8 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             <TopDomains data={data.domains || []} />
           </div>
           <div className="lg:col-span-2">
-            <RecentAnalyses 
-              data={data.recent || []} 
-              onDelete={handleDeleteAnalysis}
+            <RecentAnalyses
+              data={data.recent || []}
               onLoadMore={loadMore}
               hasMore={hasMore}
               isLoadingMore={isLoadingMore}
@@ -333,13 +314,18 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-400">
-          <p>SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes every 30s</p>
+          <p>
+            SSR/CSR Detector Analytics • Data is anonymized • Auto-refreshes
+            every 30s
+          </p>
           <p className="mt-2">
             Dashboard v1.6.0 •
-            <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/backend/CHANGELOG.md"
-               target="_blank"
-               rel="noopener noreferrer"
-               className="text-indigo-500 hover:text-indigo-600 ml-1">
+            <a
+              href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/backend/CHANGELOG.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-500 hover:text-indigo-600 ml-1"
+            >
               Changelog
             </a>
           </p>

@@ -10,13 +10,14 @@ Real-time analytics dashboard for the [CSR vs SSR Detector](../extension) Chrome
 **[View Live Dashboard](https://backend-mauve-beta-88.vercel.app/dashboard)**
 
 Features:
+
 - Real-time stats with 30-second auto-refresh
 - SSR/CSR/Hybrid distribution charts
 - Core Web Vitals by render type (LCP, CLS, TTFB, pass rate)
 - SPA vs MPA navigation behavior by render type
 - Framework detection trends
-- Top analyzed domains (with country flags and page titles)
-- Recent analyses table with infinite scroll and record deletion
+- Top analyzed domains and country flags in recent records
+- Read-only recent analyses table with infinite scroll and record details
 
 ## Tech Stack
 
@@ -74,16 +75,19 @@ are only needed for first-time project setup.
 ### Option 1: Using Vercel CLI
 
 1. **Install Vercel CLI**:
+
 ```bash
 npm i -g vercel
 ```
 
 2. **Login to Vercel**:
+
 ```bash
 vercel login
 ```
 
 3. **Deploy**:
+
 ```bash
 cd backend
 vercel
@@ -98,6 +102,7 @@ vercel
 
 5. **Set up the database**:
    - After Postgres is connected, run the setup script:
+
 ```bash
 vercel env pull .env.local  # Pull environment variables
 npm run db:setup
@@ -108,6 +113,7 @@ npm run db:setup
    - Add `API_SECRET_KEY` with a secure random value
 
 7. **Redeploy**:
+
 ```bash
 vercel --prod
 ```
@@ -140,13 +146,19 @@ This creates the `analyses` table with all necessary indexes.
 
 ### POST /api/analyze
 
-Submit analysis data from the extension.
+Submit analysis data from the extension. The request body is limited to 64 KiB of UTF-8 bytes, enforced while reading the stream (413 if exceeded). Invalid JSON or malformed retained fields return 400 with `{ success: false, error: 'Invalid telemetry' }`.
+
+The API accepts finite confidence from 0 through 100 and recognized current/legacy rendering labels. It requires an HTTP(S) URL without credentials, stores only its origin and derives the authoritative hostname from that URL. Supplied paths, queries and fragments are not stored. Missing/null optional metric groups remain null; retained counts, timings, percentages, booleans and closed-vocabulary labels are validated without numeric-string coercion. `performanceMetrics.hybridScore` is an unnormalized points accumulator (currently up to 140), not a percentage: finite nonnegative values through `Number.MAX_SAFE_INTEGER` are preserved without clamping, including in historical aggregates. Actual percentages and normalized health/confidence scores remain bounded to 0..100. Unknown fields are dropped for compatibility.
+
+`lib/telemetry-schema.ts` defines the input allowlist and the separate public record projection. Hydration retains only count/score; navigation retains aggregate flags/counts. Incoming free-form indicators, raw user-agent values, page titles, SEO text/structured-data strings, raw errors and route details are not stored. Country is derived from validated hosting-platform metadata, not the submitted device country.
 
 **Headers**:
+
 - `Content-Type`: application/json
 - `x-api-key`: (Optional) API key if configured on server
 
 **Body**:
+
 ```json
 {
   "url": "https://example.com",
@@ -158,12 +170,12 @@ Submit analysis data from the extension.
     "domReady": 125,
     "fcp": 650
   },
-  "indicators": ["Rich initial content", "Hydration markers"],
   "version": "3.7.0"
 }
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -173,28 +185,35 @@ Submit analysis data from the extension.
 
 ### GET /api/stats
 
-Get aggregated statistics.
+Get public aggregate statistics. `recent` and `all.recent` expose only the public DTO: ID, hostname, rendering label, confidence, timestamp, normalized frameworks/tech labels, validated performance metrics, hydration count/score, SPA flag/client-route count and country. URLs, user agents, indicators, SEO records, raw errors/routes and other device fields are excluded, including for historical records. The server-rendered dashboard uses the same `getRecentAnalyses` projection.
+
+Historical numeric JSONB values are type/range-checked before aggregation; malformed values are ignored rather than cast unsafely. Historical public category names are normalized or filtered. Existing CWV thresholds are unchanged.
 
 **Query Parameters**:
+
 - `type`: `all`, `total`, `frameworks`, `domains`, `timeline`, `recent`, `contentComparison`
-- `limit`: Number of results (for frameworks, domains, recent)
-- `offset`: Pagination offset (for recent)
-- `days`: Number of days for timeline (default: 30)
+- `limit`: Integer 1..100 (frameworks default 10; domains/recent default 20)
+- `offset`: Integer 0..100000 (recent default 0)
+- `days`: Integer 1..365 (timeline default 30)
+
+Invalid, fractional, negative, out-of-range or trailing-junk query values return 400 with `{ success: false, error: 'Invalid query parameters' }`.
 
 **Examples**:
+
 - `/api/stats?type=all` - All stats (Phase 1-3, preferred)
 - `/api/stats?type=frameworks&limit=10` - Top 10 frameworks
 - `/api/stats?type=timeline&days=7` - Last 7 days
 
 ### DELETE /api/analyze/[id]
 
-Remove a single analysis record (used by the dashboard's delete action).
+Deletion is disabled. Every request returns HTTP 403 and `{ success: false, error: 'Analysis deletion is disabled' }`, regardless of ID, Referer or API-key configuration. No database mutation is performed. OPTIONS does not advertise DELETE, and the public dashboard has no deletion controls. There is no new administrator login or key.
 
 ## Dashboard
 
 Access at: `/dashboard`
 
 Features:
+
 - Total analyses count
 - SSR/CSR/Hybrid distribution
 - Top frameworks detected
@@ -211,12 +230,18 @@ the "Share Anonymous Data" toggle in the extension settings.
 
 ## Security
 
-- CORS headers restrict browser requests to allowed origins
-- Optional API key authentication (disabled by default)
-- Rate limiting (implement with Upstash Redis in production)
-- Input validation and sanitization
-- No sensitive user data stored (only domains, not full URLs)
-- HTTPS only in production
+- CORS is not authentication. The existing optional ingestion-key policy is unchanged: when configured, the key is required for POST; without it, ingestion remains public.
+- Public deletion is disabled independently of ingestion policy.
+- Strict bounded input and public-output projections minimize retained and exposed fields; this is not a blanket anonymity guarantee.
+- HTTPS is used in production.
+
+### Operational follow-up
+
+These source changes do not deploy anything, inspect production records or delete historical data. Previously accepted raw fields may remain in private database storage after the public projection is deployed. Historical cleanup requires separate approval. Review hosting/log retention and store disclosures against the updated extension privacy policy before release; no live store settings have been changed.
+
+Authentication redesign, distributed rate limiting, consent-default redesign and extension history/CSV cleanup remain separate work. No new secret, provider, per-process limiter or migration is introduced here.
+
+Run mocked tests with `npm run test:run` and typecheck with `npm run typecheck`; do not supply production database credentials for verification.
 
 ## Monitoring
 
@@ -227,10 +252,12 @@ the "Share Anonymous Data" toggle in the extension settings.
 ## Cost Estimate
 
 **Free Tier (Starting out)**:
+
 - Vercel: Free (100GB bandwidth, unlimited requests)
 - Vercel Postgres: Free (256MB storage, 60 hours compute/month)
 
 **Pro Tier (If you exceed free tier)**:
+
 - Vercel Pro: $20/month
 - Postgres Pro: $10+/month
 
@@ -247,6 +274,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 ## Support
 
 For issues or questions:
+
 - [GitHub Issues](https://github.com/dzienisz/chrome-ssr-csr/issues)
 - Check Vercel logs for errors
 - Review database queries in Vercel Postgres dashboard

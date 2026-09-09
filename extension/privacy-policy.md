@@ -1,95 +1,56 @@
 # Privacy Policy for CSR vs SSR Detector
 
-## Data Collection and Storage
+## Local Analysis and History
 
-### Local Storage
-This extension stores the following information locally on your device:
-- URLs of websites you analyze
-- Titles of websites you analyze
-- Analysis results (rendering type, confidence score, indicators)
-- Timestamps of when analyses were performed
-- Your preferences (theme, history limit, notification settings)
+The extension analyzes pages you choose to inspect. Analysis and the local history feature work even when telemetry sharing is disabled.
 
-### Anonymous Telemetry (enabled by default, opt-out)
-Unless you disable "Share anonymous data" in settings, the extension sends anonymized usage data to help improve the extension:
+Your browser's extension storage holds:
 
-**Data sent while sharing is enabled:**
-- Domain name only (e.g., "example.com", NOT full URLs or paths)
-- Detected render type (SSR/CSR/Hybrid)
-- Confidence score
-- Detected frameworks (e.g., "Next.js", "React")
-- Performance metrics (DOM ready time, First Contentful Paint)
-- Core Web Vitals (LCP, CLS, INP, TTFB - performance metrics) and aggregate
-  Long Animation Frame counts/durations (no script names or URLs)
-- Page type classification (e.g., "blog", "ecommerce", "docs")
-- Device information:
-  - Device type (mobile/tablet/desktop)
-  - Screen dimensions
-  - Browser name and version
-  - Connection type (e.g., "4g", "wifi")
-  - Timezone and language
-- Tech stack information:
-  - CSS framework detected (e.g., "Tailwind", "Bootstrap")
-  - State management library (e.g., "Redux", "MobX")
-  - Build tool detected (e.g., "Webpack", "Vite")
-  - Hosting provider (if detectable)
-- SEO metrics:
-  - Presence of meta description and Open Graph tags
-  - Heading structure analysis
-  - Image alt text coverage
-- Hydration metrics:
-  - Hydration error count
-  - Hydration timing
-- Navigation type (SPA vs MPA)
-- Extension version
-- Timestamp
-- Approximate location: country only (2-letter code, e.g., "US"), derived
-  server-side from the request IP address; the IP address itself is not stored
+- Analyzed page URLs and titles
+- Rendering results, confidence scores, indicators and timestamps
+- Preferences such as theme, history limit and notifications
 
-**Data NOT collected:**
-- Full URLs or page paths
-- Personal information
-- Browsing history
-- Page content
-- IP addresses (used transiently server-side to derive the country code above, never stored)
+History stays on your device; enabling sharing does not upload the history database. Preferences use browser sync storage and may sync through your browser account. Exports you create are under your control.
 
-## Data Usage
+## Optional Telemetry (enabled by default, opt-out)
 
-### Local Data
-Local data is used solely to provide the history feature, allowing you to view your past analyses. All local data is stored on your device using chrome.storage and is not transmitted unless telemetry sharing is enabled.
+The setting named "Share anonymous data" controls telemetry sharing. It is **enabled by default** and can be disabled in settings. The name of this setting is not a guarantee of anonymity: domains, timestamps and combinations of technical measurements can reveal context about an analyzed visit.
 
-### Telemetry Data (only while sharing is enabled)
-Anonymous telemetry data is used to:
-- Understand which frameworks are most commonly detected
-- Improve detection accuracy
-- Identify and fix issues with the extension
-- View aggregate usage statistics
+When sharing is enabled, the extension sends technical analysis data to the analytics backend. The backend validates and minimizes incoming records before storing them. Retained fields are:
 
-Telemetry data is stored on secure servers hosted by Vercel and is only accessible to the extension developer.
+- HTTP(S) origin and hostname, not URL paths, queries or fragments
+- Rendering classification, confidence, recognized frameworks and extension version
+- Performance measurements and counts: DOM ready time, content-size comparison, Core Web Vitals and aggregate Long Animation Frame measurements
+- A page-category label such as blog, ecommerce or documentation
+- Device category, screen dimensions, pixel ratio, touch capability, browser/engine/version, connection category and measurements, CPU core count, language, timezone and display/motion preferences
+- Recognized CSS frameworks, state-management libraries, build tools, hosting/CDN providers and technology-related global labels
+- SEO/accessibility flags, counts and percentages, including title/description lengths, heading counts and image-alt coverage; not page titles or description text
+- Hydration error count and health score
+- SPA/MPA classification and aggregate client-navigation counts/API-support flags
+- Receipt timestamp and a two-letter country code derived server-side from hosting-platform request metadata
 
-## Data Retention
+The API discards free-form indicators, raw user-agent values, page titles, structured-data strings, raw hydration messages/stacks, route details and unrecognized extra fields. Older clients may submit fields that are now discarded. The updated hydration collector emits only an error count and score, not raw messages. Local diagnostic/probe data is separate from the retained telemetry record.
 
-### Local Data
-The extension stores a configurable number of recent analyses (default: 10). Older entries are automatically deleted when new analyses are performed.
+IP addresses are not stored in the analysis records. Network requests necessarily expose connection information, including an IP address, to the hosting provider; this policy does not make claims about provider-level request logs.
 
-### Telemetry Data
-Anonymous telemetry data is retained for statistical analysis and may be deleted periodically.
+## Public Dashboard and API
 
-## User Control
+Telemetry is hosted on Vercel infrastructure. Aggregate statistics and a minimized subset of individual recent analyses are **publicly accessible**, not developer-only.
 
-### Local Data
-You can clear all stored data by clearing your browser's extension storage or by uninstalling the extension.
+The public per-record subset contains a record ID, hostname, rendering classification, confidence, timestamp, recognized frameworks/technologies, allowed performance metrics, hydration count/score, SPA flag/client-route count and country. Other device details, URLs, indicators, SEO records, raw errors and route details are excluded. The same projection applies when displaying historical records.
 
-### Telemetry
-- Telemetry is **enabled by default** (opt-out)
-- You can disable it anytime in the extension settings
-- Disabling telemetry stops all future data transmission
+Data is used to understand framework usage, compare rendering/performance patterns, improve detection and identify extension issues. Public data can be accessed by third parties. Do not enable sharing for visits whose hostname or technical context you do not want to appear publicly.
 
-## Third-Party Access
-- Local data: No third parties have access
-- Telemetry data: Hosted on Vercel infrastructure, not shared with third parties
+## Retention and Control
+
+Local history retains a configurable number of recent analyses (default: 10); older entries are removed as new analyses are added. Clear extension storage or uninstall the extension to remove local history.
+
+Disable telemetry in settings to stop future telemetry submissions. This does not remove already submitted records. Public record deletion is currently disabled; no administrator login or public deletion control is provided.
+
+Telemetry records are retained for statistical analysis with no automatic deletion schedule promised here. Historical records may still contain previously accepted fields in private database storage. The public projection excludes those fields; this change does not perform historical cleanup. Any cleanup requires a separate operational decision.
 
 ## Contact
-For questions about this privacy policy, please open an issue on the GitHub repository.
 
-Last updated: 2026-07-10
+For privacy questions, please open an issue on the GitHub repository. Do not include private page content, credentials or sensitive URLs in a public issue.
+
+Last updated: 2026-09-09
