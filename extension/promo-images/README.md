@@ -22,6 +22,9 @@ Requires Google Chrome (used headless for rendering).
 | `screenshot-3-learn-1280x800.png` | 1280×800 | Screenshot 3 — built-in SSR/CSR explainer |
 | `firefox-hero-1400x560.png` | 1400×560 | Firefox "now on Firefox" hero (GitHub release / social) |
 | `firefox-tile-440x280.png` | 440×280 | Firefox compact social tile |
+| `social-landscape-1600x900.png` | 1600×900 | Social card — X/LinkedIn/Mastodon landscape |
+| `social-square-1080x1080.png` | 1080×1080 | Social card — feed square (Instagram/LinkedIn) |
+| `social-diff-1600x900.png` | 1600×900 | Social card — raw-vs-rendered diff explainer |
 
 **AMO note:** addons.mozilla.org has no promo-tile slots — only the icon and
 screenshots show in the listing. The three `screenshot-*-1280x800.png` files are

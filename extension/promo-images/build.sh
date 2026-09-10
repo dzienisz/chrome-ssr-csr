@@ -26,6 +26,11 @@ shoot marquee 1400 560 marquee-1400x560.png
 shoot firefox-hero 1400 560 firefox-hero-1400x560.png
 shoot firefox-tile 440 280 firefox-tile-440x280.png
 
+# Social media cards (X/Twitter, LinkedIn, Mastodon, feed square)
+shoot social-landscape 1600 900 social-landscape-1600x900.png
+shoot social-square 1080 1080 social-square-1080x1080.png
+shoot social-diff 1600 900 social-diff-1600x900.png
+
 # Store screenshots (compose raw popup captures from raw/ — see README)
 for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn; do
   shoot "$n" 1280 800 "$n-1280x800.png"

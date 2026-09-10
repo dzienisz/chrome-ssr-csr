@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  body { width: 1080px; height: 1080px; padding: 70px 80px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .head { display: flex; align-items: center; gap: 20px; }
+  .app-icon { width: 76px; height: 76px; }
+  .brand-title { font-size: 54px; }
+  .tagline { font-size: 38px; margin-top: 34px; line-height: 1.28; font-weight: 700; color: var(--text); }
+  .tagline .hl { color: var(--csr); }
+  .verdict-card { width: 640px; margin-top: 52px; text-align: left; }
+  .verdict-badge { font-size: 24px; padding: 16px 24px; }
+  .vc-row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
+  .confidence { font-size: 18px; }
+  .conf-bar { margin-top: 11px; height: 10px; }
+  .chip-row { gap: 10px; margin-top: 22px; }
+  .chip { font-size: 16px; padding: 9px 13px; }
+  .metric-row { gap: 26px; margin-top: 24px; font-size: 16px; }
+  .bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .pills { display: flex; gap: 12px; }
+  .pill { font-size: 16px; padding: 9px 18px; }
+  .url { font-family: var(--mono); font-size: 18px; color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <img class="app-icon" src="../../icon128.png" alt="">
+    <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+  </div>
+  <div class="tagline">Does Google see your content —<br>or an <span class="hl">empty div</span>?</div>
+  <div class="verdict-card">
+    <div class="vc-head"><span class="traffic"><i></i><i></i><i></i></span>nextjs.org</div>
+    <div class="vc-body">
+      <div class="verdict-badge"><span class="check">✓</span>Server-Side Rendered</div>
+      <div class="vc-row"><span class="confidence">Confidence <b>92%</b></span></div>
+      <div class="conf-bar"><i></i></div>
+      <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Vercel</span></div>
+      <div class="metric-row"><span>LCP <b class="good">1.8s</b></span><span>CLS <b class="good">0.02</b></span><span>TTFB <b class="good">320ms</b></span></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="pills">
+      <span class="pill ssr"><i class="dot"></i>SSR</span>
+      <span class="pill csr"><i class="dot"></i>CSR</span>
+      <span class="pill mix"><i class="dot"></i>MIX</span>
+    </div>
+    <div class="url">dzienko.dev/chrome-ssr-csr</div>
+  </div>
+</body>
+</html>

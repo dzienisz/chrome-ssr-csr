@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  body { width: 1600px; height: 900px; padding: 64px 90px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .head { display: flex; align-items: center; gap: 16px; }
+  .app-icon { width: 56px; height: 56px; }
+  .brand-title { font-size: 40px; }
+  .kicker { font-family: var(--mono); font-size: 16px; color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+
+  .panes { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; gap: 34px; align-items: stretch; margin-top: 40px; }
+  .pane {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .pane-head {
+    display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border); color: var(--muted);
+    font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: .06em;
+  }
+  .pane-head .traffic { display: flex; gap: 6px; }
+  .pane-head .traffic i { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
+  .pane-head .size { margin-left: auto; font-weight: 500; color: #64748b; }
+  .pane pre {
+    flex: 1; padding: 24px 26px; font-family: var(--mono); font-size: 17px; line-height: 1.8;
+    color: #94a3b8; overflow: hidden;
+  }
+  .pane pre .tag { color: #7dd3fc; }
+  .pane pre .txt { color: var(--text); font-weight: 600; }
+  .pane pre .csr { color: var(--csr); font-weight: 700; }
+  .pane pre .dim { color: #475569; }
+
+  .mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-width: 190px; }
+  .mid .glyph { font-size: 44px; color: var(--accent); font-family: var(--mono); }
+  .mid .lbl { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: .12em; }
+  .mid .ratio {
+    font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--csr);
+    border: 2px solid rgba(244,63,94,.5); background: rgba(244,63,94,.10);
+    border-radius: 10px; padding: 8px 18px;
+  }
+
+  .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 34px; }
+  .verdict-badge.csr {
+    background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.5); color: var(--csr);
+    font-size: 24px; padding: 15px 26px; border-radius: 12px;
+  }
+  .note { font-family: var(--mono); font-size: 16px; color: var(--muted); }
+  .note b { color: var(--text); }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="head">
+      <img class="app-icon" src="../../icon128.png" alt="">
+      <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+    </div>
+    <div class="kicker">RAW HTML ≠ RENDERED DOM</div>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <div class="pane-head"><span class="traffic"><i></i><i></i><i></i></span>RAW HTML <span class="size">6.8 KB</span></div>
+      <pre><span class="tag">&lt;body&gt;</span>
+  <span class="csr">&lt;div id="root"&gt;&lt;/div&gt;</span>
+  <span class="tag">&lt;script</span> src=<span class="txt">"bundle.js"</span><span class="tag">&gt;</span>
+  <span class="dim">&lt;!-- 1.9 MB of JS --&gt;</span>
+<span class="tag">&lt;/body&gt;</span></pre>
+    </div>
+    <div class="mid">
+      <span class="glyph">⇄</span>
+      <span class="lbl">DIFF</span>
+      <span class="ratio">4%</span>
+      <span class="lbl" style="color:#64748b;letter-spacing:.04em;">of visible text</span>
+    </div>
+    <div class="pane">
+      <div class="pane-head"><span class="traffic"><i></i><i></i><i></i></span>RENDERED DOM <span class="size">31.5 KB text</span></div>
+      <pre><span class="tag">&lt;body&gt;</span>
+  <span class="tag">&lt;div</span> id=<span class="txt">"root"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;nav&gt;</span><span class="txt">Dashboard · Reports</span><span class="tag">&lt;/nav&gt;</span>
+    <span class="tag">&lt;main&gt;</span><span class="txt">1,247 rows of data…</span><span class="tag">&lt;/main&gt;</span>
+  <span class="tag">&lt;/div&gt;</span>
+<span class="tag">&lt;/body&gt;</span></pre>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="verdict-badge csr"><span class="check">✗</span>Client-Side Rendered · 94%</div>
+    <div class="note">one click · <b>Chrome + Firefox</b> · dzienko.dev/chrome-ssr-csr</div>
+  </div>
+</body>
+</html>

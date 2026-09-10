@@ -57,6 +57,8 @@ and SEO specialists understand page rendering strategies.
 │
 ├── site/                   # Product landing page (GitHub Pages → dzienko.dev/chrome-ssr-csr)
 │
+├── promo/                  # Social-media post copy (posts.md); images in extension/promo-images/
+│
 ├── README.md               # Main project readme
 ├── CLAUDE.md               # This file
 └── LICENSE                 # MIT License

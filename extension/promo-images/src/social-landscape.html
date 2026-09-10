@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="tile-shared.css">
+<style>
+  body { width: 1600px; height: 900px; padding: 0 110px; display: flex; align-items: center; gap: 100px; }
+  .left { flex: 1; }
+  .head { display: flex; align-items: center; gap: 22px; }
+  .app-icon { width: 84px; height: 84px; }
+  .brand-title { font-size: 66px; }
+  .tagline { font-size: 31px; margin-top: 22px; line-height: 1.3; }
+  .tagline .hl { color: var(--csr); font-weight: 700; }
+  .pills { display: flex; gap: 14px; margin-top: 34px; }
+  .pill { font-size: 18px; padding: 10px 20px; }
+  .sub { color: var(--muted); font-size: 19px; margin-top: 32px; font-weight: 500; }
+  .sub b { color: #e2e8f0; }
+  .url { margin-top: 44px; font-family: var(--mono); font-size: 20px; color: var(--accent); font-weight: 600; }
+  .verdict-card { width: 520px; flex: none; }
+  .verdict-badge { font-size: 24px; padding: 16px 24px; }
+  .vc-row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
+  .confidence { font-size: 18px; }
+  .conf-bar { margin-top: 11px; height: 10px; }
+  .chip-row { gap: 10px; margin-top: 22px; }
+  .chip { font-size: 16px; padding: 9px 13px; }
+  .metric-row { gap: 26px; margin-top: 24px; font-size: 16px; }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="head">
+      <img class="app-icon" src="../../icon128.png" alt="">
+      <div class="brand-title"><span class="csr">CSR</span> <span class="vs">vs</span> <span class="ssr">SSR</span> Detector</div>
+    </div>
+    <div class="tagline">Does Google see your content —<br>or an <span class="hl">empty div</span>?</div>
+    <div class="pills">
+      <span class="pill ssr"><i class="dot"></i>SSR</span>
+      <span class="pill csr"><i class="dot"></i>CSR</span>
+      <span class="pill mix"><i class="dot"></i>MIX</span>
+    </div>
+    <div class="sub"><b>Raw HTML vs rendered DOM</b> · framework &amp; tech stack · Core Web Vitals · Chrome &amp; Firefox · open source</div>
+    <div class="url">dzienko.dev/chrome-ssr-csr</div>
+  </div>
+  <div class="verdict-card">
+    <div class="vc-head"><span class="traffic"><i></i><i></i><i></i></span>nextjs.org</div>
+    <div class="vc-body">
+      <div class="verdict-badge"><span class="check">✓</span>Server-Side Rendered</div>
+      <div class="vc-row"><span class="confidence">Confidence <b>92%</b></span></div>
+      <div class="conf-bar"><i></i></div>
+      <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Vercel</span></div>
+      <div class="metric-row"><span>LCP <b class="good">1.8s</b></span><span>CLS <b class="good">0.02</b></span><span>TTFB <b class="good">320ms</b></span></div>
+    </div>
+  </div>
+</body>
+</html>
