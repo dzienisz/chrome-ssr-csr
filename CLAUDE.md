@@ -55,6 +55,8 @@ and SEO specialists understand page rendering strategies.
 │   │   └── auth.ts         # API key verification
 │   └── CHANGELOG.md        # Dashboard version history
 │
+├── site/                   # Product landing page (GitHub Pages → dzienko.dev/chrome-ssr-csr)
+│
 ├── README.md               # Main project readme
 ├── CLAUDE.md               # This file
 └── LICENSE                 # MIT License

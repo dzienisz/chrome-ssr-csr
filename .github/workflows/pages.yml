@@ -1,0 +1,47 @@
+name: Deploy site to GitHub Pages
+
+# Publishes the product landing page (site/) as this repo's project page:
+#   https://dzienko.dev/chrome-ssr-csr/   ← site/ (landing)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one deploy at a time; don't cancel a running one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Stage site
+        run: cp -r site _site
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload staged site as artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -14,6 +14,7 @@ This monorepo contains two projects:
 |---------|-------------|-------|
 | **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome & Firefox) | [Chrome](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Firefox](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) · [Docs](./extension/README.md) |
 | **[Analytics Dashboard](./backend)** | Real-time usage analytics | [Live](https://backend-mauve-beta-88.vercel.app/dashboard) · [Docs](./backend/README.md) |
+| **[Landing page](./site)** | Product site (GitHub Pages) | [dzienko.dev/chrome-ssr-csr](https://dzienko.dev/chrome-ssr-csr/) |
 
 ## Quick Start
 
@@ -76,6 +77,7 @@ MIT License - see [LICENSE](LICENSE)
 
 ## Links
 
+- [Website](https://dzienko.dev/chrome-ssr-csr/)
 - [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
 - [Live Dashboard](https://backend-mauve-beta-88.vercel.app/dashboard)
 - [Report Issues](https://github.com/dzienisz/chrome-ssr-csr/issues)
