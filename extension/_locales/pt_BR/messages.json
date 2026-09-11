@@ -4,5 +4,155 @@
   },
   "appDesc": {
     "message": "Detecta se uma página web usa renderização no lado do cliente (CSR) ou no servidor (SSR)"
+  },
+  "analyzing": {
+    "message": "Analisando esta página…"
+  },
+  "analyzePage": {
+    "message": "Analisar esta página"
+  },
+  "rerun": {
+    "message": "Analisar novamente"
+  },
+  "analyzeAgain": {
+    "message": "Analisar novamente"
+  },
+  "settings": {
+    "message": "Configurações"
+  },
+  "dismiss": {
+    "message": "Fechar"
+  },
+  "confidence": {
+    "message": "confiança"
+  },
+  "fromServer": {
+    "message": "do servidor"
+  },
+  "fromJavaScript": {
+    "message": "adicionado por JavaScript"
+  },
+  "detectedStack": {
+    "message": "Stack detectada"
+  },
+  "whyThisVerdict": {
+    "message": "Por que este veredito"
+  },
+  "scoredEvidence": {
+    "message": "Evidências pontuadas"
+  },
+  "context": {
+    "message": "Contexto"
+  },
+  "transport": {
+    "message": "Entrega"
+  },
+  "regions": {
+    "message": "Regiões"
+  },
+  "tabOverview": {
+    "message": "Visão geral"
+  },
+  "tabSignals": {
+    "message": "Evidências"
+  },
+  "tabDelivery": {
+    "message": "Entrega"
+  },
+  "tabDiff": {
+    "message": "Regiões"
+  },
+  "tabHistory": {
+    "message": "Histórico"
+  },
+  "devToolsPanel": {
+    "message": "Painel do DevTools"
+  },
+  "copySummary": {
+    "message": "Copiar resumo"
+  },
+  "copied": {
+    "message": "Copiado"
+  },
+  "copyFailed": {
+    "message": "Falha ao copiar"
+  },
+  "historyEmpty": {
+    "message": "As páginas analisadas aparecerão aqui."
+  },
+  "clearHistory": {
+    "message": "Limpar histórico"
+  },
+  "analysisFailed": {
+    "message": "A análise falhou"
+  },
+  "cannotAccess": {
+    "message": "Não é possível acessar esta página"
+  },
+  "restrictedTitle": {
+    "message": "Esta página não pode ser analisada"
+  },
+  "giveFeedback": {
+    "message": "Enviar feedback · 1 min"
+  },
+  "contextMenuAnalyze": {
+    "message": "Analisar a renderização da página"
+  },
+  "rerunOnNavigation": {
+    "message": "Repetir ao navegar"
+  },
+  "saveSettings": {
+    "message": "Salvar configurações"
+  },
+  "resetDefaults": {
+    "message": "Restaurar padrões"
+  },
+  "settingsSaved": {
+    "message": "Configurações salvas"
+  },
+  "settingsReset": {
+    "message": "Configurações restauradas"
+  },
+  "settingsTitle": {
+    "message": "Configurações"
+  },
+  "sectionAppearance": {
+    "message": "Aparência"
+  },
+  "sectionAnalysis": {
+    "message": "Análise"
+  },
+  "sectionPrivacy": {
+    "message": "Privacidade e dados"
+  },
+  "sectionShortcuts": {
+    "message": "Atalhos"
+  },
+  "themeAuto": {
+    "message": "Acompanhar o sistema"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "themeDark": {
+    "message": "Escuro"
+  },
+  "unlimited": {
+    "message": "Ilimitado"
+  },
+  "openSettings": {
+    "message": "Abrir configurações"
+  },
+  "privacyPolicy": {
+    "message": "Política de privacidade"
+  },
+  "pinNotPinned": {
+    "message": "Ainda não fixada"
+  },
+  "pinPinned": {
+    "message": "Fixada — tudo pronto."
+  },
+  "shortcutUnset": {
+    "message": "Não definido"
   }
 }

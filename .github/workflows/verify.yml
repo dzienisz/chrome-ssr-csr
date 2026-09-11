@@ -48,10 +48,43 @@ jobs:
           cache: npm
           cache-dependency-path: extension/package-lock.json
       - name: Install locked dependencies
+        # This job never launches a browser; skipping the Playwright browser
+        # download keeps ~150 MB out of every unit-test run.
         run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - name: Run unit tests
         run: npm run test:run
       - name: Rebuild bundles
         run: npm run build
       - name: Verify committed bundles match source
         run: git diff --exit-code -- src/analyzer-bundle.js src/telemetry-bundle.js
+
+  # End-to-end detection: the committed bundle is injected into real pages in
+  # a real browser and graded against fixtures whose rendering strategy and
+  # delivery headers are known by construction. Unit tests cannot catch a
+  # regression that only appears once fetch, DOMParser and the live DOM are
+  # all involved.
+  detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Grade detection against the offline fixtures
+        run: npm run validate:local

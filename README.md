@@ -35,6 +35,8 @@ npm install
 npm run build         # rebuild bundles after editing src/
 npm run build:firefox # generate the Firefox variant in dist/firefox/
 npm run test:run      # unit tests
+npm run validate:local # grade detection against offline fixtures in Chromium
+npm run preview       # screenshot every UI surface from a real analysis
 # Chrome: load extension/ folder in chrome://extensions (Developer Mode)
 # Firefox: load extension/dist/firefox/ in about:debugging#/runtime/this-firefox
 
@@ -46,15 +48,19 @@ npm run dev
 
 ## Features
 
-- **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators — validated against a 22-site ground-truth suite (v3.7.0)
-- **Framework Recognition** - Detects Next.js, Nuxt, Gatsby, React, Vue, Angular, and more
+- **Accurate Detection** - Compares raw HTML vs rendered DOM, plus 15+ indicators — graded against offline fixtures in CI and a 22-site live ground-truth suite
+- **Explained, not asserted** - Every signal that moved the verdict, with the points it contributed and what it observed (v4.0.0)
+- **Rendered where** - Build time, CDN cache, or per request, read from the document's own response headers (v4.0.0)
+- **Region attribution** - Which parts of the page the server sent and which ones JavaScript filled in (v4.0.0)
+- **DevTools panel** - The same report at full width, re-running on every navigation (v4.0.0)
+- **Framework Recognition** - Detects Next.js, Nuxt, Gatsby, React, Vue, Angular, SvelteKit, Astro, Qwik, Turbo, Livewire, LiveView and more
 - **Tech Stack Intelligence** - Identifies CSS frameworks (Tailwind, Bootstrap), Build Tools (Vite), and Hosting (Vercel, Netlify)
 - **SEO & Accessibility Audit** - Checks meta tags, social preview tags, alt text coverage, and ARIA labels
 - **Badge on Icon** - Shows SSR/CSR/MIX result directly on extension icon
-- **Export Results** - Download as JSON, CSV, or Markdown
+- **Export Results** - JSON, CSV, Markdown, or a one-line summary for a pull request
 - **Dark Mode** - Beautiful dark theme
 - **Analytics Dashboard** - Aggregated usage data with live updates
-- **Privacy-respecting telemetry** - Opt-out anonymous stats, origin only (never full URLs) — see the [privacy policy](./extension/privacy-policy.md)
+- **Privacy-respecting telemetry** - Opt-out anonymous stats, origin only (never full URLs); response headers and region attribution never leave your device — see the [privacy policy](./extension/privacy-policy.md)
 
 ## SSR vs CSR
 

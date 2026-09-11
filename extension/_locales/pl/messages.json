@@ -4,5 +4,155 @@
   },
   "appDesc": {
     "message": "Wykrywa, czy strona używa renderowania po stronie klienta (CSR), czy po stronie serwera (SSR)"
+  },
+  "analyzing": {
+    "message": "Analizowanie strony…"
+  },
+  "analyzePage": {
+    "message": "Przeanalizuj tę stronę"
+  },
+  "rerun": {
+    "message": "Analizuj ponownie"
+  },
+  "analyzeAgain": {
+    "message": "Analizuj ponownie"
+  },
+  "settings": {
+    "message": "Ustawienia"
+  },
+  "dismiss": {
+    "message": "Zamknij"
+  },
+  "confidence": {
+    "message": "pewność"
+  },
+  "fromServer": {
+    "message": "z serwera"
+  },
+  "fromJavaScript": {
+    "message": "dodane przez JavaScript"
+  },
+  "detectedStack": {
+    "message": "Wykryty stack"
+  },
+  "whyThisVerdict": {
+    "message": "Dlaczego taki werdykt"
+  },
+  "scoredEvidence": {
+    "message": "Punktowane przesłanki"
+  },
+  "context": {
+    "message": "Kontekst"
+  },
+  "transport": {
+    "message": "Dostarczenie"
+  },
+  "regions": {
+    "message": "Obszary"
+  },
+  "tabOverview": {
+    "message": "Przegląd"
+  },
+  "tabSignals": {
+    "message": "Przesłanki"
+  },
+  "tabDelivery": {
+    "message": "Dostarczenie"
+  },
+  "tabDiff": {
+    "message": "Obszary"
+  },
+  "tabHistory": {
+    "message": "Historia"
+  },
+  "devToolsPanel": {
+    "message": "Panel DevTools"
+  },
+  "copySummary": {
+    "message": "Kopiuj podsumowanie"
+  },
+  "copied": {
+    "message": "Skopiowano"
+  },
+  "copyFailed": {
+    "message": "Nie udało się skopiować"
+  },
+  "historyEmpty": {
+    "message": "Tutaj pojawią się przeanalizowane strony."
+  },
+  "clearHistory": {
+    "message": "Wyczyść historię"
+  },
+  "analysisFailed": {
+    "message": "Analiza nie powiodła się"
+  },
+  "cannotAccess": {
+    "message": "Brak dostępu do tej strony"
+  },
+  "restrictedTitle": {
+    "message": "Tej strony nie można przeanalizować"
+  },
+  "giveFeedback": {
+    "message": "Prześlij opinię · 1 min"
+  },
+  "contextMenuAnalyze": {
+    "message": "Przeanalizuj renderowanie strony"
+  },
+  "rerunOnNavigation": {
+    "message": "Powtarzaj przy nawigacji"
+  },
+  "saveSettings": {
+    "message": "Zapisz ustawienia"
+  },
+  "resetDefaults": {
+    "message": "Przywróć domyślne"
+  },
+  "settingsSaved": {
+    "message": "Ustawienia zapisane"
+  },
+  "settingsReset": {
+    "message": "Przywrócono ustawienia domyślne"
+  },
+  "settingsTitle": {
+    "message": "Ustawienia"
+  },
+  "sectionAppearance": {
+    "message": "Wygląd"
+  },
+  "sectionAnalysis": {
+    "message": "Analiza"
+  },
+  "sectionPrivacy": {
+    "message": "Prywatność i dane"
+  },
+  "sectionShortcuts": {
+    "message": "Skróty klawiszowe"
+  },
+  "themeAuto": {
+    "message": "Jak w systemie"
+  },
+  "themeLight": {
+    "message": "Jasny"
+  },
+  "themeDark": {
+    "message": "Ciemny"
+  },
+  "unlimited": {
+    "message": "Bez limitu"
+  },
+  "openSettings": {
+    "message": "Otwórz ustawienia"
+  },
+  "privacyPolicy": {
+    "message": "Polityka prywatności"
+  },
+  "pinNotPinned": {
+    "message": "Jeszcze nie przypięto"
+  },
+  "pinPinned": {
+    "message": "Przypięto — gotowe."
+  },
+  "shortcutUnset": {
+    "message": "Nie ustawiono"
   }
 }

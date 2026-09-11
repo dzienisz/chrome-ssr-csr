@@ -26,10 +26,11 @@ const OUT_DIR = path.join(EXTENSION_DIR, 'dist', 'firefox');
 // Same file list as the Chrome Web Store zip (.github/workflows/release.yml)
 const SHIPPED = [
   'manifest.json',
-  'popup.html', 'popup.js',
-  'options.html', 'options.js',
+  'popup.html', 'popup.js', 'popup.css',
+  'options.html', 'options.js', 'options.css',
   'background.js',
-  'welcome.html', 'welcome.js',
+  'welcome.html', 'welcome.js', 'welcome.css',
+  'devtools',
   'src',
   '_locales'
 ];

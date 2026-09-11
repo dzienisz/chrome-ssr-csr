@@ -172,3 +172,69 @@ describe("compareInitialVsRendered", () => {
     expect(await window.compareInitialVsRendered()).toBeNull();
   });
 });
+
+describe("response header capture", () => {
+  /**
+   * The delivery classification is only as good as the headers it gets, and a
+   * Headers object does not survive the executeScript boundary — so the
+   * detector flattens it here, lowercased, the way delivery-detector expects.
+   */
+  function mockFetchWithHeaders(html, headerPairs, status = 200) {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status,
+      text: async () => html,
+      headers: {
+        forEach: (callback) => {
+          for (const [key, value] of headerPairs) callback(value, key);
+        },
+      },
+    });
+  }
+
+  it("flattens the response headers into a plain object", async () => {
+    mockFetchWithHeaders(`<html><body><p>${LONG_TEXT}</p></body></html>`, [
+      ["X-Vercel-Cache", "HIT"],
+      ["Age", "120"],
+    ]);
+    document.body.innerHTML = `<p>${LONG_TEXT}</p>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.responseHeaders).toEqual({ "x-vercel-cache": "HIT", age: "120" });
+    expect(result.responseStatus).toBe(200);
+  });
+
+  it("still returns a comparison when the headers cannot be read", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => `<html><body><p>${LONG_TEXT}</p></body></html>`,
+      headers: {
+        forEach: () => {
+          throw new Error("headers unavailable");
+        },
+      },
+    });
+    document.body.innerHTML = `<p>${LONG_TEXT}</p>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result).not.toBeNull();
+    expect(result.responseHeaders).toEqual({});
+  });
+
+  it("keeps the headers out of any string serialization of the page", async () => {
+    mockFetchWithHeaders(`<html><body><p>${LONG_TEXT}</p></body></html>`, [
+      ["set-cookie", "session=secret"],
+    ]);
+    document.body.innerHTML = `<p>${LONG_TEXT}</p>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    // The analyzer copies specific fields out of this object; the raw
+    // document and source must never be among them.
+    expect(Object.keys(result)).toContain("responseHeaders");
+    expect(document.body.innerHTML).not.toContain("session=secret");
+  });
+});

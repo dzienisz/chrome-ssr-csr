@@ -1,416 +1,244 @@
-// Store last analysis results for export
-let lastAnalysisResult = null;
-let lastAnalysisUrl = null;
-let lastAnalysisTitle = null;
+/**
+ * Popup controller.
+ *
+ * Analysis runs the moment the popup opens — the old flow made you click a
+ * button to ask the only question the popup exists to answer.
+ *
+ * Results are rendered here, from JSON, by src/ui/report.js. The previous
+ * version built an HTML string inside the inspected page and assigned it to
+ * the popup's innerHTML, which handed any page a way to inject markup into an
+ * extension surface. Nothing from the page is treated as markup any more.
+ */
 
-// Update extension badge based on render type
-function updateBadge(renderType, tabId) {
-  let text = '';
-  let color = '#6b7280'; // gray default
+const DEFAULTS = {
+  darkMode: "auto",
+  historyLimit: 10,
+  notifications: true,
+  shareData: true,
+  autoAnalyze: true,
+};
 
-  if (renderType.includes('SSR') || renderType.includes('Server')) {
-    text = 'SSR';
-    color = '#10b981'; // green
-  } else if (renderType.includes('CSR') || renderType.includes('Client')) {
-    text = 'CSR';
-    color = '#ef4444'; // red
-  } else if (renderType.includes('Hybrid') || renderType.includes('Mixed')) {
-    text = 'MIX';
-    color = '#f59e0b'; // amber
-  }
+const BACKEND_URL = "https://backend-mauve-beta-88.vercel.app";
 
-  chrome.action.setBadgeText({ text, tabId });
-  chrome.action.setBadgeBackgroundColor({ color, tabId });
-}
+const RESTRICTED_PROTOCOLS = [
+  "chrome:",
+  "chrome-extension:",
+  "edge:",
+  "about:",
+  "view-source:",
+  "moz-extension:",
+  "resource:",
+  "devtools:",
+];
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Inject version from manifest
-  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+const state = {
+  result: null,
+  page: { url: "", title: "" },
+  tab: "overview",
+  settings: { ...DEFAULTS },
+};
 
-  // Load and apply settings
-  loadSettings();
+/* ------------------------------------------------------------------ setup */
 
-  // Initialize UI elements
-  setupUI();
+document.addEventListener("DOMContentLoaded", async () => {
+  window.applyI18n(document);
+  document.getElementById("version").textContent = `v${chrome.runtime.getManifest().version}`;
 
-  // Show pin hint if the extension isn't pinned to the toolbar
+  state.settings = await getSettings();
+  applyTheme(state.settings.darkMode);
+
+  wireEvents();
   setupPinHint();
 
-  // Add event listener for settings button
-  document.getElementById("settingsButton").addEventListener("click", () => {
-    chrome.runtime.openOptionsPage();
-  });
-
-  // Add event listener for analyze button
-  document.getElementById("analyze").addEventListener("click", analyzeCurrentPage);
-
-  // Add event listener for history button
-  document.getElementById("history-button").addEventListener("click", toggleHistory);
-
-  // Export button listeners
-  document.getElementById("exportJson").addEventListener("click", () => exportResults('json'));
-  document.getElementById("exportCsv").addEventListener("click", () => exportResults('csv'));
-  document.getElementById("exportMd").addEventListener("click", () => exportResults('markdown'));
-
-  // Listen for settings updates
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.action === 'settingsUpdated') {
-      applySettings(message.settings);
-    }
-  });
+  if (state.settings.autoAnalyze) {
+    analyze();
+  } else {
+    showIdle();
+  }
 });
 
-// Load settings from storage
-function loadSettings() {
-  chrome.storage.sync.get({
-    darkMode: 'auto',
-    historyLimit: 10,
-    notifications: true,
-    shareData: true
-  }, (settings) => {
-    applySettings(settings);
+function wireEvents() {
+  document.getElementById("settings").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+  });
+  document.getElementById("rerun").addEventListener("click", () => analyze());
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => selectTab(tab.dataset.panel));
+    tab.addEventListener("keydown", onTabKeydown);
+  });
+
+  document.getElementById("copy").addEventListener("click", copySummary);
+  document.getElementById("export-json").addEventListener("click", () => exportAs("json"));
+  document.getElementById("export-md").addEventListener("click", () => exportAs("md"));
+  document.getElementById("export-csv").addEventListener("click", () => exportAs("csv"));
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message && message.action === "settingsUpdated") {
+      state.settings = { ...DEFAULTS, ...message.settings };
+      applyTheme(state.settings.darkMode);
+    }
   });
 }
 
-// Apply settings to UI
-function applySettings(settings) {
-  // Apply dark mode based on setting (auto/light/dark)
-  if (settings.darkMode === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else if (settings.darkMode === 'light') {
-    document.documentElement.removeAttribute('data-theme');
-  } else { // auto
-    // Detect system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  }
+/** Left/right arrows move between tabs, as the ARIA tablist pattern expects. */
+function onTabKeydown(event) {
+  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+  const tabs = Array.from(document.querySelectorAll(".tab"));
+  const index = tabs.indexOf(event.currentTarget);
+  const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+  next.focus();
+  selectTab(next.dataset.panel);
+  event.preventDefault();
 }
 
-// Analyze current page
-function analyzeCurrentPage() {
-  // Show loading state
-  document.getElementById("result").innerHTML = `
-    <div style="text-align: center; padding: 20px;">
-      <div style="border: 4px solid var(--bg-secondary); border-top: 4px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; margin: 0 auto; animation: spin 1s linear infinite;"></div>
-      <p style="margin-top: 10px; color: var(--text-secondary);">Analyzing page...</p>
-    </div>
-  `;
-
-  // Hide export buttons during analysis
-  document.getElementById("exportButtons").style.display = "none";
-
-  // Add animation style
-  if (!document.getElementById('spinner-style')) {
-    const style = document.createElement('style');
-    style.id = 'spinner-style';
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Execute analysis
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const tab = tabs[0];
-    lastAnalysisUrl = tab.url;
-    lastAnalysisTitle = tab.title;
-
-    // Check if URL is restricted (chrome://, edge://, about:, moz-extension://, etc.)
-    const restrictedProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'view-source:', 'moz-extension:', 'resource:'];
-    const isRestricted = restrictedProtocols.some(protocol => tab.url.startsWith(protocol));
-
-    if (isRestricted) {
-      document.getElementById("result").innerHTML = `
-        <div style="color: var(--text-secondary); text-align: center; padding: 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;">
-          <p style="font-size: 24px; margin-bottom: 10px;">🚫</p>
-          <p style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Cannot Analyze This Page</p>
-          <p style="font-size: 13px; line-height: 1.5;">
-            Browser extensions cannot access internal browser pages like:
-            <br><br>
-            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">chrome://</code>
-            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">edge://</code>
-            <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">about:</code>
-            <br><br>
-            Please navigate to a regular website to analyze it.
-          </p>
-        </div>
-      `;
-      return;
-    }
-
-    chrome.scripting.executeScript(
-      {
-        target: { tabId: tab.id },
-        files: ['src/analyzer-bundle.js']
-      },
-      () => {
-        // Check for injection errors
-        if (chrome.runtime.lastError) {
-          document.getElementById("result").innerHTML = `
-            <div style="color: var(--danger-color, #dc2626); font-weight: 500; text-align: center; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;">
-              ❌ Cannot access this page
-              <p style="font-size: 13px; margin-top: 8px; font-weight: normal; color: var(--text-secondary);">
-                ${chrome.runtime.lastError.message}
-              </p>
-            </div>
-          `;
-          return;
-        }
-
-        // After analyzer.js is injected, run the analysis (async)
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: tab.id },
-            func: async () => await window.pageAnalyzer()
-          },
-          (results) => {
-            if (chrome.runtime.lastError) {
-              showError();
-              return;
-            }
-
-            if (results && results[0] && results[0].result) {
-              // Get the analysis results
-              const analysisResults = results[0].result;
-              lastAnalysisResult = analysisResults;
-
-              // Generate HTML for results
-              chrome.scripting.executeScript(
-                {
-                  target: { tabId: tab.id },
-                  func: (results) => window.createResultsHTML(results),
-                  args: [analysisResults]
-                },
-                (htmlResults) => {
-                  if (htmlResults && htmlResults[0] && htmlResults[0].result) {
-                    // Display the formatted results
-                    document.getElementById("result").innerHTML = htmlResults[0].result;
-
-                    // Show export buttons
-                    document.getElementById("exportButtons").style.display = "flex";
-
-                    // Update badge on extension icon
-                    updateBadge(analysisResults.renderType, tab.id);
-
-                    // Save to history
-                    saveToHistory(tab.url, analysisResults, tab.title);
-
-                    // Show history button
-                    document.getElementById("history-button").style.display = "block";
-
-                    // Phase 2: collect telemetry and send only if shareData is enabled
-                    chrome.storage.sync.get({ shareData: true }, (settings) => {
-                      if (!settings.shareData) return;
-
-                      chrome.scripting.executeScript(
-                        {
-                          target: { tabId: tab.id },
-                          files: ['src/telemetry-bundle.js']
-                        },
-                        () => {
-                          if (chrome.runtime.lastError) return;
-
-                          chrome.scripting.executeScript(
-                            {
-                              target: { tabId: tab.id },
-                              func: async (detectionResults) => await window.collectTelemetryData(detectionResults),
-                              args: [analysisResults]
-                            },
-                            (telemetryResults) => {
-                              if (chrome.runtime.lastError || !telemetryResults || !telemetryResults[0]) return;
-
-                              const telemetry = telemetryResults[0].result;
-                              const merged = { ...analysisResults, ...telemetry };
-                              sendAnalysisData(tab.url, tab.title, merged);
-                            }
-                          );
-                        }
-                      );
-                    });
-                  } else {
-                    showError();
-                  }
-                }
-              );
-            } else {
-              showError();
-            }
-          }
-        );
-      }
-    );
+function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(DEFAULTS, (settings) => resolve({ ...DEFAULTS, ...settings }));
   });
 }
 
-// Export results in different formats
-function exportResults(format) {
-  if (!lastAnalysisResult) {
-    alert('No analysis results to export');
+function applyTheme(mode) {
+  const dark =
+    mode === "dark" ||
+    (mode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (dark) document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+}
+
+/* --------------------------------------------------------------- analysis */
+
+async function analyze() {
+  showStatus();
+
+  const tab = await getActiveTab();
+  if (!tab) {
+    showError("No active tab", "The popup could not find a page to analyze.");
     return;
   }
 
-  const timestamp = new Date().toISOString().split('T')[0];
-  const filename = `csr-ssr-analysis-${timestamp}`;
+  state.page = { url: tab.url || "", title: tab.title || tab.url || "" };
 
-  if (format === 'json') {
-    exportAsJSON(filename);
-  } else if (format === 'csv') {
-    exportAsCSV(filename);
-  } else if (format === 'markdown') {
-    exportAsMarkdown(filename);
-  }
-}
-
-// Export as JSON
-function exportAsJSON(filename) {
-  const data = {
-    url: lastAnalysisUrl,
-    title: lastAnalysisTitle,
-    timestamp: new Date().toISOString(),
-    analysis: lastAnalysisResult
-  };
-
-  const dataStr = JSON.stringify(data, null, 2);
-  downloadFile(dataStr, `${filename}.json`, 'application/json');
-}
-
-// Export as CSV
-function exportAsCSV(filename) {
-  const { renderType, confidence, indicators, detailedInfo } = lastAnalysisResult;
-
-  const csvContent = [
-    ['Field', 'Value'],
-    ['URL', lastAnalysisUrl],
-    ['Title', lastAnalysisTitle],
-    ['Timestamp', new Date().toISOString()],
-    ['Render Type', renderType],
-    ['Confidence', `${confidence}%`],
-    ['SSR Score', detailedInfo.ssrScore],
-    ['CSR Score', detailedInfo.csrScore],
-    ['SSR Percentage', `${detailedInfo.ssrPercentage}%`],
-    ['Frameworks', detailedInfo.frameworks ? detailedInfo.frameworks.join(', ') : 'None'],
-    ['Generators', detailedInfo.generators ? detailedInfo.generators.join(', ') : 'None'],
-    ['Key Indicators', indicators.join('; ')],
-    ['DOM Ready Time', detailedInfo.timing ? `${detailedInfo.timing.domContentLoaded}ms` : 'N/A'],
-    ['First Contentful Paint', detailedInfo.timing && detailedInfo.timing.firstContentfulPaint ? `${detailedInfo.timing.firstContentfulPaint}ms` : 'N/A']
-  ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-  downloadFile(csvContent, `${filename}.csv`, 'text/csv');
-}
-
-// Export as Markdown
-function exportAsMarkdown(filename) {
-  const { renderType, confidence, indicators, detailedInfo } = lastAnalysisResult;
-
-  let markdown = `# CSR vs SSR Analysis Report\n\n`;
-  markdown += `**URL:** ${lastAnalysisUrl}\n\n`;
-  markdown += `**Title:** ${lastAnalysisTitle}\n\n`;
-  markdown += `**Date:** ${new Date().toLocaleString()}\n\n`;
-  markdown += `---\n\n`;
-  markdown += `## Results\n\n`;
-  markdown += `- **Render Type:** ${renderType}\n`;
-  markdown += `- **Confidence:** ${confidence}%\n`;
-  markdown += `- **SSR Score:** ${detailedInfo.ssrScore}\n`;
-  markdown += `- **CSR Score:** ${detailedInfo.csrScore}\n`;
-  markdown += `- **SSR Percentage:** ${detailedInfo.ssrPercentage}%\n\n`;
-
-  if (detailedInfo.frameworks && detailedInfo.frameworks.length > 0) {
-    markdown += `### Detected Frameworks\n\n`;
-    detailedInfo.frameworks.forEach(fw => {
-      markdown += `- ${fw.toUpperCase()}\n`;
-    });
-    markdown += `\n`;
+  if (RESTRICTED_PROTOCOLS.some((protocol) => state.page.url.startsWith(protocol))) {
+    showRestricted();
+    return;
   }
 
-  if (detailedInfo.generators && detailedInfo.generators.length > 0) {
-    markdown += `### Static Site Generators\n\n`;
-    detailedInfo.generators.forEach(gen => {
-      markdown += `- ${gen.toUpperCase()}\n`;
-    });
-    markdown += `\n`;
-  }
-
-  markdown += `### Key Indicators (${detailedInfo.totalIndicators})\n\n`;
-  indicators.forEach(indicator => {
-    markdown += `- ${indicator}\n`;
-  });
-  markdown += `\n`;
-
-  if (detailedInfo.timing) {
-    markdown += `### Performance Metrics\n\n`;
-    markdown += `- **DOM Ready:** ${detailedInfo.timing.domContentLoaded}ms\n`;
-    if (detailedInfo.timing.firstContentfulPaint) {
-      markdown += `- **First Contentful Paint:** ${detailedInfo.timing.firstContentfulPaint}ms\n`;
-    }
-    markdown += `\n`;
-  }
-
-  markdown += `---\n\n`;
-  const version = chrome.runtime.getManifest().version;
-  markdown += `*Generated by CSR vs SSR Detector v${version}*\n`;
-
-  downloadFile(markdown, `${filename}.md`, 'text/markdown');
-}
-
-// Download file helper
-function downloadFile(content, filename, mimeType) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-// Send merged detection + telemetry data to backend
-async function sendAnalysisData(url, title, results) {
   try {
-    const BACKEND_URL = 'https://backend-mauve-beta-88.vercel.app';
+    await executeScript({
+      target: { tabId: tab.id },
+      files: ["src/analyzer-bundle.js"],
+    });
 
-    let domain = 'unknown';
-    let anonymizedUrl = url;
+    const [injection] = await executeScript({
+      target: { tabId: tab.id },
+      func: async () => await window.pageAnalyzer(),
+    });
+
+    const result = injection && injection.result;
+    if (!result) {
+      showError(
+        window.t("analysisFailed", "Analysis failed"),
+        window.t("analysisFailedBody", "The page did not return a result. Try reloading it."),
+      );
+      return;
+    }
+
+    state.result = result;
+    render(result);
+    updateBadge(result.renderType, tab.id);
+    saveToHistory(state.page, result);
+
+    if (state.settings.shareData) {
+      collectAndSendTelemetry(tab.id, result);
+    }
+  } catch (error) {
+    showError(
+      window.t("cannotAccess", "Cannot access this page"),
+      String((error && error.message) || error),
+    );
+  }
+}
+
+function getActiveTab() {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs && tabs[0]));
+  });
+}
+
+/**
+ * Promise wrapper over chrome.scripting.executeScript.
+ *
+ * Not `await chrome.scripting.executeScript(...)`: Chrome's MV3 `chrome.*`
+ * namespace returns a promise when no callback is given, but Firefox's
+ * `chrome.*` alias is callback-only and returns undefined — awaiting it there
+ * yields undefined and every analysis fails. The callback form works in both.
+ *
+ * @param {Object} options
+ * @returns {Promise<Array>} injection results
+ */
+function executeScript(options) {
+  return new Promise((resolve, reject) => {
+    chrome.scripting.executeScript(options, (results) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(results || []);
+    });
+  });
+}
+
+/**
+ * Telemetry stays exactly as it was: the same fields, sent only when the user
+ * has left sharing on. Nothing this release added — response headers, region
+ * attribution — leaves the device.
+ */
+async function collectAndSendTelemetry(tabId, result) {
+  try {
+    await executeScript({
+      target: { tabId },
+      files: ["src/telemetry-bundle.js"],
+    });
+
+    const [injection] = await executeScript({
+      target: { tabId },
+      func: async (detection) => await window.collectTelemetryData(detection),
+      args: [result],
+    });
+
+    if (!injection || !injection.result) return;
+    await sendAnalysisData({ ...result, ...injection.result });
+  } catch (e) {
+    // Telemetry must never affect what the user sees.
+  }
+}
+
+async function sendAnalysisData(results) {
+  try {
+    let domain = "unknown";
+    let anonymizedUrl = state.page.url;
     try {
-      const urlObj = new URL(url);
-      domain = urlObj.hostname;
-      anonymizedUrl = urlObj.origin;
+      const url = new URL(state.page.url);
+      domain = url.hostname;
+      anonymizedUrl = url.origin;
     } catch {
-      // Use defaults if URL parsing fails
+      // keep defaults
     }
 
     const payload = {
       url: anonymizedUrl,
-      domain: domain,
+      domain,
       renderType: results.renderType,
       confidence: results.confidence,
       frameworks: results.detailedInfo?.frameworks || [],
-
-      // Phase 1: Core Web Vitals
       coreWebVitals: results.coreWebVitals || null,
-
-      // Phase 1: Page Type
       pageType: results.pageType || null,
-
-      // Phase 1: Device & Connection Info
       deviceInfo: results.deviceInfo || null,
-
-      // Phase 2: Tech Stack
       techStack: results.techStack || null,
-
-      // Phase 2: SEO & Accessibility
       seoAccessibility: results.seoAccessibility || null,
-
-      // Phase 3: User Journey
       hydrationData: results.hydrationData || null,
       navigationData: results.navigationData || null,
-
       performanceMetrics: {
         domReady: results.detailedInfo?.timing?.domContentLoaded,
         fcp: results.detailedInfo?.timing?.firstContentfulPaint,
@@ -424,192 +252,256 @@ async function sendAnalysisData(url, title, results) {
       timestamp: new Date().toISOString(),
     };
 
-    const response = await fetch(`${BACKEND_URL}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch(`${BACKEND_URL}/api/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (response.ok) {
-      await response.json();
-    }
   } catch {
-    // Fail silently - don't disrupt user experience
+    // Fail silently - never disrupt the user experience
   }
 }
 
-// Setup UI elements
-function setupUI() {
-  // Add history button
-  if (!document.getElementById("history-button")) {
-    const historyButton = document.createElement("button");
-    historyButton.id = "history-button";
-    historyButton.textContent = "View History";
-    historyButton.style.cssText = `
-      background-color: var(--button-secondary);
-      color: var(--text-primary);
-      padding: 8px 16px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 10px;
-      display: none;
-      width: 100%;
-    `;
-    document.body.insertBefore(historyButton, document.getElementById("exportButtons"));
-  }
+/* ---------------------------------------------------------------- rendering */
 
-  // Add history container
-  if (!document.getElementById("history-container")) {
-    const historyContainer = document.createElement("div");
-    historyContainer.id = "history-container";
-    historyContainer.style.cssText = `
-      display: none;
-      margin-top: 15px;
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background-color: var(--bg-secondary);
-    `;
-    document.body.appendChild(historyContainer);
-  }
+function showStatus() {
+  document.getElementById("report").hidden = true;
+  const status = document.getElementById("status");
+  status.hidden = false;
+  status.className = "empty";
+  status.replaceChildren(
+    window.SSRReport.el("div", { className: "spinner", attrs: { "aria-hidden": "true" } }),
+    window.SSRReport.el("span", { text: window.t("analyzing", "Analyzing this page…") }),
+  );
+}
 
-  // Add help section
-  if (!document.getElementById("help-section")) {
-    const helpSection = document.createElement("div");
-    helpSection.id = "help-section";
-    helpSection.style.cssText = `
-      margin-top: 15px;
-      padding: 10px;
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 12px;
-      color: var(--text-secondary);
-    `;
-    helpSection.innerHTML = `
-      <p><strong>What's the difference?</strong></p>
-      <p><strong>SSR (Server-Side Rendering):</strong> Content is generated on the server before being sent to the browser. Better for SEO and initial load performance.</p>
-      <p><strong>CSR (Client-Side Rendering):</strong> Content is generated in the browser using JavaScript. Better for rich interactions and app-like experiences.</p>
-    `;
-    document.body.appendChild(helpSection);
+function showIdle() {
+  const status = document.getElementById("status");
+  status.hidden = false;
+  status.className = "empty";
+  const button = window.SSRReport.el("button", {
+    className: "btn btn-primary",
+    text: window.t("analyzePage", "Analyze this page"),
+  });
+  button.addEventListener("click", () => analyze());
+  status.replaceChildren(button);
+}
+
+function showRestricted() {
+  showError(
+    window.t("restrictedTitle", "This page cannot be analyzed"),
+    window.t(
+      "restrictedBody",
+      "Browsers do not let extensions read their own internal pages (chrome://, edge://, about:). Open a regular website and try again.",
+    ),
+  );
+}
+
+function showError(title, detail) {
+  document.getElementById("report").hidden = true;
+  const status = document.getElementById("status");
+  status.hidden = false;
+  status.className = "";
+  status.replaceChildren(
+    window.SSRReport.el("div", {
+      className: "error-box",
+      children: [
+        window.SSRReport.el("h2", { text: title }),
+        window.SSRReport.el("div", { text: detail }),
+      ],
+    }),
+  );
+}
+
+function render(result) {
+  document.getElementById("status").hidden = true;
+  document.getElementById("report").hidden = false;
+
+  document.getElementById("verdict").replaceChildren(window.SSRReport.renderVerdict(result));
+  document.getElementById("signal-count").textContent = String((result.signals || []).length);
+
+  renderPanel("overview", () => window.SSRReport.renderOverview(result));
+  renderPanel("signals", () => window.SSRReport.renderSignals(result));
+  renderPanel("delivery", () => window.SSRReport.renderDelivery(result));
+  renderPanel("diff", () => window.SSRReport.renderDiff(result));
+  renderHistoryPanel();
+
+  selectTab(state.tab);
+}
+
+function renderPanel(name, build) {
+  document.getElementById(`panel-${name}`).replaceChildren(build());
+}
+
+function selectTab(name) {
+  state.tab = name;
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.setAttribute("aria-selected", String(tab.dataset.panel === name));
+  });
+  document.querySelectorAll(".panel").forEach((panel) => {
+    panel.hidden = panel.id !== `panel-${name}`;
+  });
+  if (name === "history") renderHistoryPanel();
+}
+
+/* ------------------------------------------------------------------ history */
+
+function saveToHistory(page, result) {
+  chrome.storage.local.get(["analysisHistory"], (data) => {
+    const history = data.analysisHistory || [];
+    history.unshift({
+      url: page.url,
+      title: page.title || page.url,
+      timestamp: Date.now(),
+      results: result,
+    });
+
+    const limit = state.settings.historyLimit === -1 ? Infinity : state.settings.historyLimit;
+    if (history.length > limit) history.splice(limit);
+
+    chrome.storage.local.set({ analysisHistory: history });
+  });
+}
+
+function renderHistoryPanel() {
+  const panel = document.getElementById("panel-history");
+
+  chrome.storage.local.get(["analysisHistory"], (data) => {
+    const history = data.analysisHistory || [];
+    if (!history.length) {
+      panel.replaceChildren(
+        window.SSRReport.el("div", {
+          className: "empty",
+          text: window.t("historyEmpty", "Analyzed pages will be listed here."),
+        }),
+      );
+      return;
+    }
+
+    const card = window.SSRReport.el("section", { className: "card" });
+    history.forEach((entry) => {
+      const kind = window.SSRReport.verdictKind(entry.results.renderType);
+      const item = window.SSRReport.el("button", {
+        className: "history-item",
+        attrs: { type: "button" },
+        children: [
+          window.SSRReport.el("div", { className: "history-title", text: entry.title }),
+          window.SSRReport.el("div", {
+            className: "history-meta",
+            children: [
+              // The short badge, not the full verdict string: at 400px the
+              // long form wraps to two lines and pushes every row apart.
+              window.SSRReport.el("span", {
+                className: "chip",
+                dataset: { tone: kind },
+                text: window.SSRReport.verdictBadge(entry.results.renderType) || "—",
+                attrs: { title: entry.results.renderType },
+              }),
+              window.SSRReport.el("span", {
+                text: `${entry.results.confidence}% · ${new Date(entry.timestamp).toLocaleString()}`,
+              }),
+            ],
+          }),
+        ],
+      });
+      item.addEventListener("click", () => {
+        state.result = entry.results;
+        state.page = { url: entry.url, title: entry.title };
+        state.tab = "overview";
+        render(entry.results);
+      });
+      card.appendChild(item);
+    });
+
+    const clear = window.SSRReport.el("button", {
+      className: "btn",
+      text: window.t("clearHistory", "Clear history"),
+    });
+    clear.addEventListener("click", () => {
+      chrome.storage.local.set({ analysisHistory: [] }, renderHistoryPanel);
+    });
+
+    panel.replaceChildren(
+      card,
+      window.SSRReport.el("div", { className: "history-actions", children: [clear] }),
+    );
+  });
+}
+
+/* ------------------------------------------------------------------ exports */
+
+function exportAs(format) {
+  if (!state.result) return;
+  const stamp = new Date().toISOString().split("T")[0];
+  const base = `csr-ssr-analysis-${stamp}`;
+  const version = chrome.runtime.getManifest().version;
+
+  if (format === "json") {
+    window.SSRExport.downloadFile(
+      window.SSRExport.toJSON(state.result, state.page),
+      `${base}.json`,
+      "application/json",
+    );
+  } else if (format === "csv") {
+    window.SSRExport.downloadFile(
+      window.SSRExport.toCSV(state.result, state.page),
+      `${base}.csv`,
+      "text/csv",
+    );
+  } else {
+    window.SSRExport.downloadFile(
+      window.SSRExport.toMarkdown(state.result, state.page, version),
+      `${base}.md`,
+      "text/markdown",
+    );
   }
 }
 
-// Show a dismissible "pin me" hint when the extension isn't on the toolbar.
-// Chrome can't pin programmatically; getUserSettings() (Chrome 91+) only
-// reports whether the user has done it.
+async function copySummary() {
+  if (!state.result) return;
+  const button = document.getElementById("copy");
+  const original = button.textContent;
+  try {
+    await navigator.clipboard.writeText(window.SSRExport.toSummary(state.result, state.page));
+    button.textContent = window.t("copied", "Copied");
+  } catch {
+    button.textContent = window.t("copyFailed", "Copy failed");
+  }
+  setTimeout(() => {
+    button.textContent = original;
+  }, 1400);
+}
+
+/* -------------------------------------------------------------------- misc */
+
+function updateBadge(renderType, tabId) {
+  const kind = window.SSRReport.verdictKind(renderType);
+  const text = window.SSRReport.verdictBadge(renderType);
+  const color = { ssr: "#059669", csr: "#dc2626", hybrid: "#d97706" }[kind] || "#6b7280";
+
+  chrome.action.setBadgeText({ text, tabId });
+  chrome.action.setBadgeBackgroundColor({ color, tabId });
+}
+
+/**
+ * Chrome offers no API to pin an extension; getUserSettings() only reports
+ * whether the user already has. Show the hint once, then never again.
+ */
 function setupPinHint() {
   if (!chrome.action || !chrome.action.getUserSettings) return;
 
-  chrome.storage.local.get(['pinHintDismissed'], (data) => {
+  chrome.storage.local.get(["pinHintDismissed"], (data) => {
     if (data.pinHintDismissed) return;
 
     chrome.action.getUserSettings((settings) => {
       if (settings.isOnToolbar) return;
 
-      const banner = document.getElementById('pin-banner');
-      banner.style.display = 'flex';
-
-      document.getElementById('pin-banner-close').addEventListener('click', () => {
-        banner.style.display = 'none';
+      const banner = document.getElementById("pin-banner");
+      banner.hidden = false;
+      document.getElementById("pin-dismiss").addEventListener("click", () => {
+        banner.hidden = true;
         chrome.storage.local.set({ pinHintDismissed: true });
       });
     });
   });
-}
-
-// Show error message
-function showError() {
-  document.getElementById("result").innerHTML = `
-    <div style="color: var(--danger-color, #dc2626); font-weight: 500; text-align: center; padding: 15px;">
-      ❌ Analysis failed. Please try again.
-    </div>
-  `;
-}
-
-// Save analysis to history
-function saveToHistory(url, results, title) {
-  chrome.storage.sync.get({ historyLimit: 10 }, (settings) => {
-    chrome.storage.local.get(['analysisHistory'], (data) => {
-      const history = data.analysisHistory || [];
-
-      // Add new entry
-      const newEntry = {
-        url: url,
-        title: title || url,
-        timestamp: Date.now(),
-        results: results
-      };
-
-      // Add to beginning of array
-      history.unshift(newEntry);
-
-      // Apply history limit
-      const limit = settings.historyLimit === -1 ? Infinity : settings.historyLimit;
-      if (history.length > limit) {
-        history.splice(limit);
-      }
-
-      // Save back to storage
-      chrome.storage.local.set({ analysisHistory: history });
-    });
-  });
-}
-
-// Toggle history display
-function toggleHistory() {
-  const historyContainer = document.getElementById("history-container");
-  const isVisible = historyContainer.style.display === "block";
-
-  if (isVisible) {
-    historyContainer.style.display = "none";
-    document.getElementById("history-button").textContent = "View History";
-  } else {
-    // Load and display history
-    chrome.storage.local.get(['analysisHistory'], (data) => {
-      const history = data.analysisHistory || [];
-
-      if (history.length === 0) {
-        historyContainer.innerHTML = `
-          <div style="padding: 15px; text-align: center; color: var(--text-secondary);">
-            No analysis history yet
-          </div>
-        `;
-      } else {
-        historyContainer.innerHTML = history.map((entry, index) => `
-          <div style="padding: 10px; border-bottom: ${index < history.length - 1 ? '1px solid var(--border-color)' : 'none'};">
-            <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">
-              ${entry.title}
-            </div>
-            <div style="font-size: 12px; color: var(--text-secondary);">
-              ${new Date(entry.timestamp).toLocaleString()}
-            </div>
-            <div style="margin-top: 5px;">
-              <span style="display: inline-block; background: ${getTypeColor(entry.results.renderType)}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">
-                ${entry.results.renderType}
-              </span>
-              <span style="font-size: 12px; margin-left: 5px; color: var(--text-secondary);">
-                ${entry.results.confidence}% confidence
-              </span>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      historyContainer.style.display = "block";
-      document.getElementById("history-button").textContent = "Hide History";
-    });
-  }
-}
-
-// Helper function to get color based on render type
-// Note: This is duplicated from results-renderer.js because popup runs in a separate context
-function getTypeColor(renderType) {
-  if (renderType.includes('SSR')) return '#059669';
-  if (renderType.includes('CSR')) return '#dc2626';
-  if (renderType.includes('Hybrid')) return '#d97706';
-  return '#6b7280';
 }

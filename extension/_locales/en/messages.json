@@ -6,5 +6,205 @@
   "appDesc": {
     "message": "Detect if a webpage is using Client-Side Rendering or Server-Side Rendering",
     "description": "Extension description shown on the extensions page and Chrome Web Store (max 132 chars)"
+  },
+  "analyzing": {
+    "message": "Analyzing this page…",
+    "description": "Popup/panel status while the analysis runs"
+  },
+  "analyzePage": {
+    "message": "Analyze this page",
+    "description": "Button shown when automatic analysis is turned off"
+  },
+  "rerun": {
+    "message": "Analyze again",
+    "description": "Tooltip on the re-run icon button"
+  },
+  "analyzeAgain": {
+    "message": "Analyze again",
+    "description": "DevTools panel button that re-runs the analysis"
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Tooltip on the settings icon button"
+  },
+  "dismiss": {
+    "message": "Dismiss",
+    "description": "Tooltip on a dismiss (x) button"
+  },
+  "confidence": {
+    "message": "confidence",
+    "description": "Caption under the confidence dial; lowercase"
+  },
+  "fromServer": {
+    "message": "from server",
+    "description": "Legend for the share of text that came from the server"
+  },
+  "fromJavaScript": {
+    "message": "added by JavaScript",
+    "description": "Legend for the share of text added by scripts"
+  },
+  "detectedStack": {
+    "message": "Detected stack",
+    "description": "Card title listing detected frameworks and generators"
+  },
+  "whyThisVerdict": {
+    "message": "Why this verdict",
+    "description": "Card title above the strongest signals"
+  },
+  "scoredEvidence": {
+    "message": "Scored evidence",
+    "description": "Card title for signals that changed the score"
+  },
+  "context": {
+    "message": "Context",
+    "description": "Card title for signals that did not change the score"
+  },
+  "transport": {
+    "message": "Transport",
+    "description": "Card title for CDN and cache header details"
+  },
+  "regions": {
+    "message": "Regions",
+    "description": "Card title for the per-region server/client breakdown"
+  },
+  "tabOverview": {
+    "message": "Overview",
+    "description": "Tab label"
+  },
+  "tabSignals": {
+    "message": "Evidence",
+    "description": "Tab label for the evidence list"
+  },
+  "tabDelivery": {
+    "message": "Delivery",
+    "description": "Tab label for delivery/caching details"
+  },
+  "tabDiff": {
+    "message": "Regions",
+    "description": "Tab label for the region breakdown"
+  },
+  "tabHistory": {
+    "message": "History",
+    "description": "Tab label for past analyses"
+  },
+  "devToolsPanel": {
+    "message": "DevTools panel",
+    "description": "Name of the DevTools panel feature"
+  },
+  "copySummary": {
+    "message": "Copy summary",
+    "description": "Button that copies a one-line summary"
+  },
+  "copied": {
+    "message": "Copied",
+    "description": "Transient button label after a successful copy"
+  },
+  "copyFailed": {
+    "message": "Copy failed",
+    "description": "Transient button label after a failed copy"
+  },
+  "historyEmpty": {
+    "message": "Analyzed pages will be listed here.",
+    "description": "Empty state for the history tab"
+  },
+  "clearHistory": {
+    "message": "Clear history",
+    "description": "Button that deletes stored history"
+  },
+  "analysisFailed": {
+    "message": "Analysis failed",
+    "description": "Error heading when analysis did not return a result"
+  },
+  "cannotAccess": {
+    "message": "Cannot access this page",
+    "description": "Error heading when the page cannot be scripted"
+  },
+  "restrictedTitle": {
+    "message": "This page cannot be analyzed",
+    "description": "Error heading for browser-internal pages"
+  },
+  "giveFeedback": {
+    "message": "Give feedback · 1 min",
+    "description": "Footer link to the feedback form; keep it short"
+  },
+  "contextMenuAnalyze": {
+    "message": "Analyze page rendering",
+    "description": "Right-click menu entry"
+  },
+  "rerunOnNavigation": {
+    "message": "Re-run on navigation",
+    "description": "Checkbox in the DevTools panel"
+  },
+  "saveSettings": {
+    "message": "Save settings",
+    "description": "Button on the settings page"
+  },
+  "resetDefaults": {
+    "message": "Reset to defaults",
+    "description": "Button that restores default settings"
+  },
+  "settingsSaved": {
+    "message": "Settings saved",
+    "description": "Toast shown after saving settings"
+  },
+  "settingsReset": {
+    "message": "Settings reset to defaults",
+    "description": "Toast shown after resetting settings"
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Heading of the settings page"
+  },
+  "sectionAppearance": {
+    "message": "Appearance",
+    "description": "Settings section heading"
+  },
+  "sectionAnalysis": {
+    "message": "Analysis",
+    "description": "Settings section heading"
+  },
+  "sectionPrivacy": {
+    "message": "Privacy & data",
+    "description": "Settings section heading"
+  },
+  "sectionShortcuts": {
+    "message": "Shortcuts",
+    "description": "Settings section heading"
+  },
+  "themeAuto": {
+    "message": "Match the system",
+    "description": "Theme option that follows the operating system"
+  },
+  "themeLight": {
+    "message": "Light",
+    "description": "Theme option"
+  },
+  "themeDark": {
+    "message": "Dark",
+    "description": "Theme option"
+  },
+  "unlimited": {
+    "message": "Unlimited",
+    "description": "History limit option meaning no cap"
+  },
+  "openSettings": {
+    "message": "Open settings",
+    "description": "Button on the welcome page"
+  },
+  "privacyPolicy": {
+    "message": "Privacy policy",
+    "description": "Button/link to the privacy policy"
+  },
+  "pinNotPinned": {
+    "message": "Not pinned yet",
+    "description": "Welcome page status: the extension is not pinned yet"
+  },
+  "pinPinned": {
+    "message": "Pinned — you're all set.",
+    "description": "Welcome page status: the extension is pinned"
+  },
+  "shortcutUnset": {
+    "message": "Not set",
+    "description": "Shown when no keyboard shortcut is assigned"
   }
 }

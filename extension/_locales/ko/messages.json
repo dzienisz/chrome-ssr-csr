@@ -4,5 +4,155 @@
   },
   "appDesc": {
     "message": "웹페이지가 클라이언트 사이드 렌더링(CSR)인지 서버 사이드 렌더링(SSR)인지 감지합니다"
+  },
+  "analyzing": {
+    "message": "페이지를 분석하는 중…"
+  },
+  "analyzePage": {
+    "message": "이 페이지 분석"
+  },
+  "rerun": {
+    "message": "다시 분석"
+  },
+  "analyzeAgain": {
+    "message": "다시 분석"
+  },
+  "settings": {
+    "message": "설정"
+  },
+  "dismiss": {
+    "message": "닫기"
+  },
+  "confidence": {
+    "message": "신뢰도"
+  },
+  "fromServer": {
+    "message": "서버에서"
+  },
+  "fromJavaScript": {
+    "message": "JavaScript가 추가"
+  },
+  "detectedStack": {
+    "message": "감지된 스택"
+  },
+  "whyThisVerdict": {
+    "message": "이 판정의 근거"
+  },
+  "scoredEvidence": {
+    "message": "점수에 반영된 근거"
+  },
+  "context": {
+    "message": "참고 정보"
+  },
+  "transport": {
+    "message": "전달 방식"
+  },
+  "regions": {
+    "message": "영역"
+  },
+  "tabOverview": {
+    "message": "개요"
+  },
+  "tabSignals": {
+    "message": "근거"
+  },
+  "tabDelivery": {
+    "message": "전달"
+  },
+  "tabDiff": {
+    "message": "영역"
+  },
+  "tabHistory": {
+    "message": "기록"
+  },
+  "devToolsPanel": {
+    "message": "DevTools 패널"
+  },
+  "copySummary": {
+    "message": "요약 복사"
+  },
+  "copied": {
+    "message": "복사됨"
+  },
+  "copyFailed": {
+    "message": "복사하지 못했습니다"
+  },
+  "historyEmpty": {
+    "message": "분석한 페이지가 여기에 표시됩니다."
+  },
+  "clearHistory": {
+    "message": "기록 지우기"
+  },
+  "analysisFailed": {
+    "message": "분석에 실패했습니다"
+  },
+  "cannotAccess": {
+    "message": "이 페이지에 접근할 수 없습니다"
+  },
+  "restrictedTitle": {
+    "message": "이 페이지는 분석할 수 없습니다"
+  },
+  "giveFeedback": {
+    "message": "피드백 보내기 · 1분"
+  },
+  "contextMenuAnalyze": {
+    "message": "페이지 렌더링 분석"
+  },
+  "rerunOnNavigation": {
+    "message": "페이지 이동 시 다시 실행"
+  },
+  "saveSettings": {
+    "message": "설정 저장"
+  },
+  "resetDefaults": {
+    "message": "기본값으로 재설정"
+  },
+  "settingsSaved": {
+    "message": "설정을 저장했습니다"
+  },
+  "settingsReset": {
+    "message": "설정을 기본값으로 되돌렸습니다"
+  },
+  "settingsTitle": {
+    "message": "설정"
+  },
+  "sectionAppearance": {
+    "message": "모양"
+  },
+  "sectionAnalysis": {
+    "message": "분석"
+  },
+  "sectionPrivacy": {
+    "message": "개인정보 및 데이터"
+  },
+  "sectionShortcuts": {
+    "message": "단축키"
+  },
+  "themeAuto": {
+    "message": "시스템 설정 따르기"
+  },
+  "themeLight": {
+    "message": "밝게"
+  },
+  "themeDark": {
+    "message": "어둡게"
+  },
+  "unlimited": {
+    "message": "무제한"
+  },
+  "openSettings": {
+    "message": "설정 열기"
+  },
+  "privacyPolicy": {
+    "message": "개인정보 처리방침"
+  },
+  "pinNotPinned": {
+    "message": "아직 고정되지 않음"
+  },
+  "pinPinned": {
+    "message": "고정 완료 — 준비되었습니다."
+  },
+  "shortcutUnset": {
+    "message": "설정되지 않음"
   }
 }

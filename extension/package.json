@@ -1,6 +1,6 @@
 {
   "name": "ssr-csr-detector-extension",
-  "version": "3.12.0",
+  "version": "4.0.0",
   "description": "Browser extension (Chrome & Firefox) to detect SSR vs CSR rendering",
   "scripts": {
     "build": "node scripts/build-bundle.js",
@@ -8,11 +8,15 @@
     "build:watch": "nodemon --watch src --exec 'npm run build'",
     "lint": "echo 'Linting not configured yet'",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "validate:local": "node scripts/validate-local.mjs",
+    "validate:live": "node scripts/validate-detection.mjs",
+    "preview": "node scripts/ui-preview.mjs"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",
     "nodemon": "^3.0.2",
+    "playwright": "^1.63.0",
     "vitest": "^4.0.18"
   },
   "keywords": [

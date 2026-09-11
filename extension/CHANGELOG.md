@@ -5,6 +5,98 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-09-11
+
+The release answers a question the extension could not answer before: not just
+*what* kind of rendering a page uses, but *where* its HTML was produced, *which
+parts of the page* came from the server, and *why* the verdict came out the way
+it did.
+
+### Added
+
+- **Delivery classification** (`src/detectors/delivery-detector.js`). The
+  response headers of the document are now read and turned into a plain
+  answer: prerendered at build time, served from a CDN cache, rendered by the
+  origin, or dynamic and uncacheable. Identifies the CDN (Vercel, Netlify,
+  Cloudflare, Fastly, CloudFront, Akamai, GitHub Pages, S3, Fly.io, Firebase,
+  Bunny, KeyCDN, Varnish) and the origin runtime, parses `Cache-Control`,
+  `Age`, RFC 9211 `Cache-Status` and the vendor cache headers, and reports
+  TTFB and Server-Timing. Deliberately contributes **zero** to the SSR/CSR
+  score — transport is not rendering.
+- **Region attribution** (`src/detectors/dom-diff-detector.js`). The
+  pre-JavaScript document is now lined up against the live DOM region by
+  region, so the report can say that the header and footer came from the
+  server and `#root` gained 12,400 characters after the scripts ran. A
+  container the server filled is split into its landmarks; a container
+  JavaScript filled is reported whole, because that boundary is the finding.
+  Also score-neutral.
+- **"Rendered where"** — a one-line verdict combining the rendering
+  classification with the delivery evidence: built in the browser, rendered at
+  build time, rendered once and served from cache, rendered per request, or
+  server-rendered with client islands.
+- **Explainable evidence.** Every detector now emits structured signals
+  (`{id, label, impact, weight, detail}`) alongside its indicators, so the UI
+  shows the arithmetic behind a verdict — which signal contributed how many
+  points, and what it actually observed — instead of a bare percentage.
+- **DevTools panel** ("Rendering"). The same report at full width, re-running
+  on every navigation. Reaches the page through
+  `devtools.inspectedWindow.eval`, so it needs no additional permissions.
+- **Right-click entry** ("Analyze page rendering") and a keyboard shortcut
+  (`Ctrl/Cmd+Shift+Y`) that opens the report.
+- **Offline detection harness** (`npm run validate:local`). Eight hand-written
+  fixture pages, served with known headers, analyzed by the real bundle in real
+  Chromium, graded on verdict, delivery mode and region attribution. Runs in CI
+  — unlike the 22-site live harness, which needs the open internet and sites
+  that rewrite themselves without warning. `npm run preview` renders every
+  surface against a real analysis result and screenshots it.
+- **Localized UI.** 50 interface strings across all eight shipped locales (en,
+  ja, ko, fr, de, es, pt-BR, pl). Longer explanatory prose stays in English and
+  falls back cleanly.
+
+### Changed
+
+- **The popup analyzes the moment it opens.** Asking you to press a button
+  first was asking you to confirm the only question the popup exists to answer.
+  Settings → Analysis turns it back off.
+- **Popup rewritten** around a verdict hero (badge, confidence dial, render
+  origin, server/client split bar) and five tabs: Overview, Evidence, Delivery,
+  Regions, History. Keyboard-navigable tabs, live regions for the verdict, and
+  a shared stylesheet with the panel, the settings page and onboarding.
+- **Settings and onboarding** rebuilt on that shared design system, with the
+  new auto-analyze toggle and the configured keyboard shortcut.
+- Exports carry the new data: Markdown gains delivery, evidence and a region
+  table; CSV gains delivery and server-share columns; a one-line "Copy summary"
+  is new.
+- History rows open the report they describe, and honor the configured limit
+  when written from the context menu (they previously used a hardcoded ten).
+- Framework coverage extended to SvelteKit 2, Deno Fresh, Vike, TanStack Start,
+  Blazor, Phoenix LiveView, Turbo/Hotwire, Livewire, Inertia, Stimulus, Unpoly,
+  Marko, Ember and Angular's `ng-server-context`; generator coverage to Astro,
+  Gatsby, VitePress, Zola, Sphinx, Middleman, Bridgetown, Nikola, Publii,
+  Quarto and Antora. Script `src` and `id` attributes now count as framework
+  evidence, which is the only way to see Blazor, Deno Fresh and Vike.
+
+### Fixed
+
+- **The popup no longer renders page-derived strings as HTML.** Results were
+  previously formatted into an HTML string inside the inspected page and
+  assigned to the popup's `innerHTML`; a page chooses its own element ids and
+  header values. Rendering is now DOM construction with text nodes, on the
+  extension side.
+- `chrome.action.onClicked` in the background worker was unreachable — the
+  action has a popup, so that event never fires, and the analysis pipeline
+  behind it could never run. Replaced with the context-menu entry.
+- The toolbar badge is cleared when a tab navigates, instead of showing the
+  previous document's verdict.
+- `popup.html` loaded a script (`analyzer.js`) that has not existed since the
+  modular rewrite.
+### Privacy
+
+- Unchanged. The telemetry payload is exactly what it was in 3.12.0: nothing
+  added in this release — response headers, region attribution, delivery
+  classification — is ever sent anywhere. It is computed on your device, shown
+  to you, and discarded.
+
 ## [3.12.0] - 2026-09-09
 
 ### Privacy

@@ -5,7 +5,9 @@
 #   ./build.sh icons      → ALSO overwrite ../icon16/48/128.png (the extension icon)
 set -euo pipefail
 
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# Override for a non-macOS machine, e.g.
+#   CHROME=$(node -e "console.log(require('playwright').chromium.executablePath())") ./build.sh
+CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 shoot() { # src-name width height out-name
@@ -31,7 +33,12 @@ shoot social-landscape 1600 900 social-landscape-1600x900.png
 shoot social-square 1080 1080 social-square-1080x1080.png
 shoot social-diff 1600 900 social-diff-1600x900.png
 
-# Store screenshots (compose raw popup captures from raw/ — see README)
+# Store screenshots. These compose popup captures from raw/, which are produced
+# by the extension itself:  cd .. && npm run preview -- --promo
+if [ ! -f "$DIR/raw/popup-verdict.png" ]; then
+  echo "! raw/popup-verdict.png missing — run 'npm run preview -- --promo' in extension/ first" >&2
+  exit 1
+fi
 for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn; do
   shoot "$n" 1280 800 "$n-1280x800.png"
 done

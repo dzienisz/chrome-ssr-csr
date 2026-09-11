@@ -4,5 +4,155 @@
   },
   "appDesc": {
     "message": "Erkennt, ob eine Webseite Client-Side-Rendering (CSR) oder Server-Side-Rendering (SSR) verwendet"
+  },
+  "analyzing": {
+    "message": "Seite wird analysiert …"
+  },
+  "analyzePage": {
+    "message": "Diese Seite analysieren"
+  },
+  "rerun": {
+    "message": "Erneut analysieren"
+  },
+  "analyzeAgain": {
+    "message": "Erneut analysieren"
+  },
+  "settings": {
+    "message": "Einstellungen"
+  },
+  "dismiss": {
+    "message": "Schließen"
+  },
+  "confidence": {
+    "message": "Sicherheit"
+  },
+  "fromServer": {
+    "message": "vom Server"
+  },
+  "fromJavaScript": {
+    "message": "von JavaScript ergänzt"
+  },
+  "detectedStack": {
+    "message": "Erkannter Stack"
+  },
+  "whyThisVerdict": {
+    "message": "Warum dieses Ergebnis"
+  },
+  "scoredEvidence": {
+    "message": "Gewertete Belege"
+  },
+  "context": {
+    "message": "Kontext"
+  },
+  "transport": {
+    "message": "Auslieferung"
+  },
+  "regions": {
+    "message": "Bereiche"
+  },
+  "tabOverview": {
+    "message": "Überblick"
+  },
+  "tabSignals": {
+    "message": "Belege"
+  },
+  "tabDelivery": {
+    "message": "Auslieferung"
+  },
+  "tabDiff": {
+    "message": "Bereiche"
+  },
+  "tabHistory": {
+    "message": "Verlauf"
+  },
+  "devToolsPanel": {
+    "message": "DevTools-Panel"
+  },
+  "copySummary": {
+    "message": "Zusammenfassung kopieren"
+  },
+  "copied": {
+    "message": "Kopiert"
+  },
+  "copyFailed": {
+    "message": "Kopieren fehlgeschlagen"
+  },
+  "historyEmpty": {
+    "message": "Analysierte Seiten erscheinen hier."
+  },
+  "clearHistory": {
+    "message": "Verlauf löschen"
+  },
+  "analysisFailed": {
+    "message": "Analyse fehlgeschlagen"
+  },
+  "cannotAccess": {
+    "message": "Zugriff auf diese Seite nicht möglich"
+  },
+  "restrictedTitle": {
+    "message": "Diese Seite kann nicht analysiert werden"
+  },
+  "giveFeedback": {
+    "message": "Feedback geben · 1 Min."
+  },
+  "contextMenuAnalyze": {
+    "message": "Seiten-Rendering analysieren"
+  },
+  "rerunOnNavigation": {
+    "message": "Bei Navigation neu ausführen"
+  },
+  "saveSettings": {
+    "message": "Einstellungen speichern"
+  },
+  "resetDefaults": {
+    "message": "Auf Standard zurücksetzen"
+  },
+  "settingsSaved": {
+    "message": "Einstellungen gespeichert"
+  },
+  "settingsReset": {
+    "message": "Einstellungen zurückgesetzt"
+  },
+  "settingsTitle": {
+    "message": "Einstellungen"
+  },
+  "sectionAppearance": {
+    "message": "Darstellung"
+  },
+  "sectionAnalysis": {
+    "message": "Analyse"
+  },
+  "sectionPrivacy": {
+    "message": "Datenschutz & Daten"
+  },
+  "sectionShortcuts": {
+    "message": "Tastenkürzel"
+  },
+  "themeAuto": {
+    "message": "System folgen"
+  },
+  "themeLight": {
+    "message": "Hell"
+  },
+  "themeDark": {
+    "message": "Dunkel"
+  },
+  "unlimited": {
+    "message": "Unbegrenzt"
+  },
+  "openSettings": {
+    "message": "Einstellungen öffnen"
+  },
+  "privacyPolicy": {
+    "message": "Datenschutzerklärung"
+  },
+  "pinNotPinned": {
+    "message": "Noch nicht angeheftet"
+  },
+  "pinPinned": {
+    "message": "Angeheftet — alles bereit."
+  },
+  "shortcutUnset": {
+    "message": "Nicht festgelegt"
   }
 }

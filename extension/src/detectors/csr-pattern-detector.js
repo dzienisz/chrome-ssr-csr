@@ -10,6 +10,7 @@
 function detectCSRPatterns() {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let csrScore = 0;
 
   // Check for typical SPA root containers
@@ -26,6 +27,13 @@ function detectCSRPatterns() {
     if (hasReactRoot || hasVueApp) {
       csrScore += config.scoring.spaRootPattern;
       indicators.push("SPA root container pattern detected (CSR)");
+      signals.push({
+        id: "csr.spaRoot",
+        label: "Single-page-app mount point",
+        impact: "csr",
+        weight: config.scoring.spaRootPattern,
+        detail: `#${root.id} carries framework root markers — the whole page hangs off one container.`,
+      });
     }
   }
 
@@ -39,6 +47,13 @@ function detectCSRPatterns() {
         text.includes('need to enable')) {
       csrScore += config.scoring.noscriptFallback;
       indicators.push("JavaScript required message found (CSR)");
+      signals.push({
+        id: "csr.noscript",
+        label: "\u201cJavaScript required\u201d fallback",
+        impact: "csr",
+        weight: config.scoring.noscriptFallback,
+        detail: "The page ships a <noscript> notice telling visitors the site needs JavaScript.",
+      });
       break;
     }
   }
@@ -53,12 +68,20 @@ function detectCSRPatterns() {
       bodyClasses.includes('hydrated')) {
     csrScore += 10;
     indicators.push("dynamic body class detected (CSR)");
+    signals.push({
+      id: "csr.bodyClass",
+      label: "Body class set after boot",
+      impact: "csr",
+      weight: 10,
+      detail: "A js-loaded / app-loaded / hydrated class was added to <body> by script.",
+    });
   }
 
   return {
     ssrScore: 0,
     csrScore,
     indicators,
+    signals,
     details: {
       hasRoot: !!root,
       hasNoscriptWarning: indicators.some(i => i.includes('JavaScript required'))

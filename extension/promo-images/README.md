@@ -4,11 +4,22 @@ All assets are generated from HTML/CSS sources in `src/` — edit the source,
 re-run the build, get pixel-exact PNGs. No image editor required.
 
 ```bash
-./build.sh          # promo tiles + store screenshots
-./build.sh icons    # also regenerate ../icon16/48/128.png from src/icon.html
+cd ..                          # extension/
+npm run preview -- --promo     # capture the popup into promo-images/raw/
+cd promo-images
+./build.sh                     # promo tiles + store screenshots
+./build.sh icons               # also regenerate ../icon16/48/128.png
 ```
 
-Requires Google Chrome (used headless for rendering).
+Requires Google Chrome (used headless for rendering); set `CHROME=` to point at
+another binary, e.g. Playwright's Chromium.
+
+The three store screenshots frame a real popup capture. Those captures used to
+be hand-cropped out of a 4K browser screenshot with four pixel offsets per
+file, which went stale the moment the popup layout changed. `npm run preview
+-- --promo` now renders the shipping popup against a real analysis result, at
+exactly the size the frame expects — so the marketing art cannot drift from the
+product.
 
 ## Generated assets
 
@@ -17,9 +28,9 @@ Requires Google Chrome (used headless for rendering).
 | `small-tile-440x280.png` | 440×280 | Small promo tile (required) |
 | `large-promo-920x680.png` | 920×680 | Large promo tile |
 | `marquee-1400x560.png` | 1400×560 | Marquee (featured placement) |
-| `screenshot-1-verdict-1280x800.png` | 1280×800 | Screenshot 1 — SSR verdict on nextjs.org |
-| `screenshot-2-hybrid-1280x800.png` | 1280×800 | Screenshot 2 — Hybrid/MIX verdict on google.com |
-| `screenshot-3-learn-1280x800.png` | 1280×800 | Screenshot 3 — built-in SSR/CSR explainer |
+| `screenshot-1-verdict-1280x800.png` | 1280×800 | Screenshot 1 — verdict and evidence |
+| `screenshot-2-hybrid-1280x800.png` | 1280×800 | Screenshot 2 — delivery: where the HTML was produced |
+| `screenshot-3-learn-1280x800.png` | 1280×800 | Screenshot 3 — regions: what JavaScript built |
 | `firefox-hero-1400x560.png` | 1400×560 | Firefox "now on Firefox" hero (GitHub release / social) |
 | `firefox-tile-440x280.png` | 440×280 | Firefox compact social tile |
 | `social-landscape-1600x900.png` | 1600×900 | Social card — X/LinkedIn/Mastodon landscape |

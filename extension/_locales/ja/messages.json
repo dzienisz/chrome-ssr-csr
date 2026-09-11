@@ -4,5 +4,155 @@
   },
   "appDesc": {
     "message": "ウェブページがクライアントサイドレンダリング（CSR）かサーバーサイドレンダリング（SSR）かを検出します"
+  },
+  "analyzing": {
+    "message": "ページを解析しています…"
+  },
+  "analyzePage": {
+    "message": "このページを解析"
+  },
+  "rerun": {
+    "message": "再解析"
+  },
+  "analyzeAgain": {
+    "message": "再解析"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "dismiss": {
+    "message": "閉じる"
+  },
+  "confidence": {
+    "message": "確信度"
+  },
+  "fromServer": {
+    "message": "サーバー由来"
+  },
+  "fromJavaScript": {
+    "message": "JavaScript が追加"
+  },
+  "detectedStack": {
+    "message": "検出されたスタック"
+  },
+  "whyThisVerdict": {
+    "message": "判定の根拠"
+  },
+  "scoredEvidence": {
+    "message": "スコアに反映された根拠"
+  },
+  "context": {
+    "message": "参考情報"
+  },
+  "transport": {
+    "message": "配信"
+  },
+  "regions": {
+    "message": "領域"
+  },
+  "tabOverview": {
+    "message": "概要"
+  },
+  "tabSignals": {
+    "message": "根拠"
+  },
+  "tabDelivery": {
+    "message": "配信"
+  },
+  "tabDiff": {
+    "message": "領域"
+  },
+  "tabHistory": {
+    "message": "履歴"
+  },
+  "devToolsPanel": {
+    "message": "DevTools パネル"
+  },
+  "copySummary": {
+    "message": "要約をコピー"
+  },
+  "copied": {
+    "message": "コピーしました"
+  },
+  "copyFailed": {
+    "message": "コピーできません"
+  },
+  "historyEmpty": {
+    "message": "解析したページがここに表示されます。"
+  },
+  "clearHistory": {
+    "message": "履歴を消去"
+  },
+  "analysisFailed": {
+    "message": "解析に失敗しました"
+  },
+  "cannotAccess": {
+    "message": "このページにはアクセスできません"
+  },
+  "restrictedTitle": {
+    "message": "このページは解析できません"
+  },
+  "giveFeedback": {
+    "message": "フィードバック · 1分"
+  },
+  "contextMenuAnalyze": {
+    "message": "ページのレンダリングを解析"
+  },
+  "rerunOnNavigation": {
+    "message": "ページ遷移ごとに再解析"
+  },
+  "saveSettings": {
+    "message": "設定を保存"
+  },
+  "resetDefaults": {
+    "message": "初期設定に戻す"
+  },
+  "settingsSaved": {
+    "message": "設定を保存しました"
+  },
+  "settingsReset": {
+    "message": "設定を初期化しました"
+  },
+  "settingsTitle": {
+    "message": "設定"
+  },
+  "sectionAppearance": {
+    "message": "外観"
+  },
+  "sectionAnalysis": {
+    "message": "解析"
+  },
+  "sectionPrivacy": {
+    "message": "プライバシーとデータ"
+  },
+  "sectionShortcuts": {
+    "message": "ショートカット"
+  },
+  "themeAuto": {
+    "message": "システムに合わせる"
+  },
+  "themeLight": {
+    "message": "ライト"
+  },
+  "themeDark": {
+    "message": "ダーク"
+  },
+  "unlimited": {
+    "message": "無制限"
+  },
+  "openSettings": {
+    "message": "設定を開く"
+  },
+  "privacyPolicy": {
+    "message": "プライバシーポリシー"
+  },
+  "pinNotPinned": {
+    "message": "まだピン留めされていません"
+  },
+  "pinPinned": {
+    "message": "ピン留め済み — 準備完了です。"
+  },
+  "shortcutUnset": {
+    "message": "未設定"
   }
 }

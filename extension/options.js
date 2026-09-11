@@ -1,125 +1,113 @@
-// Default settings
+/**
+ * Options page controller.
+ *
+ * Settings live in chrome.storage.sync so they follow the user between
+ * profiles; the analysis history stays in storage.local because it names the
+ * sites you visited and has no business syncing anywhere.
+ */
+
 const DEFAULT_SETTINGS = {
-  darkMode: 'auto', // 'auto', 'light', 'dark'
+  darkMode: "auto",
   historyLimit: 10,
   notifications: true,
-  shareData: true
+  shareData: true,
+  autoAnalyze: true,
 };
 
-// Load settings when page opens
-document.addEventListener('DOMContentLoaded', () => {
-  // Inject version from manifest
-  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+const FIELDS = {
+  darkMode: { el: "darkMode", type: "value" },
+  historyLimit: { el: "historyLimit", type: "number" },
+  notifications: { el: "notifications", type: "checked" },
+  shareData: { el: "shareData", type: "checked" },
+  autoAnalyze: { el: "autoAnalyze", type: "checked" },
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  window.applyI18n(document);
+  document.getElementById("version").textContent = `v${chrome.runtime.getManifest().version}`;
 
   loadSettings();
-  setupEventListeners();
+  showConfiguredShortcut();
+
+  document.getElementById("save").addEventListener("click", saveSettings);
+  document.getElementById("reset").addEventListener("click", resetSettings);
+  document.getElementById("darkMode").addEventListener("change", (event) => {
+    applyDarkMode(event.target.value);
+  });
 });
 
-// Load settings from storage
 function loadSettings() {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
-    // Apply settings to UI
-    document.getElementById('darkMode').value = settings.darkMode;
-    document.getElementById('historyLimit').value = settings.historyLimit;
-    document.getElementById('notifications').checked = settings.notifications;
-    document.getElementById('shareData').checked = settings.shareData;
-
-    // Apply dark mode based on setting
+    for (const [key, field] of Object.entries(FIELDS)) {
+      const node = document.getElementById(field.el);
+      if (field.type === "checked") node.checked = Boolean(settings[key]);
+      else node.value = String(settings[key]);
+    }
     applyDarkMode(settings.darkMode);
   });
 }
 
-// Apply dark mode based on setting (auto/light/dark)
-function applyDarkMode(mode) {
-  if (mode === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else if (mode === 'light') {
-    document.documentElement.removeAttribute('data-theme');
-  } else { // auto
-    // Detect system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
+function readSettings() {
+  const settings = {};
+  for (const [key, field] of Object.entries(FIELDS)) {
+    const node = document.getElementById(field.el);
+    if (field.type === "checked") settings[key] = node.checked;
+    else if (field.type === "number") settings[key] = parseInt(node.value, 10);
+    else settings[key] = node.value;
   }
+  return settings;
 }
 
-// Save settings to storage
+function applyDarkMode(mode) {
+  const dark =
+    mode === "dark" ||
+    (mode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (dark) document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+}
+
 function saveSettings() {
-  const settings = {
-    darkMode: document.getElementById('darkMode').value,
-    historyLimit: parseInt(document.getElementById('historyLimit').value),
-    notifications: document.getElementById('notifications').checked,
-    shareData: document.getElementById('shareData').checked
-  };
-
+  const settings = readSettings();
   chrome.storage.sync.set(settings, () => {
-    // Apply dark mode immediately
     applyDarkMode(settings.darkMode);
+    toast(window.t("settingsSaved", "Settings saved"));
 
-    // Show success message
-    showStatusMessage('Settings saved successfully!');
-
-    // Notify popup to update if it's open (ignore errors if popup is closed)
+    // The popup may be open; tell it to re-theme. It is usually closed, and a
+    // closed popup makes this call fail — which is not an error worth showing.
     try {
-      chrome.runtime.sendMessage({
-        action: 'settingsUpdated',
-        settings: settings
-      }, () => {
-        // Ignore error if popup isn't open
-        if (chrome.runtime.lastError) {
-          // Silently ignore - popup just isn't open
-        }
+      chrome.runtime.sendMessage({ action: "settingsUpdated", settings }, () => {
+        void chrome.runtime.lastError;
       });
     } catch (e) {
-      // Silently ignore - popup isn't open
+      void e;
     }
   });
 }
 
-// Reset to default settings
 function resetSettings() {
-  if (confirm('Are you sure you want to reset all settings to defaults?')) {
-    chrome.storage.sync.set(DEFAULT_SETTINGS, () => {
-      loadSettings();
-      showStatusMessage('Settings reset to defaults!');
-    });
-  }
+  chrome.storage.sync.set(DEFAULT_SETTINGS, () => {
+    loadSettings();
+    toast(window.t("settingsReset", "Settings reset to defaults"));
+  });
 }
 
-
-// Show status message
-function showStatusMessage(message) {
-  const statusEl = document.getElementById('statusMessage');
-  statusEl.textContent = message;
-  statusEl.classList.add('show');
-
-  setTimeout(() => {
-    statusEl.classList.remove('show');
-  }, 3000);
+/**
+ * Show the shortcut the user actually has bound rather than the one the
+ * manifest suggests — browsers drop a suggested key when it is already taken.
+ */
+function showConfiguredShortcut() {
+  if (!chrome.commands || !chrome.commands.getAll) return;
+  chrome.commands.getAll((commands) => {
+    const command = (commands || []).find((c) => c.name === "_execute_action");
+    const node = document.getElementById("shortcut");
+    if (command && command.shortcut) node.textContent = command.shortcut;
+    else node.textContent = window.t("shortcutUnset", "Not set");
+  });
 }
 
-// Setup event listeners
-function setupEventListeners() {
-  // Save button
-  document.getElementById('saveButton').addEventListener('click', saveSettings);
-
-  // Reset button
-  document.getElementById('resetButton').addEventListener('click', resetSettings);
-
-  // Dark mode select - apply immediately on change
-  document.getElementById('darkMode').addEventListener('change', (e) => {
-    applyDarkMode(e.target.value);
-  });
-
-  // Auto-save on toggle switches (optional - comment out if you want manual save only)
-  /*
-  document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-    checkbox.addEventListener('change', saveSettings);
-  });
-
-  document.getElementById('historyLimit').addEventListener('change', saveSettings);
-  */
+function toast(message) {
+  const node = document.getElementById("toast");
+  node.textContent = message;
+  node.classList.add("show");
+  setTimeout(() => node.classList.remove("show"), 2200);
 }

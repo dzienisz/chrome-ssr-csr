@@ -1,0 +1,88 @@
+/* DevTools panel layout: the popup's report, given room to breathe. */
+
+body {
+  padding: 12px 14px 18px;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.panel-url {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40ch;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.panel-header-actions .btn {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.col-wide {
+  grid-column: span 1;
+}
+
+@media (min-width: 1100px) {
+  .panel-grid {
+    grid-template-columns: 1.2fr 1fr 1fr;
+  }
+}
+
+.col-title {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin: 14px 0 8px;
+}
+
+.col-title:first-child {
+  margin-top: 0;
+}
+
+.col > div > .card:first-child {
+  margin-top: 10px;
+}
