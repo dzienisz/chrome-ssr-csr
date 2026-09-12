@@ -223,6 +223,36 @@ for (const { path, ready } of PAGES) {
   await extensionPage.close();
 }
 
+/* ------------------------------------ popup on a page it cannot analyze */
+
+// Opened as a tab, the popup's "active tab" is itself — an extension page it
+// has no business scripting, and one whose url it cannot even read without
+// activeTab. That is the same situation as a chrome:// tab, and it has to end
+// in an explanation rather than a spinner or Chrome's own error wording.
+const blockedPage = await context.newPage();
+await blockedPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+  waitUntil: "domcontentloaded",
+});
+await blockedPage.waitForTimeout(1500);
+
+const blocked = await blockedPage.evaluate(() => ({
+  spinning: Boolean(document.querySelector("#status .spinner")),
+  text: document.getElementById("status").textContent,
+}));
+
+check(!blocked.spinning, "the popup stops spinning on a page it cannot analyze");
+check(
+  /cannot be analyzed/i.test(blocked.text),
+  "the popup explains why a page cannot be analyzed",
+  `showed instead: ${blocked.text.trim().slice(0, 140)}`,
+);
+check(
+  !/manifest must request permission/i.test(blocked.text),
+  "the popup does not forward Chrome's raw permission error to the user",
+  blocked.text.trim().slice(0, 140),
+);
+await blockedPage.close();
+
 /* ------------------------------------------- popup renders a real report */
 
 // The popup asks chrome.tabs for the active tab, which is itself when it is

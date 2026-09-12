@@ -132,7 +132,13 @@ async function analyze() {
 
     const page = { url: tab.url || "", title: tab.title || tab.url || "" };
 
-    if (RESTRICTED_PROTOCOLS.some((protocol) => page.url.startsWith(protocol))) {
+    // An empty url is itself the answer. `tabs` is not among the permissions,
+    // so a tab's address is only visible once activeTab has been granted for
+    // it — and it is never granted for the pages this cannot analyze anyway.
+    // Without this, the restricted branch is dead exactly where it is needed,
+    // and the user gets Chrome's raw "Extension manifest must request
+    // permission…" string instead of an explanation.
+    if (!page.url || RESTRICTED_PROTOCOLS.some((protocol) => page.url.startsWith(protocol))) {
       state.page = page;
       showRestricted();
       return;
@@ -170,10 +176,17 @@ async function analyze() {
     }
   } catch (error) {
     if (stale()) return;
-    showError(
-      window.t("cannotAccess", "Cannot access this page"),
-      String((error && error.message) || error),
-    );
+
+    // Injection refusals are the same situation as the restricted branch
+    // above, reached a step later — a page the browser will not let an
+    // extension read. Say so, rather than forwarding the API's wording.
+    const message = String((error && error.message) || error);
+    if (/cannot access|host permission|manifest must request|cannot be scripted/i.test(message)) {
+      showRestricted();
+      return;
+    }
+
+    showError(window.t("cannotAccess", "Cannot access this page"), message);
   } finally {
     if (!stale()) setBusy(false);
   }

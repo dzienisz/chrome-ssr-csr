@@ -130,6 +130,13 @@ it did.
 - The decisive-CSR cap now reports the points it removed, so the evidence list
   adds up to the score the verdict used instead of landing 80 points away
   from it with nothing to explain the gap.
+- **The "this page cannot be analyzed" message never appeared on the pages it
+  was written for.** `tabs` is not among the permissions, so a tab's address is
+  only visible once `activeTab` has been granted — which never happens for a
+  `chrome://` or extension page. The restricted branch tested a url it could
+  not see, and the user got Chrome's raw "Extension manifest must request
+  permission to access the respective host" instead. An unreadable url is now
+  treated as restricted, and an injection refusal shows the same explanation.
 - The toolbar badge is cleared on same-URL reloads, which report `loading`
   with no `url` field.
 - Clicking Copy twice inside the reset window left the button permanently
