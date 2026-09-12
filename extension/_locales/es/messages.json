@@ -4,5 +4,275 @@
   },
   "appDesc": {
     "message": "Detecta si una página web usa renderizado del lado del cliente (CSR) o del servidor (SSR)"
+  },
+  "analyzing": {
+    "message": "Analizando esta página…"
+  },
+  "analyzePage": {
+    "message": "Analizar esta página"
+  },
+  "rerun": {
+    "message": "Analizar de nuevo"
+  },
+  "analyzeAgain": {
+    "message": "Analizar de nuevo"
+  },
+  "settings": {
+    "message": "Ajustes"
+  },
+  "dismiss": {
+    "message": "Cerrar"
+  },
+  "confidence": {
+    "message": "confianza"
+  },
+  "fromServer": {
+    "message": "del servidor"
+  },
+  "fromJavaScript": {
+    "message": "añadido por JavaScript"
+  },
+  "detectedStack": {
+    "message": "Stack detectado"
+  },
+  "whyThisVerdict": {
+    "message": "Por qué este veredicto"
+  },
+  "scoredEvidence": {
+    "message": "Evidencia puntuada"
+  },
+  "context": {
+    "message": "Contexto"
+  },
+  "transport": {
+    "message": "Entrega"
+  },
+  "regions": {
+    "message": "Regiones"
+  },
+  "tabOverview": {
+    "message": "Resumen"
+  },
+  "tabSignals": {
+    "message": "Evidencia"
+  },
+  "tabDelivery": {
+    "message": "Entrega"
+  },
+  "tabDiff": {
+    "message": "Regiones"
+  },
+  "tabHistory": {
+    "message": "Historial"
+  },
+  "devToolsPanel": {
+    "message": "Panel de DevTools"
+  },
+  "copySummary": {
+    "message": "Copiar resumen"
+  },
+  "copied": {
+    "message": "Copiado"
+  },
+  "copyFailed": {
+    "message": "No se pudo copiar"
+  },
+  "historyEmpty": {
+    "message": "Las páginas analizadas aparecerán aquí."
+  },
+  "clearHistory": {
+    "message": "Borrar historial"
+  },
+  "analysisFailed": {
+    "message": "El análisis falló"
+  },
+  "cannotAccess": {
+    "message": "No se puede acceder a esta página"
+  },
+  "restrictedTitle": {
+    "message": "Esta página no se puede analizar"
+  },
+  "giveFeedback": {
+    "message": "Enviar comentarios · 1 min"
+  },
+  "contextMenuAnalyze": {
+    "message": "Analizar el renderizado de la página"
+  },
+  "rerunOnNavigation": {
+    "message": "Repetir al navegar"
+  },
+  "saveSettings": {
+    "message": "Guardar ajustes"
+  },
+  "resetDefaults": {
+    "message": "Restablecer valores"
+  },
+  "settingsSaved": {
+    "message": "Ajustes guardados"
+  },
+  "settingsReset": {
+    "message": "Ajustes restablecidos"
+  },
+  "settingsTitle": {
+    "message": "Ajustes"
+  },
+  "sectionAppearance": {
+    "message": "Apariencia"
+  },
+  "sectionAnalysis": {
+    "message": "Análisis"
+  },
+  "sectionPrivacy": {
+    "message": "Privacidad y datos"
+  },
+  "sectionShortcuts": {
+    "message": "Atajos"
+  },
+  "themeAuto": {
+    "message": "Seguir el sistema"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "themeDark": {
+    "message": "Oscuro"
+  },
+  "unlimited": {
+    "message": "Sin límite"
+  },
+  "openSettings": {
+    "message": "Abrir ajustes"
+  },
+  "privacyPolicy": {
+    "message": "Política de privacidad"
+  },
+  "pinNotPinned": {
+    "message": "Aún sin fijar"
+  },
+  "pinPinned": {
+    "message": "Fijada: todo listo."
+  },
+  "shortcutUnset": {
+    "message": "Sin asignar"
+  },
+  "pinTitle": {
+    "message": "Fija la extensión"
+  },
+  "pinBody": {
+    "message": "(icono de puzle → fijar) para analizar cualquier página con un clic."
+  },
+  "settingsSubtitle": {
+    "message": "Cómo se comporta el detector, qué guarda y qué comparte."
+  },
+  "settingTheme": {
+    "message": "Tema"
+  },
+  "settingThemeHelp": {
+    "message": "Se aplica al popup, al panel de DevTools y a esta página."
+  },
+  "settingAutoAnalyze": {
+    "message": "Analizar en cuanto se abra el popup"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "Desactívalo si prefieres pulsar un botón primero."
+  },
+  "settingHistory": {
+    "message": "Entradas del historial"
+  },
+  "settingHistoryHelp": {
+    "message": "Se guardan solo en este dispositivo, nunca se envían."
+  },
+  "settingNotifications": {
+    "message": "Notificaciones de escritorio"
+  },
+  "settingNotificationsHelp": {
+    "message": "Las usa la entrada del menú contextual «Analizar el renderizado de la página»."
+  },
+  "settingShare": {
+    "message": "Compartir datos de análisis anónimos"
+  },
+  "settingShareHelp": {
+    "message": "Ayuda a ajustar la detección con sitios reales. Puedes desactivarlo cuando quieras."
+  },
+  "privacyWhatTitle": {
+    "message": "Qué se comparte cuando está activo"
+  },
+  "privacyWhatBody": {
+    "message": "El nombre de dominio (nunca la URL completa), el tipo de renderizado y la confianza, los frameworks detectados, las métricas de rendimiento y un país deducido en el servidor a partir de la IP de la petición, que no se almacena."
+  },
+  "privacyNeverBody": {
+    "message": "Nunca se comparte: el contenido de la página, información personal, el historial de navegación, las cabeceras de respuesta ni el desglose por regiones de la pestaña Regiones — ese análisis se queda en tu dispositivo."
+  },
+  "privacyPolicyLink": {
+    "message": "Leer la política de privacidad completa"
+  },
+  "shortcutOpen": {
+    "message": "Abrir el informe de renderizado"
+  },
+  "shortcutOpenHelp": {
+    "message": "Cámbialo en la página de atajos de extensiones de tu navegador."
+  },
+  "welcomeTitle": {
+    "message": "¿Cómo se renderiza esta página?"
+  },
+  "welcomeSubtitle": {
+    "message": "Abre cualquier sitio y obtén la respuesta con un clic, junto con la evidencia, dónde se produjo el HTML y qué partes de la página construyó JavaScript."
+  },
+  "welcomeStep1": {
+    "message": "Fíjala en la barra de herramientas"
+  },
+  "welcomeStep1Body": {
+    "message": "Los navegadores esconden las extensiones nuevas tras el icono de puzle. Fíjala para tener el informe a un clic."
+  },
+  "pinStepOpen": {
+    "message": "Haz clic en el icono de puzle"
+  },
+  "pinStepFind": {
+    "message": "busca CSR vs SSR Detector"
+  },
+  "pinStepPin": {
+    "message": "haz clic en la chincheta"
+  },
+  "welcomeStep2": {
+    "message": "Lee el veredicto"
+  },
+  "welcomeStep2Body": {
+    "message": "La insignia da el titular; el popup explica cómo se llegó a él."
+  },
+  "welcomeSsr": {
+    "message": "El contenido llegó en el HTML inicial. Bueno para buscadores y para el primer pintado."
+  },
+  "welcomeCsr": {
+    "message": "El navegador construyó la página con JavaScript. Típico de sitios de una sola página tipo aplicación."
+  },
+  "welcomeMix": {
+    "message": "Parte de la página vino del servidor y el resto se hidrató o se cargó después."
+  },
+  "welcomeStep3": {
+    "message": "Profundiza cuando lo necesites"
+  },
+  "welcomePrivacy": {
+    "message": "Tu privacidad"
+  },
+  "welcomePrivacyBody": {
+    "message": "Estadísticas anónimas —dominio, tipo de renderizado, métricas de rendimiento, nunca URLs completas ni contenido— ayudan a ajustar la detección con la web real. Las cabeceras de respuesta y el desglose por regiones nunca salen de tu dispositivo. Puedes desactivarlo cuando quieras."
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— cada indicio que movió el veredicto, con los puntos que aportó."
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— si el HTML se construyó en el build, se sirvió desde una caché CDN o se renderizó para esta petición, leído directamente de las cabeceras de respuesta."
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— qué partes de la página envió el servidor y cuáles rellenó JavaScript."
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— el mismo informe a todo lo ancho, repitiéndose en cada navegación. Busca «Rendering» en las DevTools."
+  },
+  "cacheLayers": {
+    "message": "Capas de caché"
+  },
+  "pageChanged": {
+    "message": "La página navegó mientras se analizaba. Vuelve a ejecutarlo."
   }
 }

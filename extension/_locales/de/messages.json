@@ -4,5 +4,275 @@
   },
   "appDesc": {
     "message": "Erkennt, ob eine Webseite Client-Side-Rendering (CSR) oder Server-Side-Rendering (SSR) verwendet"
+  },
+  "analyzing": {
+    "message": "Seite wird analysiert …"
+  },
+  "analyzePage": {
+    "message": "Diese Seite analysieren"
+  },
+  "rerun": {
+    "message": "Erneut analysieren"
+  },
+  "analyzeAgain": {
+    "message": "Erneut analysieren"
+  },
+  "settings": {
+    "message": "Einstellungen"
+  },
+  "dismiss": {
+    "message": "Schließen"
+  },
+  "confidence": {
+    "message": "Sicherheit"
+  },
+  "fromServer": {
+    "message": "vom Server"
+  },
+  "fromJavaScript": {
+    "message": "von JavaScript ergänzt"
+  },
+  "detectedStack": {
+    "message": "Erkannter Stack"
+  },
+  "whyThisVerdict": {
+    "message": "Warum dieses Ergebnis"
+  },
+  "scoredEvidence": {
+    "message": "Gewertete Belege"
+  },
+  "context": {
+    "message": "Kontext"
+  },
+  "transport": {
+    "message": "Auslieferung"
+  },
+  "regions": {
+    "message": "Bereiche"
+  },
+  "tabOverview": {
+    "message": "Überblick"
+  },
+  "tabSignals": {
+    "message": "Belege"
+  },
+  "tabDelivery": {
+    "message": "Auslieferung"
+  },
+  "tabDiff": {
+    "message": "Bereiche"
+  },
+  "tabHistory": {
+    "message": "Verlauf"
+  },
+  "devToolsPanel": {
+    "message": "DevTools-Panel"
+  },
+  "copySummary": {
+    "message": "Zusammenfassung kopieren"
+  },
+  "copied": {
+    "message": "Kopiert"
+  },
+  "copyFailed": {
+    "message": "Kopieren fehlgeschlagen"
+  },
+  "historyEmpty": {
+    "message": "Analysierte Seiten erscheinen hier."
+  },
+  "clearHistory": {
+    "message": "Verlauf löschen"
+  },
+  "analysisFailed": {
+    "message": "Analyse fehlgeschlagen"
+  },
+  "cannotAccess": {
+    "message": "Zugriff auf diese Seite nicht möglich"
+  },
+  "restrictedTitle": {
+    "message": "Diese Seite kann nicht analysiert werden"
+  },
+  "giveFeedback": {
+    "message": "Feedback geben · 1 Min."
+  },
+  "contextMenuAnalyze": {
+    "message": "Seiten-Rendering analysieren"
+  },
+  "rerunOnNavigation": {
+    "message": "Bei Navigation neu ausführen"
+  },
+  "saveSettings": {
+    "message": "Einstellungen speichern"
+  },
+  "resetDefaults": {
+    "message": "Auf Standard zurücksetzen"
+  },
+  "settingsSaved": {
+    "message": "Einstellungen gespeichert"
+  },
+  "settingsReset": {
+    "message": "Einstellungen zurückgesetzt"
+  },
+  "settingsTitle": {
+    "message": "Einstellungen"
+  },
+  "sectionAppearance": {
+    "message": "Darstellung"
+  },
+  "sectionAnalysis": {
+    "message": "Analyse"
+  },
+  "sectionPrivacy": {
+    "message": "Datenschutz & Daten"
+  },
+  "sectionShortcuts": {
+    "message": "Tastenkürzel"
+  },
+  "themeAuto": {
+    "message": "System folgen"
+  },
+  "themeLight": {
+    "message": "Hell"
+  },
+  "themeDark": {
+    "message": "Dunkel"
+  },
+  "unlimited": {
+    "message": "Unbegrenzt"
+  },
+  "openSettings": {
+    "message": "Einstellungen öffnen"
+  },
+  "privacyPolicy": {
+    "message": "Datenschutzerklärung"
+  },
+  "pinNotPinned": {
+    "message": "Noch nicht angeheftet"
+  },
+  "pinPinned": {
+    "message": "Angeheftet — alles bereit."
+  },
+  "shortcutUnset": {
+    "message": "Nicht festgelegt"
+  },
+  "pinTitle": {
+    "message": "Erweiterung anheften"
+  },
+  "pinBody": {
+    "message": "(Puzzle-Symbol → Anheften), um jede Seite mit einem Klick zu prüfen."
+  },
+  "settingsSubtitle": {
+    "message": "Wie der Detektor arbeitet, was er speichert und was er teilt."
+  },
+  "settingTheme": {
+    "message": "Design"
+  },
+  "settingThemeHelp": {
+    "message": "Gilt für das Popup, das DevTools-Panel und diese Seite."
+  },
+  "settingAutoAnalyze": {
+    "message": "Analysieren, sobald das Popup geöffnet wird"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "Deaktivieren Sie dies, wenn Sie lieber erst auf eine Schaltfläche klicken."
+  },
+  "settingHistory": {
+    "message": "Einträge im Verlauf"
+  },
+  "settingHistoryHelp": {
+    "message": "Bleiben nur auf diesem Gerät, werden nie hochgeladen."
+  },
+  "settingNotifications": {
+    "message": "Desktop-Benachrichtigungen"
+  },
+  "settingNotificationsHelp": {
+    "message": "Wird vom Kontextmenü-Eintrag „Seiten-Rendering analysieren“ genutzt."
+  },
+  "settingShare": {
+    "message": "Anonyme Analysedaten teilen"
+  },
+  "settingShareHelp": {
+    "message": "Hilft, die Erkennung an echten Seiten zu verbessern. Jederzeit abschaltbar."
+  },
+  "privacyWhatTitle": {
+    "message": "Was geteilt wird, wenn dies aktiv ist"
+  },
+  "privacyWhatBody": {
+    "message": "Der Domainname (nie die vollständige URL), Rendering-Typ und Konfidenz, erkannte Frameworks, Performance-Metriken sowie ein serverseitig aus der Anfrage-IP abgeleitetes Land; die IP wird nicht gespeichert."
+  },
+  "privacyNeverBody": {
+    "message": "Nie geteilt: Seiteninhalte, persönliche Daten, Browserverlauf, Response-Header oder die Bereichsaufschlüsselung im Tab „Bereiche“ — diese Analyse bleibt auf Ihrem Gerät."
+  },
+  "privacyPolicyLink": {
+    "message": "Vollständige Datenschutzerklärung lesen"
+  },
+  "shortcutOpen": {
+    "message": "Rendering-Bericht öffnen"
+  },
+  "shortcutOpenHelp": {
+    "message": "Änderbar auf der Tastenkürzel-Seite Ihres Browsers."
+  },
+  "welcomeTitle": {
+    "message": "Wie wird diese Seite gerendert?"
+  },
+  "welcomeSubtitle": {
+    "message": "Öffnen Sie eine beliebige Seite und erhalten Sie die Antwort mit einem Klick — samt Belegen, wo das HTML entstanden ist und welche Teile der Seite JavaScript gebaut hat."
+  },
+  "welcomeStep1": {
+    "message": "An die Symbolleiste anheften"
+  },
+  "welcomeStep1Body": {
+    "message": "Browser verstecken neue Erweiterungen hinter dem Puzzle-Symbol. Heften Sie sie an, damit der Bericht immer einen Klick entfernt ist."
+  },
+  "pinStepOpen": {
+    "message": "Auf das Puzzle-Symbol klicken"
+  },
+  "pinStepFind": {
+    "message": "CSR vs SSR Detector suchen"
+  },
+  "pinStepPin": {
+    "message": "auf die Stecknadel klicken"
+  },
+  "welcomeStep2": {
+    "message": "Das Ergebnis lesen"
+  },
+  "welcomeStep2Body": {
+    "message": "Das Badge liefert die Schlagzeile; das Popup erklärt, wie sie zustande kam."
+  },
+  "welcomeSsr": {
+    "message": "Der Inhalt kam im ursprünglichen HTML an. Gut für Suchmaschinen und den ersten Seitenaufbau."
+  },
+  "welcomeCsr": {
+    "message": "Der Browser hat die Seite aus JavaScript gebaut. Typisch für App-artige Single-Page-Seiten."
+  },
+  "welcomeMix": {
+    "message": "Ein Teil der Seite kam vom Server, der Rest wurde danach hydriert oder nachgeladen."
+  },
+  "welcomeStep3": {
+    "message": "Bei Bedarf tiefer einsteigen"
+  },
+  "welcomePrivacy": {
+    "message": "Ihre Privatsphäre"
+  },
+  "welcomePrivacyBody": {
+    "message": "Anonyme Statistiken — Domain, Rendering-Typ, Performance-Metriken, nie vollständige URLs oder Seiteninhalte — helfen, die Erkennung am echten Web zu justieren. Response-Header und die Bereichsaufschlüsselung verlassen Ihr Gerät nie. Jederzeit abschaltbar."
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— jeder Beleg, der das Urteil bewegt hat, samt seiner Punkte."
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— ob das HTML zur Build-Zeit entstand, aus einem CDN-Cache kam oder für diese Anfrage gerendert wurde, direkt aus den Response-Headern gelesen."
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— welche Teile der Seite der Server geliefert hat und welche JavaScript gefüllt hat."
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— derselbe Bericht in voller Breite, der bei jeder Navigation neu läuft. Suchen Sie in den DevTools nach „Rendering“."
+  },
+  "cacheLayers": {
+    "message": "Cache-Ebenen"
+  },
+  "pageChanged": {
+    "message": "Die Seite hat während der Analyse navigiert. Bitte erneut ausführen."
   }
 }

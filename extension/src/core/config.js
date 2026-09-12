@@ -107,17 +107,30 @@ const CONFIG = {
     // Svelte ecosystem
     svelte: '[class*="svelte-"]',
     sveltekit: '#svelte, [data-sveltekit-preload-data], [data-sveltekit-preload-code]',
-    // Angular — ngh is the hydration annotation emitted by Angular SSR (v16+)
-    angular: '[ng-version], [_nghost], [_ngcontent], [ngh]',
+    // Angular — ngh is the hydration annotation emitted by Angular SSR (v16+),
+    // ng-server-context lands on <html> when the render came from the server
+    angular: '[ng-version], [_nghost], [_ngcontent], [ngh], [ng-server-context]',
     // Other frameworks
-    astro: '[data-astro-cid], [data-astro-island]',
+    astro: '[data-astro-cid], [data-astro-island], astro-island',
     qwik: '[q\\:container]',
     solidjs: '[data-solid], [data-hk]',
     preact: '[data-preact]',
     lit: '[data-lit]',
+    marko: '[data-marko], [data-marko-key]',
+    ember: '.ember-application, [id^="ember"][class~="ember-view"]',
+    // Server-rendered stacks that enhance markup rather than replace it.
+    // All of these put their markers in the HTML the server sends, so the
+    // raw-evidence rule in framework-detector credits them correctly.
+    turbo: 'turbo-frame, turbo-stream, [data-turbo-frame]',
+    livewire: '[wire\\:id], [wire\\:snapshot]',
+    inertia: '[data-page][id="app"], #app[data-page]',
+    phoenix: '[data-phx-main], [data-phx-session], [phx-click]',
+    blazor: '[b-render-mode], [data-blazor]',
     // Lightweight/AJAX libraries
-    htmx: '[hx-get], [hx-post], [hx-trigger]',
+    htmx: '[hx-get], [hx-post], [hx-trigger], [data-hx-get]',
     alpinejs: '[x-data], [x-init]',
+    stimulus: '[data-controller][data-action]',
+    unpoly: '[up-target], [up-follow], [up-layer]',
     // CMS platforms
     wordpress: 'link[href*="wp-content"], script[src*="wp-includes"]',
     shopify: 'script[src*="cdn.shopify.com"], link[href*="cdn.shopify.com"]',
@@ -135,7 +148,19 @@ const CONFIG = {
     nuxt: ['window.__NUXT__', '__NUXT_DATA__'],
     gatsby: ['window.___gatsby', 'window.page.staticQueryHashes'],
     solidjs: ['_$HY.'],
-    qwik: ['qwikloader']
+    qwik: ['qwikloader'],
+    // SvelteKit 2 hydrates through a kit.start() call and a __sveltekit_*
+    // globals object; neither leaves an element behind.
+    sveltekit: ['__sveltekit_', 'kit.start(', 'data-sveltekit'],
+    // Deno Fresh serializes island props into __FRSH_STATE.
+    fresh: ['__FRSH_STATE'],
+    // Vike (ex vite-plugin-ssr) and TanStack Start both ship their hydration
+    // payload as an inline JSON block rather than a marked container.
+    vike: ['vike_pageContext', '_vikePageContext'],
+    tanstackStart: ['__TSR_', 'tsrScript'],
+    // Blazor loads its runtime from a fixed path; matched against script src
+    // as well as inline text (see collectScriptSource).
+    blazor: ['_framework/blazor']
   },
 
   // Static site generator detection
@@ -148,7 +173,18 @@ const CONFIG = {
     docusaurus: 'meta[name="generator"][content*="Docusaurus"]',
     vuepress: 'meta[name="generator"][content*="VuePress"]',
     mkdocs: 'meta[name="generator"][content*="MkDocs"]',
-    gitbook: 'meta[name="generator"][content*="GitBook"]'
+    gitbook: 'meta[name="generator"][content*="GitBook"]',
+    astro: 'meta[name="generator"][content*="Astro"]',
+    gatsby: 'meta[name="generator"][content*="Gatsby"]',
+    vitepress: 'meta[name="generator"][content*="VitePress"]',
+    zola: 'meta[name="generator"][content*="Zola"]',
+    sphinx: 'meta[name="generator"][content*="Sphinx"]',
+    middleman: 'meta[name="generator"][content*="Middleman"]',
+    bridgetown: 'meta[name="generator"][content*="Bridgetown"]',
+    nikola: 'meta[name="generator"][content*="Nikola"]',
+    publii: 'meta[name="generator"][content*="Publii"]',
+    quarto: 'meta[name="generator"][content*="Quarto"]',
+    antora: 'meta[name="generator"][content*="Antora"]'
   },
 
   // Client-side routing selectors
@@ -167,6 +203,11 @@ const CONFIG = {
     'window.__INITIAL_STATE__',
     'window.__APOLLO_STATE__',
     'window.__PRELOADED_STATE__',
+    'window.__staticRouterHydrationData',
+    '__remixContext',
+    '__NUXT_DATA__',
+    '__sveltekit_',
+    '__FRSH_STATE',
     'application/json'
   ]
 };

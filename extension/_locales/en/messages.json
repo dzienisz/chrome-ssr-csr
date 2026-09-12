@@ -6,5 +6,365 @@
   "appDesc": {
     "message": "Detect if a webpage is using Client-Side Rendering or Server-Side Rendering",
     "description": "Extension description shown on the extensions page and Chrome Web Store (max 132 chars)"
+  },
+  "analyzing": {
+    "message": "Analyzing this page…",
+    "description": "Popup/panel status while the analysis runs"
+  },
+  "analyzePage": {
+    "message": "Analyze this page",
+    "description": "Button shown when automatic analysis is turned off"
+  },
+  "rerun": {
+    "message": "Analyze again",
+    "description": "Tooltip on the re-run icon button"
+  },
+  "analyzeAgain": {
+    "message": "Analyze again",
+    "description": "DevTools panel button that re-runs the analysis"
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Tooltip on the settings icon button"
+  },
+  "dismiss": {
+    "message": "Dismiss",
+    "description": "Tooltip on a dismiss (x) button"
+  },
+  "confidence": {
+    "message": "confidence",
+    "description": "Caption under the confidence dial; lowercase"
+  },
+  "fromServer": {
+    "message": "from server",
+    "description": "Legend for the share of text that came from the server"
+  },
+  "fromJavaScript": {
+    "message": "added by JavaScript",
+    "description": "Legend for the share of text added by scripts"
+  },
+  "detectedStack": {
+    "message": "Detected stack",
+    "description": "Card title listing detected frameworks and generators"
+  },
+  "whyThisVerdict": {
+    "message": "Why this verdict",
+    "description": "Card title above the strongest signals"
+  },
+  "scoredEvidence": {
+    "message": "Scored evidence",
+    "description": "Card title for signals that changed the score"
+  },
+  "context": {
+    "message": "Context",
+    "description": "Card title for signals that did not change the score"
+  },
+  "transport": {
+    "message": "Transport",
+    "description": "Card title for CDN and cache header details"
+  },
+  "regions": {
+    "message": "Regions",
+    "description": "Card title for the per-region server/client breakdown"
+  },
+  "tabOverview": {
+    "message": "Overview",
+    "description": "Tab label"
+  },
+  "tabSignals": {
+    "message": "Evidence",
+    "description": "Tab label for the evidence list"
+  },
+  "tabDelivery": {
+    "message": "Delivery",
+    "description": "Tab label for delivery/caching details"
+  },
+  "tabDiff": {
+    "message": "Regions",
+    "description": "Tab label for the region breakdown"
+  },
+  "tabHistory": {
+    "message": "History",
+    "description": "Tab label for past analyses"
+  },
+  "devToolsPanel": {
+    "message": "DevTools panel",
+    "description": "Name of the DevTools panel feature"
+  },
+  "copySummary": {
+    "message": "Copy summary",
+    "description": "Button that copies a one-line summary"
+  },
+  "copied": {
+    "message": "Copied",
+    "description": "Transient button label after a successful copy"
+  },
+  "copyFailed": {
+    "message": "Copy failed",
+    "description": "Transient button label after a failed copy"
+  },
+  "historyEmpty": {
+    "message": "Analyzed pages will be listed here.",
+    "description": "Empty state for the history tab"
+  },
+  "clearHistory": {
+    "message": "Clear history",
+    "description": "Button that deletes stored history"
+  },
+  "analysisFailed": {
+    "message": "Analysis failed",
+    "description": "Error heading when analysis did not return a result"
+  },
+  "cannotAccess": {
+    "message": "Cannot access this page",
+    "description": "Error heading when the page cannot be scripted"
+  },
+  "restrictedTitle": {
+    "message": "This page cannot be analyzed",
+    "description": "Error heading for browser-internal pages"
+  },
+  "giveFeedback": {
+    "message": "Give feedback · 1 min",
+    "description": "Footer link to the feedback form; keep it short"
+  },
+  "contextMenuAnalyze": {
+    "message": "Analyze page rendering",
+    "description": "Right-click menu entry"
+  },
+  "rerunOnNavigation": {
+    "message": "Re-run on navigation",
+    "description": "Checkbox in the DevTools panel"
+  },
+  "saveSettings": {
+    "message": "Save settings",
+    "description": "Button on the settings page"
+  },
+  "resetDefaults": {
+    "message": "Reset to defaults",
+    "description": "Button that restores default settings"
+  },
+  "settingsSaved": {
+    "message": "Settings saved",
+    "description": "Toast shown after saving settings"
+  },
+  "settingsReset": {
+    "message": "Settings reset to defaults",
+    "description": "Toast shown after resetting settings"
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Heading of the settings page"
+  },
+  "sectionAppearance": {
+    "message": "Appearance",
+    "description": "Settings section heading"
+  },
+  "sectionAnalysis": {
+    "message": "Analysis",
+    "description": "Settings section heading"
+  },
+  "sectionPrivacy": {
+    "message": "Privacy & data",
+    "description": "Settings section heading"
+  },
+  "sectionShortcuts": {
+    "message": "Shortcuts",
+    "description": "Settings section heading"
+  },
+  "themeAuto": {
+    "message": "Match the system",
+    "description": "Theme option that follows the operating system"
+  },
+  "themeLight": {
+    "message": "Light",
+    "description": "Theme option"
+  },
+  "themeDark": {
+    "message": "Dark",
+    "description": "Theme option"
+  },
+  "unlimited": {
+    "message": "Unlimited",
+    "description": "History limit option meaning no cap"
+  },
+  "openSettings": {
+    "message": "Open settings",
+    "description": "Button on the welcome page"
+  },
+  "privacyPolicy": {
+    "message": "Privacy policy",
+    "description": "Button/link to the privacy policy"
+  },
+  "pinNotPinned": {
+    "message": "Not pinned yet",
+    "description": "Welcome page status: the extension is not pinned yet"
+  },
+  "pinPinned": {
+    "message": "Pinned — you're all set.",
+    "description": "Welcome page status: the extension is pinned"
+  },
+  "shortcutUnset": {
+    "message": "Not set",
+    "description": "Shown when no keyboard shortcut is assigned"
+  },
+  "pinTitle": {
+    "message": "Pin the extension",
+    "description": "Popup banner heading urging the user to pin the extension"
+  },
+  "pinBody": {
+    "message": "(puzzle icon → pin) to check any page in one click.",
+    "description": "Rest of the pin banner sentence; follows pinTitle"
+  },
+  "settingsSubtitle": {
+    "message": "How the detector behaves, what it stores, and what it shares.",
+    "description": "Subtitle under the Settings heading"
+  },
+  "settingTheme": {
+    "message": "Theme",
+    "description": "Label of the theme setting"
+  },
+  "settingThemeHelp": {
+    "message": "Applies to the popup, the DevTools panel and this page.",
+    "description": "Help text under the theme setting"
+  },
+  "settingAutoAnalyze": {
+    "message": "Analyze as soon as the popup opens",
+    "description": "Label of the analyze-on-open setting"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "Turn this off if you would rather press a button first.",
+    "description": "Help text under the analyze-on-open setting"
+  },
+  "settingHistory": {
+    "message": "History entries",
+    "description": "Label of the history-size setting"
+  },
+  "settingHistoryHelp": {
+    "message": "Kept on this device only, never uploaded.",
+    "description": "Help text under the history-size setting"
+  },
+  "settingNotifications": {
+    "message": "Desktop notifications",
+    "description": "Label of the desktop notifications setting"
+  },
+  "settingNotificationsHelp": {
+    "message": "Used by the right-click “Analyze page rendering” entry.",
+    "description": "Help text under the notifications setting"
+  },
+  "settingShare": {
+    "message": "Share anonymous analysis data",
+    "description": "Label of the telemetry opt-out setting"
+  },
+  "settingShareHelp": {
+    "message": "Helps tune detection against real sites. Opt out any time.",
+    "description": "Help text under the telemetry setting"
+  },
+  "privacyWhatTitle": {
+    "message": "What is shared when this is on",
+    "description": "Heading of the privacy notice on the settings page"
+  },
+  "privacyWhatBody": {
+    "message": "The domain name (never the full URL), the render type and confidence, detected frameworks, performance metrics, and a country derived server-side from the request IP, which is not stored.",
+    "description": "What the extension shares when telemetry is enabled"
+  },
+  "privacyNeverBody": {
+    "message": "Never shared: page content, personal information, browsing history, response headers, or the region breakdown shown in the Regions tab — that analysis stays on your device.",
+    "description": "What the extension never shares"
+  },
+  "privacyPolicyLink": {
+    "message": "Read the full privacy policy",
+    "description": "Link text to the full privacy policy"
+  },
+  "shortcutOpen": {
+    "message": "Open the rendering report",
+    "description": "Name of the keyboard shortcut action"
+  },
+  "shortcutOpenHelp": {
+    "message": "Change it in your browser's extension shortcuts page.",
+    "description": "Help text under the keyboard shortcut row"
+  },
+  "welcomeTitle": {
+    "message": "How is this page rendered?",
+    "description": "Headline of the first-run onboarding page"
+  },
+  "welcomeSubtitle": {
+    "message": "Open any site and get the answer in one click — plus the evidence behind it, where the HTML was produced, and exactly which parts of the page JavaScript built.",
+    "description": "Subtitle of the onboarding page"
+  },
+  "welcomeStep1": {
+    "message": "Pin it to your toolbar",
+    "description": "Onboarding step 1 heading"
+  },
+  "welcomeStep1Body": {
+    "message": "Browsers hide new extensions behind the puzzle icon. Pin it so the report is always one click away.",
+    "description": "Onboarding step 1 body"
+  },
+  "pinStepOpen": {
+    "message": "Click the puzzle icon",
+    "description": "First pin instruction chip"
+  },
+  "pinStepFind": {
+    "message": "find CSR vs SSR Detector",
+    "description": "Second pin instruction chip"
+  },
+  "pinStepPin": {
+    "message": "click the pin",
+    "description": "Third pin instruction chip"
+  },
+  "welcomeStep2": {
+    "message": "Read the verdict",
+    "description": "Onboarding step 2 heading"
+  },
+  "welcomeStep2Body": {
+    "message": "The toolbar badge gives you the headline; the popup explains how it got there.",
+    "description": "Onboarding step 2 body"
+  },
+  "welcomeSsr": {
+    "message": "The content arrived in the initial HTML. Good for search engines and first paint.",
+    "description": "Explanation of the SSR verdict on the onboarding page"
+  },
+  "welcomeCsr": {
+    "message": "The browser built the page from JavaScript. Typical of app-like single-page sites.",
+    "description": "Explanation of the CSR verdict on the onboarding page"
+  },
+  "welcomeMix": {
+    "message": "Some of the page came from the server, the rest was hydrated or fetched afterwards.",
+    "description": "Explanation of the hybrid verdict on the onboarding page"
+  },
+  "welcomeStep3": {
+    "message": "Go deeper when you need to",
+    "description": "Onboarding step 3 heading"
+  },
+  "welcomePrivacy": {
+    "message": "Your privacy",
+    "description": "Privacy heading on the onboarding page"
+  },
+  "welcomePrivacyBody": {
+    "message": "Anonymous statistics — domain, render type, performance metrics, never full URLs or page content — help tune detection against the real web. Response headers and the region breakdown never leave your device. Opt out any time.",
+    "description": "Privacy body on the onboarding page"
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— every signal that moved the verdict, with the points it contributed.",
+    "description": "Onboarding: what the Evidence tab shows; follows the bold 'Evidence' label"
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— whether the HTML was built at build time, served from a CDN cache, or rendered for this request, read straight from the response headers.",
+    "description": "Onboarding: what the Delivery tab shows; follows the bold 'Delivery' label"
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— which parts of the page the server sent and which ones JavaScript filled in.",
+    "description": "Onboarding: what the Regions tab shows; follows the bold 'Regions' label"
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— the same report, full width, re-running on every navigation. Look for “Rendering” in DevTools.",
+    "description": "Onboarding: what the DevTools panel offers; follows the bold label"
+  },
+  "cacheLayers": {
+    "message": "Cache layers",
+    "description": "Label for the per-tier cache states row in the Delivery tab"
+  },
+  "pageChanged": {
+    "message": "The page navigated while it was being analyzed. Run it again.",
+    "description": "Shown when the page navigated while it was being analyzed"
   }
 }

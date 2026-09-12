@@ -48,10 +48,61 @@ jobs:
           cache: npm
           cache-dependency-path: extension/package-lock.json
       - name: Install locked dependencies
+        # This job never launches a browser; skipping the Playwright browser
+        # download keeps ~150 MB out of every unit-test run.
         run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - name: Run unit tests
         run: npm run test:run
       - name: Rebuild bundles
         run: npm run build
       - name: Verify committed bundles match source
         run: git diff --exit-code -- src/analyzer-bundle.js src/telemetry-bundle.js
+      - name: Build the Firefox package
+        run: npm run build:firefox
+      # web-ext lint is what AMO runs on submission. Finding out at tag time
+      # that the package has an error means the release is already half out
+      # the door, so the same check runs on every pull request. Warnings count
+      # too: the package currently lints completely clean, and a reviewer
+      # reading a warning has to decide whether to trust it.
+      - name: Lint the Firefox package the way AMO does
+        run: npx --yes web-ext@8 lint --source-dir dist/firefox --warnings-as-errors
+
+  # End-to-end: the committed bundle is graded against fixtures whose rendering
+  # strategy and delivery headers are known by construction, and then the whole
+  # extension is installed in a real browser. Unit tests cannot catch a
+  # regression that only appears once fetch, DOMParser, the live DOM, the
+  # manifest and the service worker are all involved.
+  detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      # Both browsers: the fixture harness is happy with the headless shell,
+      # but it cannot load extensions, so validate:extension needs the full
+      # Chromium build (see the channel note in scripts/validate-extension.mjs).
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium chromium-headless-shell
+      - name: Grade detection against the offline fixtures
+        run: npm run validate:local
+      # Installs the unpacked extension in a throwaway profile: the manifest,
+      # the service worker, probe.js as a real content script and every
+      # extension page. The harness above never loads the extension at all, so
+      # a manifest Chromium rejects would sail past it.
+      - name: Verify the extension installs and runs
+        run: npm run validate:extension

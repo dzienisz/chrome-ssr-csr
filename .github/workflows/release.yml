@@ -43,7 +43,11 @@ jobs:
           fi
 
       - name: Install extension dev dependencies
+        # Release builds never launch a browser (the detection harness runs in
+        # the verify workflow), so skip Playwright's browser download.
         run: cd extension && npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Run tests
         run: cd extension && npm run test:run
@@ -64,9 +68,11 @@ jobs:
         run: |
           cd extension
           zip -r "../csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
-            manifest.json popup.html popup.js options.html options.js \
-            background.js welcome.html welcome.js icon*.png src/ _locales/ \
-            -x '*.DS_Store' '*/__tests__/*'
+            manifest.json popup.html popup.js popup.css \
+            options.html options.js options.css \
+            background.js welcome.html welcome.js welcome.css \
+            devtools/ icon*.png src/ _locales/ \
+            -x '*.DS_Store' '*/__tests__/*' '*/fixtures/*'
 
       - name: Build Firefox extension zip
         run: |

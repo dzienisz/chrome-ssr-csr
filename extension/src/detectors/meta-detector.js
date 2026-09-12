@@ -10,6 +10,7 @@
 function analyzeMeta() {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let ssrScore = 0;
 
   const metaTags = document.querySelectorAll('meta[name], meta[property], meta[content]');
@@ -36,11 +37,25 @@ function analyzeMeta() {
   if (hasSSRFrameworkMeta) {
     ssrScore += config.scoring.ssrFrameworkMeta;
     indicators.push("SSR framework meta detected");
+    signals.push({
+      id: "meta.framework",
+      label: "Meta tags name a server framework",
+      impact: "ssr",
+      weight: config.scoring.ssrFrameworkMeta,
+      detail: "A generator/framework meta tag points at a server-rendering stack.",
+    });
   }
 
   if (hasRichMeta) {
     ssrScore += config.scoring.richMeta;
     indicators.push("rich meta tags present (SSR)");
+    signals.push({
+      id: "meta.rich",
+      label: "Complete social/SEO metadata",
+      impact: "ssr",
+      weight: config.scoring.richMeta,
+      detail: "Description and Open Graph/Twitter tags are filled in — crawlers get a usable document.",
+    });
   }
 
   // Check for structured data (JSON-LD)
@@ -48,12 +63,20 @@ function analyzeMeta() {
   if (structuredDataScripts.length > 0) {
     ssrScore += config.scoring.structuredData;
     indicators.push("structured data present (SSR)");
+    signals.push({
+      id: "meta.structuredData",
+      label: `JSON-LD structured data (${structuredDataScripts.length})`,
+      impact: "ssr",
+      weight: config.scoring.structuredData,
+      detail: "Schema.org blocks are in the document, which search engines read without running scripts.",
+    });
   }
 
   return {
     ssrScore,
     csrScore: 0,
     indicators,
+    signals,
     details: {
       hasRichMeta,
       hasSSRFrameworkMeta,

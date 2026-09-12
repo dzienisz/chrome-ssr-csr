@@ -20,6 +20,7 @@
 function detectPlatformSignals(rawDocument, rawHTML) {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let ssrScore = 0;
   let csrScore = 0;
   const details = {};
@@ -47,6 +48,13 @@ function detectPlatformSignals(rawDocument, rawHTML) {
     if (specRules.length > 0) {
       ssrScore += config.scoring.speculationRules;
       indicators.push(`speculation rules in raw HTML (${specRules.length}) - multi-page architecture (SSR)`);
+      signals.push({
+        id: 'platform.speculationRules',
+        label: `Speculation rules (${specRules.length})`,
+        impact: 'ssr',
+        weight: config.scoring.speculationRules,
+        detail: 'The page asks the browser to prefetch or prerender whole documents, which only makes sense when navigation loads documents.'
+      });
       details.speculationRules = specRules.length;
     }
   }
@@ -58,6 +66,13 @@ function detectPlatformSignals(rawDocument, rawHTML) {
   if (crossDocVT) {
     ssrScore += config.scoring.crossDocViewTransition;
     indicators.push('@view-transition navigation rule - cross-document transitions (SSR/MPA)');
+    signals.push({
+      id: 'platform.viewTransition',
+      label: 'Cross-document view transitions',
+      impact: 'ssr',
+      weight: config.scoring.crossDocViewTransition,
+      detail: 'An @view-transition rule animates between real navigations — a multi-page app that feels like an SPA.'
+    });
     details.crossDocumentViewTransitions = true;
   }
 
@@ -72,6 +87,13 @@ function detectPlatformSignals(rawDocument, rawHTML) {
   if (hasPartialMarkers && hasTemplateFor) {
     ssrScore += config.scoring.declarativePartialUpdate;
     indicators.push('declarative partial updates - JS-free streaming SSR');
+    signals.push({
+      id: 'platform.partialUpdates',
+      label: 'Declarative partial updates',
+      impact: 'ssr',
+      weight: config.scoring.declarativePartialUpdate,
+      detail: 'The server streams out-of-order HTML fragments that the browser patches in without any JavaScript.'
+    });
     details.declarativePartialUpdates = true;
   }
 
@@ -81,12 +103,26 @@ function detectPlatformSignals(rawDocument, rawHTML) {
   const navContext = window.getNavigationContext();
   if (navContext.wasPrerendered) {
     indicators.push('page was prerendered before activation - timing signals adjusted');
+    signals.push({
+      id: 'platform.prerendered',
+      label: 'Activated from a prerender',
+      impact: 'info',
+      weight: 0,
+      detail: `The browser had already built this document ${navContext.activationStart}ms before you navigated to it.`
+    });
   } else if (navContext.wasPrefetched) {
     indicators.push('navigation served from a prefetch - timing signals adjusted');
+    signals.push({
+      id: 'platform.prefetched',
+      label: 'Served from a prefetch',
+      impact: 'info',
+      weight: 0,
+      detail: 'The document bytes were fetched before you navigated, so its network timings are not this visit\u2019s.'
+    });
   }
   details.navigationContext = navContext;
 
-  return { ssrScore, csrScore, indicators, details };
+  return { ssrScore, csrScore, indicators, signals, details };
 }
 
 /**

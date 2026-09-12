@@ -26,10 +26,11 @@ const OUT_DIR = path.join(EXTENSION_DIR, 'dist', 'firefox');
 // Same file list as the Chrome Web Store zip (.github/workflows/release.yml)
 const SHIPPED = [
   'manifest.json',
-  'popup.html', 'popup.js',
-  'options.html', 'options.js',
+  'popup.html', 'popup.js', 'popup.css',
+  'options.html', 'options.js', 'options.css',
   'background.js',
-  'welcome.html', 'welcome.js',
+  'welcome.html', 'welcome.js', 'welcome.css',
+  'devtools',
   'src',
   '_locales'
 ];
@@ -73,6 +74,85 @@ function copyShippedFiles() {
   }
 }
 
+/**
+ * Every local file the packaged extension references, from the manifest and
+ * from the pages themselves.
+ *
+ * @param {Object} manifest
+ * @returns {Array<{file: string, from: string}>}
+ */
+function referencedFiles(manifest) {
+  const refs = [];
+  const add = (file, from) => {
+    if (file && !/^(https?:|data:|chrome-extension:|#|mailto:)/.test(file)) {
+      refs.push({ file: file.split(/[?#]/)[0], from });
+    }
+  };
+
+  // Manifest entry points.
+  add(manifest.background && manifest.background.scripts && manifest.background.scripts[0], 'manifest.background');
+  add(manifest.action && manifest.action.default_popup, 'manifest.action');
+  add(manifest.options_ui && manifest.options_ui.page, 'manifest.options_ui');
+  add(manifest.devtools_page, 'manifest.devtools_page');
+  for (const icon of Object.values(manifest.icons || {})) add(icon, 'manifest.icons');
+  for (const icon of Object.values((manifest.action || {}).default_icon || {})) {
+    add(icon, 'manifest.action.default_icon');
+  }
+  for (const script of manifest.content_scripts || []) {
+    for (const file of script.js || []) add(file, 'manifest.content_scripts');
+  }
+
+  // Anything the HTML pages pull in, resolved relative to the page.
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.name.endsWith('.html')) {
+        const html = fs.readFileSync(full, 'utf8');
+        const pageDir = path.relative(OUT_DIR, dir) || '.';
+        for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+          const resolved = path.posix.normalize(
+            path.posix.join(pageDir === '.' ? '' : pageDir, match[1]),
+          );
+          add(resolved, path.relative(OUT_DIR, full));
+        }
+      }
+    }
+  };
+  walk(OUT_DIR);
+
+  return refs;
+}
+
+/**
+ * Fail the build when the package references a file it does not contain.
+ *
+ * The shipped-file list is maintained by hand in two places (SHIPPED here and
+ * the zip step in release.yml), so adding a directory to the extension without
+ * adding it to both produces a package that installs and then breaks — which
+ * is exactly what a missing `devtools/` would have done.
+ *
+ * @param {Object} manifest
+ */
+function verifyPackageIsComplete(manifest) {
+  const missing = referencedFiles(manifest).filter(
+    ({ file }) => !fs.existsSync(path.join(OUT_DIR, file)),
+  );
+
+  if (missing.length) {
+    for (const { file, from } of missing) {
+      console.error(`  missing from package: ${file}  (referenced by ${from})`);
+    }
+    console.error(
+      `\n${missing.length} referenced file(s) are not in dist/firefox. ` +
+        'Add them to SHIPPED in this script, and to the zip step in ' +
+        '.github/workflows/release.yml.',
+    );
+    process.exit(1);
+  }
+}
+
 function main() {
   const manifest = buildFirefoxManifest();
 
@@ -81,6 +161,7 @@ function main() {
     path.join(OUT_DIR, 'manifest.json'),
     JSON.stringify(manifest, null, 2) + '\n'
   );
+  verifyPackageIsComplete(manifest);
   console.log(`Firefox build written to ${path.relative(process.cwd(), OUT_DIR)}`);
 
   if (process.argv.includes('--zip')) {

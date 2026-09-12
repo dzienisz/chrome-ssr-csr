@@ -27,6 +27,19 @@ Firefox loads the copy in `dist/firefox/`, not your live `src/` edits — re-run
 
 ## Features
 
+### What you get (v4.0.0)
+- **A verdict, and the reasoning behind it** — every signal that moved the
+  score, with the points it contributed and what it actually observed
+- **Rendered where** — built in the browser, rendered at build time, rendered
+  once and served from cache, rendered per request, or server-rendered with
+  client islands
+- **Delivery** — CDN, cache state, age, `Cache-Control`, TTFB and
+  Server-Timing, read from the document's own response headers
+- **Regions** — which parts of the page the server sent and which ones
+  JavaScript filled in, with character counts per region
+- **DevTools panel** ("Rendering") — the same report at full width, re-running
+  on every navigation
+
 ### Core Detection
 - **🎯 Accurate Detection**: Analyzes 15+ indicators including DOM structure, framework markers, performance metrics
 - **🚀 Framework Recognition**: Detects Next.js, Nuxt, Gatsby, Remix, SvelteKit, Astro, React, Vue, Angular
@@ -61,14 +74,20 @@ Firefox loads the copy in `dist/firefox/`, not your live `src/` edits — re-run
 ## Usage
 
 1. Navigate to any website
-2. Click the extension icon in the browser toolbar
-3. Click "Analyze Page"
-4. View results:
-   - Rendering type (SSR/CSR/Hybrid)
-   - Confidence score (30-95%)
-   - Detected frameworks
-   - Performance metrics
-   - Detection indicators
+2. Click the extension icon in the browser toolbar (or press `Ctrl/Cmd+Shift+Y`,
+   or right-click the page → **Analyze page rendering**)
+3. The analysis starts immediately — the verdict, its confidence and where the
+   HTML was produced appear at the top
+4. Dig in through the tabs:
+   - **Overview** — scores, text in the HTML vs on screen, TTFB, paint timings,
+     detected stack
+   - **Evidence** — every signal, scored ones first, with its weight
+   - **Delivery** — CDN, cache state, age, `Cache-Control`, Server-Timing
+   - **Regions** — server-sent vs JavaScript-built parts of the page
+   - **History** — recent analyses; click one to re-open its report
+
+For a full-width view that re-runs on every navigation, open DevTools and
+switch to the **Rendering** panel.
 
 The extension badge shows the result at a glance:
 - 🟢 **SSR** - Server-Side Rendered
@@ -96,6 +115,15 @@ The extension uses a weighted scoring system analyzing:
 
 **Accuracy hardening (v3.7.0):** both sides of the comparison strip `script`/`style` text before measuring; framework hydration markers only count toward SSR when found in the raw HTML; when the server sent almost none of the visible text, post-JS "SSR-looking" signals are capped; and when the raw fetch is blocked, confidence is capped instead of guessing confidently. Detection changes are validated against a 22-site ground-truth suite: `node scripts/validate-detection.mjs` (requires playwright).
 
+**Explaining the verdict (v4.0.0):** two modules run alongside the scoring ones
+and deliberately contribute **nothing** to it. `delivery-detector.js` reads the
+document's response headers and classifies how it travelled (prerendered,
+edge-cached, origin-rendered, dynamic) — transport is not rendering, and mixing
+the two is how detectors start lying. `dom-diff-detector.js` lines the pre-JS
+document up against the live DOM region by region; the overall ratio is already
+scored once in `comparison-detector.js`, and scoring it twice would double-count
+the single strongest input to the verdict.
+
 **Classification:**
 - ≥75% SSR score → "Server-Side Rendered (SSR)"
 - ≤25% SSR score → "Client-Side Rendered (CSR)"
@@ -108,14 +136,21 @@ The extension uses a weighted scoring system analyzing:
 ```
 extension/
 ├── manifest.json        # Extension config (Manifest V3) — Chrome canonical; Firefox variant generated
-├── popup.html/js        # Extension popup UI
-├── options.html/js      # Settings page
-├── welcome.html/js      # First-install onboarding page
+├── popup.html/js/css    # Extension popup UI
+├── options.html/js/css  # Settings page
+├── welcome.html/js/css  # First-install onboarding page
 ├── background.js        # Service worker (Chrome) / event page (Firefox)
+├── devtools/            # DevTools "Rendering" panel
+│   ├── devtools.html/js     # Panel registration
+│   └── panel.html/js/css    # Full-width report
 ├── scripts/
 │   ├── build-bundle.js      # Builds the src/ bundles (npm run build)
 │   ├── build-firefox.js     # Generates the Firefox/Gecko package in dist/firefox/ (npm run build:firefox)
-│   └── validate-detection.mjs  # 22-site ground-truth validation harness
+│   ├── validate-detection.mjs  # 22-site live ground-truth harness (npm run validate:live)
+│   ├── validate-local.mjs      # Offline fixture harness, runs in CI (npm run validate:local)
+│   ├── validate-extension.mjs  # Loads the extension for real, runs in CI (npm run validate:extension)
+│   ├── fixtures/pages.mjs      # Hand-written ground-truth pages + expected headers
+│   └── ui-preview.mjs          # Screenshots every surface from a real result (npm run preview)
 ├── src/
 │   ├── analyzer-bundle.js   # Bundled detection code (injected into pages)
 │   ├── telemetry-bundle.js  # Bundled collectors (injected only when Share Data is on)
@@ -130,7 +165,10 @@ extension/
 │   │   ├── performance-detector.js   # Timing metrics
 │   │   ├── comparison-detector.js    # Raw HTML vs rendered DOM
 │   │   ├── csr-pattern-detector.js   # SPA/CSR patterns
-│   │   └── hybrid-detector.js        # Islands/partial hydration
+│   │   ├── hybrid-detector.js        # Islands/partial hydration
+│   │   ├── platform-detector.js      # Speculation rules, view transitions (v3.11.0+)
+│   │   ├── delivery-detector.js      # CDN/cache headers → delivery mode (v4.0.0, score-neutral)
+│   │   └── dom-diff-detector.js      # Per-region server vs client attribution (v4.0.0, score-neutral)
 │   ├── collectors/          # Telemetry only (v3.6.0 split) — never affect the verdict
 │   │   ├── performance-collector.js  # Core Web Vitals (v3.3.0+)
 │   │   ├── page-type-detector.js     # Page classification (v3.3.0+)
@@ -139,9 +177,12 @@ extension/
 │   │   ├── seo-detector.js           # SEO & accessibility (v3.4.0+)
 │   │   ├── hydration-detector.js     # Hydration tracking (v3.5.0+)
 │   │   └── navigation-detector.js    # SPA navigation (v3.5.0+)
-│   └── ui/
-│       └── results-renderer.js     # Results HTML generation
-├── _locales/            # i18n name/description (en, ja, ko, fr, de, es, pt_BR, pl)
+│   └── ui/                  # Shared by the popup, the panel, settings and onboarding
+│       ├── theme.css           # Design tokens and components
+│       ├── report.js           # Renders a result as DOM (never as HTML strings)
+│       ├── export.js           # JSON / CSV / Markdown / one-line summary
+│       └── i18n.js             # data-i18n with English fallbacks
+├── _locales/            # i18n name, description and UI strings (en, ja, ko, fr, de, es, pt_BR, pl)
 ├── icon*.png            # Extension icons
 ├── promo-images/        # Store marketing assets (Chrome tiles + Firefox promo; HTML→PNG)
 ├── store-listing.md     # Chrome Web Store listing copy (+ store-listings.md translations)
@@ -160,21 +201,42 @@ extension/
 4. Reload the extension:
    - **Chrome** — `chrome://extensions` → click the refresh icon
    - **Firefox** — re-run `npm run build:firefox`, then reload the add-on in `about:debugging`
-5. For detection changes, run the ground-truth harness: `node scripts/validate-detection.mjs`
+5. For detection changes, run the harnesses:
+   - `npm run validate:local` — offline fixtures in real Chromium; deterministic,
+     runs in CI, and one of the two that have to stay green
+   - `npm run validate:extension` — installs the extension unpacked in a
+     throwaway profile and checks the manifest, the service worker, `probe.js`
+     as a content script, every extension page and the popup→worker message
+     contract; the only harness that loads the extension *as* an extension
+   - `npm run validate:live` — the 22-site live suite; needs the open internet
+6. For UI changes, `npm run preview` renders every surface against a real
+   analysis result and writes screenshots to `scripts/preview-out/`
+
+All of them need Playwright's Chromium (`npx playwright install chromium`).
 
 ### Adding Framework Detection
 
-Edit `src/detectors/framework-detector.js`:
+Detection lives in `src/core/config.js`, not in the detector:
 
 ```javascript
-// Add to frameworkMarkers object
-newframework: document.querySelector('[data-newframework]') !== null
+// frameworks: a CSS selector for a marker the framework leaves in the DOM
+newframework: '[data-newframework]',
 
-// Or add to staticGenerators object
-newgenerator: document.querySelector('meta[name="generator"][content*="NewGen"]') !== null
+// frameworkContentPatterns: for frameworks that leave no element — matched
+// against inline script text and against script src/id attributes
+newframework: ['__NEWFRAMEWORK_STATE'],
+
+// staticGenerators: build-time tools that announce themselves
+newgenerator: 'meta[name="generator"][content*="NewGen"]',
 ```
 
-Then rebuild the bundles: `npm run build`.
+A marker only counts as SSR evidence when it is present in the **raw** HTML —
+markers that appear only after scripts run are what a client-rendered app looks
+like. Rebuild the bundles (`npm run build`), add a case to
+`src/detectors/__tests__/framework-detector.test.js`, and if the selector uses
+a colon in the attribute name (`wire:id`, `q:container`) cover it in
+`scripts/fixtures/pages.mjs` instead — jsdom's selector engine never matches
+those.
 
 ### Creating a Release
 
@@ -191,9 +253,11 @@ Manual fallback (build the zips locally):
 ```bash
 # Chrome
 zip -r ../csr-ssr-detector-vX.Y.Z.zip \
-  manifest.json popup.html popup.js options.html options.js \
-  background.js welcome.html welcome.js icon*.png src/ _locales/ \
-  -x "*/__tests__/*"
+  manifest.json popup.html popup.js popup.css \
+  options.html options.js options.css \
+  background.js welcome.html welcome.js welcome.css \
+  devtools/ icon*.png src/ _locales/ \
+  -x "*/__tests__/*" "*/fixtures/*"
 # Firefox → dist/csr-ssr-detector-firefox-vX.Y.Z.zip
 npm run build:firefox -- --zip
 ```

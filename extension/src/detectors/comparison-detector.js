@@ -43,6 +43,19 @@ async function compareInitialVsRendered() {
 
     const rawHTML = await response.text();
 
+    // Response headers of the same document the user is on. Same-origin, so
+    // every header is readable. delivery-detector turns them into a
+    // build-time / edge-cached / per-request classification — the "where was
+    // this rendered" half of the question the verdict alone cannot answer.
+    const responseHeaders = {};
+    try {
+      response.headers.forEach((value, key) => {
+        responseHeaders[key.toLowerCase()] = value;
+      });
+    } catch (e) {
+      // Headers iteration is not expected to throw; ignore if it does.
+    }
+
     // Parse raw HTML
     const parser = new DOMParser();
     const rawDoc = parser.parseFromString(rawHTML, "text/html");
@@ -79,6 +92,8 @@ async function compareInitialVsRendered() {
       isLikelyCSR,
       isLikelySSR,
       isDecisiveCSR,
+      responseStatus: response.status,
+      responseHeaders,
       // Parsed raw document, so other detectors can check pre-JS markers.
       // Not serializable — must not be copied into analyzer output.
       rawDocument: rawDoc,

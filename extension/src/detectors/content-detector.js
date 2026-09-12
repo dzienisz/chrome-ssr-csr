@@ -10,6 +10,7 @@
 function analyzeContent() {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let ssrScore = 0;
   let csrScore = 0;
 
@@ -29,9 +30,23 @@ function analyzeContent() {
   if (hasRichInitialContent) {
     ssrScore += config.scoring.richContent;
     indicators.push("rich initial content structure (SSR)");
+    signals.push({
+      id: "content.rich",
+      label: "Rich document structure",
+      impact: "ssr",
+      weight: config.scoring.richContent,
+      detail: `${bodyText.length.toLocaleString()} characters of text across ${childrenCount} top-level blocks and real semantic elements.`,
+    });
   } else if (bodyText.length < config.content.minimalTextLength) {
     csrScore += config.scoring.minimalContent;
     indicators.push("minimal text content (CSR)");
+    signals.push({
+      id: "content.minimal",
+      label: "Almost no text in the document",
+      impact: "csr",
+      weight: config.scoring.minimalContent,
+      detail: `Only ${bodyText.length} characters of visible text — an app shell rather than a document.`,
+    });
   }
 
   // Check for loading states
@@ -48,6 +63,13 @@ function analyzeContent() {
   ) {
     csrScore += config.scoring.loadingStates;
     indicators.push("loading states with minimal content (CSR)");
+    signals.push({
+      id: "content.loading",
+      label: "Loading placeholders, little content",
+      impact: "csr",
+      weight: config.scoring.loadingStates,
+      detail: "Spinner/skeleton markup is present while the page still has almost no text.",
+    });
   }
 
   // Content-to-script ratio analysis
@@ -62,15 +84,30 @@ function analyzeContent() {
   if (scriptRatio > config.scriptRatio.high) {
     csrScore += config.scoring.highScriptRatio;
     indicators.push("high script-to-content ratio (CSR)");
+    signals.push({
+      id: "content.scriptRatio.high",
+      label: "High script-to-element ratio",
+      impact: "csr",
+      weight: config.scoring.highScriptRatio,
+      detail: `${scriptElements} script tags against ${allElements} elements — above the ${Math.round(config.scriptRatio.high * 100)}% threshold.`,
+    });
   } else if (scriptRatio < config.scriptRatio.low) {
     ssrScore += config.scoring.lowScriptRatio;
     indicators.push("low script-to-content ratio (SSR)");
+    signals.push({
+      id: "content.scriptRatio.low",
+      label: "Low script-to-element ratio",
+      impact: "ssr",
+      weight: config.scoring.lowScriptRatio,
+      detail: `${scriptElements} script tags against ${allElements} elements — below the ${Math.round(config.scriptRatio.low * 100)}% threshold.`,
+    });
   }
 
   return {
     ssrScore,
     csrScore,
     indicators,
+    signals,
     details: {
       contentLength: bodyText.length,
       childrenCount: childrenCount,

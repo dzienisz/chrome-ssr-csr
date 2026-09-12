@@ -5,10 +5,12 @@
  * src/analyzer-bundle.js, runs window.pageAnalyzer(), and grades the verdict
  * against the site's known rendering strategy.
  *
- * Requires playwright (not a package dependency — installed globally or run
- * from a directory that has it):
- *   npm i -g playwright   # or: npx playwright install chromium
- *   node scripts/validate-detection.mjs
+ * Requires playwright (a devDependency since v4.0.0) and its Chromium build:
+ *   npx playwright install chromium
+ *   npm run validate:live
+ *
+ * For a deterministic, offline, CI-runnable complement to this suite, see
+ * scripts/validate-local.mjs (`npm run validate:local`).
  *
  * Bucketing mirrors backend/lib/db.ts (ILIKE '%SSR%' / '%CSR%' / '%Hybrid%'):
  *   "Server-Side Rendered (SSR)" | "Likely SSR with Hydration"  -> SSR
@@ -69,7 +71,11 @@ function bucket(renderType) {
   return 'ERROR';
 }
 
-const browser = await chromium.launch();
+// Same escape hatch as the other two harnesses: CHROMIUM_PATH points at a
+// browser playwright did not install itself.
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+);
 const results = [];
 
 for (const site of SITES) {

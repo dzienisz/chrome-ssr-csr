@@ -14,6 +14,8 @@ const path = require('path');
 const detectorFiles = [
   'src/core/config.js',
   'src/detectors/comparison-detector.js',
+  'src/detectors/delivery-detector.js',
+  'src/detectors/dom-diff-detector.js',
   'src/detectors/csr-pattern-detector.js',
   'src/detectors/hybrid-detector.js',
   'src/detectors/platform-detector.js',
@@ -23,9 +25,7 @@ const detectorFiles = [
   'src/detectors/performance-detector.js',
   // Core analyzer (must come after detectors)
   'src/core/scoring.js',
-  'src/core/analyzer.js',
-  // UI components
-  'src/ui/components/results-renderer.js'
+  'src/core/analyzer.js'
 ];
 
 // Telemetry collectors — loaded only when shareData=true
