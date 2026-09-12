@@ -185,6 +185,69 @@ describe("detectDelivery", () => {
     });
   });
 
+  // A request crossing more than one cache tier gets one token per tier,
+  // ordered origin-first. Only the last one describes what the browser got.
+  describe("multi-tier cache headers", () => {
+    it("reads the edge token from a Fastly-style list", () => {
+      expect(window.normalizeCacheState("MISS, HIT")).toBe("HIT");
+      expect(window.normalizeCacheState("HIT, MISS")).toBe("MISS");
+      expect(window.normalizeCacheState("HIT, STALE")).toBe("STALE");
+      expect(window.normalizeCacheState("STALE, HIT")).toBe("HIT");
+    });
+
+    it("skips an unrecognized trailing token rather than giving up", () => {
+      expect(window.normalizeCacheState("HIT, unknown-thing")).toBe("HIT");
+    });
+
+    it("still reads single-token and prose values", () => {
+      expect(window.normalizeCacheState("HIT")).toBe("HIT");
+      expect(window.normalizeCacheState("Hit from cloudfront")).toBe("HIT");
+      expect(window.normalizeCacheState("Miss from cloudfront")).toBe("MISS");
+    });
+
+    it("classifies a shield miss with an edge hit as edge-cached", () => {
+      const { details } = run({ "x-cache": "MISS, HIT", "x-served-by": "cache-fra-1" });
+
+      expect(details.delivery.cacheState).toBe("HIT");
+      expect(details.delivery.mode).toBe("edge-cached");
+    });
+
+    it("records every tier that reported a state", () => {
+      const { details } = run({
+        "x-vercel-cache": "MISS",
+        "cf-cache-status": "HIT",
+        "cf-ray": "abc",
+      });
+
+      // Headline stays the most specific vendor header; the rest is kept so
+      // the report can say Cloudflare served it while Vercel did the work.
+      expect(details.delivery.cacheState).toBe("MISS");
+      expect(details.delivery.cacheLayers).toEqual([
+        { header: "x-vercel-cache", state: "MISS" },
+        { header: "cf-cache-status", state: "HIT" },
+      ]);
+    });
+
+    it("reports a single layer as a one-entry list", () => {
+      const { details } = run({ "cf-cache-status": "HIT", "cf-ray": "abc" });
+
+      expect(details.delivery.cacheLayers).toEqual([
+        { header: "cf-cache-status", state: "HIT" },
+      ]);
+    });
+
+    it("leaves the layer list empty when nothing reports a cache state", () => {
+      expect(run({ "content-type": "text/html" }).details.delivery.cacheLayers).toEqual([]);
+    });
+
+    it("includes the RFC 9211 Cache-Status header as a layer", () => {
+      const { details } = run({ "cache-status": "ExampleCDN; hit" });
+
+      expect(details.delivery.cacheState).toBe("HIT");
+      expect(details.delivery.cacheLayers).toEqual([{ header: "cache-status", state: "HIT" }]);
+    });
+  });
+
   describe("parseCacheControl", () => {
     it("reads the directives that decide the mode", () => {
       const parsed = window.parseCacheControl(

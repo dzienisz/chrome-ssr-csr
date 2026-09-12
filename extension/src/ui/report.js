@@ -422,6 +422,14 @@ function renderDelivery(result) {
           ["Server", delivery.server],
           ["X-Powered-By", delivery.poweredBy],
           ["Cache state", delivery.cacheState],
+          // Only when more than one tier answered: a single layer is already
+          // the line above it, and repeating it reads like a second fact.
+          [
+            "Cache layers",
+            delivery.cacheLayers && delivery.cacheLayers.length > 1
+              ? delivery.cacheLayers.map((l) => `${l.header}: ${l.state}`).join(" · ")
+              : null,
+          ],
           ["Age", delivery.age != null ? `${delivery.age}s` : null],
           ["Cache-Control", delivery.cacheControl],
           ["Shared max-age", delivery.sMaxAge != null ? `${delivery.sMaxAge}s` : null],

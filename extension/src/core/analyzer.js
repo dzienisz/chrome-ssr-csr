@@ -312,6 +312,12 @@ async function pageAnalyzer() {
 
     // Strongest first, so a reader sees the evidence that decided the verdict
     // before the supporting detail. Purely informational signals sort last.
+    //
+    // No tiebreak on purpose: Array.prototype.sort has been required to be
+    // stable since ES2019, so equal weights keep the order the modules were
+    // aggregated in above — comparison, then the scoring detectors, then
+    // delivery and the region diff. That grouping is meaningful; sorting the
+    // zero-weight signals alphabetically by id would scatter it.
     const orderedSignals = signals
       .slice()
       .sort((a, b) => (b.weight || 0) - (a.weight || 0));

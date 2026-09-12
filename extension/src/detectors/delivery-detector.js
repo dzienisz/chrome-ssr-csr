@@ -16,6 +16,21 @@
  * not rendering, and mixing the two is how detectors start lying.
  */
 
+/**
+ * Cache headers worth reading, most specific first. The first one present
+ * decides the headline cache state; the rest are reported alongside it.
+ */
+const CACHE_HEADERS = [
+  "x-vercel-cache",
+  "x-nextjs-cache",
+  "cf-cache-status",
+  "x-cache",
+  "x-drupal-cache",
+  "x-litespeed-cache",
+  "x-proxy-cache",
+  "cache-status",
+];
+
 /** Cache states, normalized across the dozen vendor spellings. */
 const CACHE_HIT = "HIT";
 const CACHE_MISS = "MISS";
@@ -67,18 +82,48 @@ const RUNTIME_SIGNATURES = [
 ];
 
 /**
- * Normalize a vendor cache header value to one of the CACHE_* constants.
- * @param {string} value
+ * Normalize one cache-state token to a CACHE_* constant.
+ * @param {string} token
  * @returns {string|null}
  */
-function normalizeCacheState(value) {
-  if (!value) return null;
-  const v = String(value).toUpperCase();
+function normalizeCacheToken(token) {
+  const v = String(token).toUpperCase();
   if (v.includes("PRERENDER")) return CACHE_PRERENDER;
   if (v.includes("STALE") || v.includes("REVALIDATED") || v.includes("UPDATING")) return CACHE_STALE;
   if (v.includes("BYPASS") || v.includes("DYNAMIC") || v.includes("NONE") || v.includes("EXPIRED")) return CACHE_BYPASS;
   if (v.includes("HIT")) return CACHE_HIT;
   if (v.includes("MISS")) return CACHE_MISS;
+  return null;
+}
+
+/**
+ * Normalize a vendor cache header value to one of the CACHE_* constants.
+ *
+ * A request that crosses more than one cache tier gets one token per tier,
+ * ordered origin-first: Fastly returns `X-Cache: MISS, HIT` when the shield
+ * missed and the edge served. The token that decides what the *browser*
+ * experienced is therefore the last one — searching the whole string for
+ * keywords instead would read `HIT, MISS` as a hit, and `HIT, STALE` as
+ * stale, both of which describe a tier the user never talked to.
+ *
+ * @param {string} value
+ * @returns {string|null}
+ */
+function normalizeCacheState(value) {
+  if (!value) return null;
+
+  const tokens = String(value)
+    .split(",")
+    .map((token) => token.trim())
+    .filter(Boolean);
+  if (!tokens.length) return null;
+
+  // Walk back from the edge: the nearest tier that says anything recognizable
+  // wins, so an unlabelled trailing token cannot erase a known state.
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const state = normalizeCacheToken(tokens[i]);
+    if (state) return state;
+  }
   return null;
 }
 
@@ -184,16 +229,22 @@ function detectDelivery(headers) {
   const cdn = has ? (HOST_SIGNATURES.find((s) => s.test(h)) || {}).name || null : null;
   const runtime = has ? (RUNTIME_SIGNATURES.find((s) => s.test(h)) || {}).name || null : null;
 
-  // Cache state: proprietary headers first (most specific), then RFC 9211.
-  const vendorCache =
-    normalizeCacheState(h["x-vercel-cache"]) ||
-    normalizeCacheState(h["x-nextjs-cache"]) ||
-    normalizeCacheState(h["cf-cache-status"]) ||
-    normalizeCacheState(h["x-cache"]) ||
-    normalizeCacheState(h["x-drupal-cache"]) ||
-    normalizeCacheState(h["x-litespeed-cache"]) ||
-    normalizeCacheState(h["x-proxy-cache"]) ||
-    parseCacheStatusHeader(h["cache-status"]);
+  // Every cache tier that reported a state, in the order below. A site behind
+  // two of them (Cloudflare in front of Vercel is routine) can legitimately
+  // answer HIT at one tier and MISS at another, and reporting only the first
+  // match hides half of what happened.
+  const cacheLayers = [];
+  for (const header of CACHE_HEADERS) {
+    const raw = h[header];
+    if (!raw) continue;
+    const state =
+      header === "cache-status" ? parseCacheStatusHeader(raw) : normalizeCacheState(raw);
+    if (state) cacheLayers.push({ header, state });
+  }
+
+  // The headline state is the first tier in CACHE_HEADERS order — the most
+  // specific vendor header present. `cacheLayers` keeps the rest.
+  const vendorCache = cacheLayers.length ? cacheLayers[0].state : null;
 
   const cacheControl = parseCacheControl(h["cache-control"]);
   const age = h.age != null ? parseInt(h.age, 10) : null;
@@ -275,6 +326,7 @@ function detectDelivery(headers) {
     server: h.server ? String(h.server).slice(0, 60) : null,
     poweredBy: h["x-powered-by"] ? String(h["x-powered-by"]).slice(0, 60) : null,
     cacheState: vendorCache,
+    cacheLayers,
     age,
     cacheControl: h["cache-control"] ? String(h["cache-control"]).slice(0, 120) : null,
     sMaxAge: cacheControl.sMaxAge,
@@ -312,7 +364,12 @@ function detectDelivery(headers) {
       label: `Served through ${cdn}`,
       impact: "info",
       weight: 0,
-      detail: vendorCache ? `Cache state reported as ${vendorCache}.` : "Edge network identified from response headers.",
+      detail:
+        cacheLayers.length > 1
+          ? `Cache tiers reported ${cacheLayers.map((l) => `${l.state} (${l.header})`).join(", ")}.`
+          : vendorCache
+            ? `Cache state reported as ${vendorCache}.`
+            : "Edge network identified from response headers.",
     });
   }
 

@@ -34,7 +34,16 @@ const RUNNER = `(() => {
 })()`;
 
 const POLL_INTERVAL_MS = 120;
-const POLL_TIMEOUT_MS = 20000;
+
+/**
+ * The analysis re-fetches the document, parses it and runs every detector, so
+ * a slow origin on a slow connection can legitimately take a while. The
+ * timeout exists to stop the panel spinning forever when the page went away
+ * mid-run, not to police how long a real analysis may take — a navigation now
+ * ends the run through the generation check, so this can afford to be
+ * generous.
+ */
+const POLL_TIMEOUT_MS = 60000;
 
 const state = {
   result: null,

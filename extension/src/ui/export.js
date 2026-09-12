@@ -25,8 +25,15 @@ function toJSON(result, page) {
 
 /**
  * Characters that make a spreadsheet treat a cell as a formula rather than as
- * text. Leading whitespace and control characters are stripped by the parser
- * before this check, so they cannot be used to hide one.
+ * text, optionally behind leading whitespace or control characters that the
+ * parser strips before deciding.
+ *
+ * `\t` and `\r` appear in both halves deliberately — they are not redundant
+ * with the leading-whitespace class. OWASP lists them as trigger characters in
+ * their own right (they carry DDE payloads), so the second class has to be
+ * able to match one: for "\tcmd" the first class gives the tab back on
+ * backtracking and the trigger class consumes it. Drop them from the trigger
+ * class and a leading-tab payload stops being quoted.
  */
 const FORMULA_PREFIX = /^[\s\u0000-\u001F\u00A0]*[=+\-@\t\r]/;
 

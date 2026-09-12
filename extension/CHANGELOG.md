@@ -108,6 +108,12 @@ it did.
 - `public, max-age=0, s-maxage=86400` — the canonical ISR header pair — was
   classified as a dynamic, uncacheable response. `s-maxage` is now read before
   the `max-age=0` fallback.
+- **Multi-tier cache headers were read from the wrong end.** A request crossing
+  a shield and an edge gets one token per tier, origin-first (`X-Cache: MISS,
+  HIT`), and keyword-searching the whole string reported the tier the browser
+  never talked to. The edge-most token decides now, and every tier that
+  reported a state is kept — a site behind Cloudflare *and* Vercel can answer
+  HIT at one and MISS at the other, and the Delivery tab shows both.
 - The decisive-CSR cap now reports the points it removed, so the evidence list
   adds up to the score the verdict used instead of landing 80 points away
   from it with nothing to explain the gap.
