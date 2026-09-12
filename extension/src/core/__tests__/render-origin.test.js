@@ -339,11 +339,13 @@ describe("decisive-CSR cap arithmetic", () => {
     expect(cap.impact).toBe("ssr");
     expect(cap.detail).toContain("90");
 
-    // The SSR signals now total the score the verdict actually used.
-    const ssrTotal = result.signals
-      .filter((s) => s.impact === "ssr")
-      .reduce((sum, s) => sum + s.weight, 0);
-    expect(ssrTotal).toBe(result.detailedInfo.ssrScore);
+    // Both sides now total the scores the verdict actually used. This is the
+    // property the sign carries: group the weights by impact and you get the
+    // scoring back, cap included.
+    const totalFor = (impact) =>
+      result.signals.filter((s) => s.impact === impact).reduce((sum, s) => sum + s.weight, 0);
+    expect(totalFor("ssr")).toBe(result.detailedInfo.ssrScore);
+    expect(totalFor("csr")).toBe(result.detailedInfo.csrScore);
 
     // A removal that large belongs near the top of the evidence, not below
     // every zero-weight note.

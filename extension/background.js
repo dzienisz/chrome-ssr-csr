@@ -98,7 +98,7 @@ async function analyzeTab(tab) {
   }
 
   try {
-    await executeScript({
+    const [loaded] = await executeScript({
       target: { tabId: tab.id },
       files: ["src/analyzer-bundle.js"],
     });
@@ -117,9 +117,15 @@ async function analyzeTab(tab) {
     // Same hazard as the popup: the tab id survives a navigation, so a result
     // produced after one describes a document that `tab` no longer names.
     // Recording it under the click-time url would file the wrong verdict
-    // against the wrong site.
+    // against the wrong site. The documentId the two injections ran against
+    // catches a reload, which keeps the url; the url catches the rest, and is
+    // all Firefox reports.
+    const sameDocument =
+      !loaded || !injection || !loaded.documentId || !injection.documentId
+        ? true
+        : loaded.documentId === injection.documentId;
     const current = await getTab(tab.id);
-    if (!current || (current.url && current.url !== url)) {
+    if (!sameDocument || !current || (current.url && current.url !== url)) {
       notify(
         "Analysis discarded",
         "The page navigated while it was being analyzed.",

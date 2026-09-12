@@ -144,7 +144,7 @@ async function analyze() {
       return;
     }
 
-    await executeScript({
+    const [loaded] = await executeScript({
       target: { tabId: tab.id },
       files: ["src/analyzer-bundle.js"],
     });
@@ -161,7 +161,7 @@ async function analyze() {
     // not name — and labelling one page's report with another page's URL is
     // worse than showing nothing, because it also gets written to history and
     // sent as telemetry.
-    if (await documentChanged(tab.id, page.url)) {
+    if (await documentChanged(tab.id, page.url, loaded, injection)) {
       showError(
         window.t("analysisFailed", "Analysis failed"),
         window.t(
@@ -224,14 +224,26 @@ function getActiveTab() {
 /**
  * Did the tab move to a different document while we were analyzing it?
  *
- * Compared by url rather than by the documentId in the injection results:
- * those are Chromium-only, and this has to hold on Firefox too.
+ * Two checks, because neither alone is enough:
+ *
+ * - Every injection result carries the documentId it ran against, and a
+ *   navigation mints a new one. This catches what the url cannot: a reload,
+ *   or a navigation that lands back on the same address. Chromium-only, so it
+ *   is used when present rather than required.
+ * - The url, for Firefox, and for a document swapped after the last injection
+ *   returned.
  *
  * @param {number} tabId
  * @param {string} expectedUrl
+ * @param {chrome.scripting.InjectionResult} [first] injection that loaded the bundle
+ * @param {chrome.scripting.InjectionResult} [second] injection that ran it
  * @returns {Promise<boolean>}
  */
-function documentChanged(tabId, expectedUrl) {
+function documentChanged(tabId, expectedUrl, first, second) {
+  if (first && second && first.documentId && second.documentId && first.documentId !== second.documentId) {
+    return Promise.resolve(true);
+  }
+
   return new Promise((resolve) => {
     chrome.tabs.get(tabId, (tab) => {
       if (chrome.runtime.lastError || !tab) {
