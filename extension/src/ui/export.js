@@ -23,9 +23,28 @@ function toJSON(result, page) {
   );
 }
 
-/** RFC 4180: a field containing a quote, comma or newline is quoted and its quotes doubled. */
+/**
+ * Characters that make a spreadsheet treat a cell as a formula rather than as
+ * text. Leading whitespace and control characters are stripped by the parser
+ * before this check, so they cannot be used to hide one.
+ */
+const FORMULA_PREFIX = /^[\s\u0000-\u001F\u00A0]*[=+\-@\t\r]/;
+
+/**
+ * RFC 4180 quoting, plus formula neutralization.
+ *
+ * Cell values come from the analyzed page — its title, its element ids, its
+ * response headers. Quoting alone is not enough: a page titled `=HYPERLINK(…)`
+ * produces a valid CSV field that Excel, LibreOffice and Sheets all execute
+ * when the file is opened. Prefixing a single quote makes the cell literal
+ * text in every one of them, and the quote is not part of the value.
+ *
+ * @param {*} value
+ * @returns {string}
+ */
 function csvCell(value) {
-  const text = value == null ? "" : String(value);
+  let text = value == null ? "" : String(value);
+  if (FORMULA_PREFIX.test(text)) text = `'${text}`;
   return `"${text.replace(/"/g, '""')}"`;
 }
 

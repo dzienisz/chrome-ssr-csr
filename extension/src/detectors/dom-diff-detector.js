@@ -139,8 +139,18 @@ function regionLabel(el, key) {
   return key;
 }
 
-/** Per-analysis memo, so a region's text is measured once, not once per depth. */
-const textLengthCache = new WeakMap();
+/**
+ * Per-analysis memo, so a region's text is measured once, not once per depth.
+ *
+ * Reset at the start of every analysis. The keys are live DOM elements that
+ * stay reachable after a run ends, so nothing here is ever collected on its
+ * own — and the popup's re-run button and the panel's re-run-on-navigation
+ * both analyze the same document twice. Without the reset, the second run
+ * reports the first run's text lengths and every number downstream of them
+ * (region origins, serverSharePct, the diff signals) describes a DOM that has
+ * already changed.
+ */
+let textLengthCache = new WeakMap();
 
 /**
  * Visible text length of an element, counting the same characters
@@ -322,6 +332,8 @@ function detectDomDiff(rawDocument) {
   // so everything it has to say goes into `signals`.
   const indicators = [];
   const signals = [];
+
+  textLengthCache = new WeakMap();
 
   if (!rawDocument || !rawDocument.body || !document.body) {
     return {

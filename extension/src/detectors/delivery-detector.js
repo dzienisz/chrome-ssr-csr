@@ -220,13 +220,13 @@ function detectDelivery(headers) {
     evidence.push(`cache ${vendorCache.toLowerCase()}`);
   } else if (vendorCache === CACHE_MISS || vendorCache === CACHE_BYPASS) {
     mode = "origin";
-    modeLabel = "Rendered by the origin server";
-    modeDetail = "The cache did not answer this request, so the origin produced the HTML.";
+    modeLabel = "Answered by the origin server";
+    modeDetail = "The cache did not answer this request, so it travelled all the way to the origin.";
     evidence.push(`cache ${vendorCache.toLowerCase()}`);
-  } else if (cacheControl.noStore || cacheControl.private || cacheControl.maxAge === 0) {
+  } else if (cacheControl.noStore || cacheControl.private) {
     mode = "dynamic";
-    modeLabel = "Dynamic, uncacheable response";
-    modeDetail = "Cache-Control forbids storing this document, which means it is produced per request.";
+    modeLabel = "Uncacheable response";
+    modeDetail = "Cache-Control forbids shared caches from storing this document, so every visitor reaches the origin.";
     evidence.push("cache-control forbids caching");
   } else if (age != null && age > 0) {
     mode = "edge-cached";
@@ -238,6 +238,15 @@ function detectDelivery(headers) {
     modeLabel = "Cacheable at the edge";
     modeDetail = `The origin allows shared caches to reuse this document for ${cacheControl.sMaxAge}s (ISR-style revalidation).`;
     evidence.push(`s-maxage: ${cacheControl.sMaxAge}s`);
+  } else if (cacheControl.maxAge === 0) {
+    // Checked *after* s-maxage on purpose: `public, max-age=0, s-maxage=86400`
+    // is the canonical ISR header pair, and it means "browsers revalidate,
+    // shared caches hold it for a day" — the opposite of uncacheable. Reading
+    // the max-age=0 first would file every ISR page under "dynamic".
+    mode = "dynamic";
+    modeLabel = "Revalidated on every visit";
+    modeDetail = "Cache-Control tells caches to revalidate before reusing this document.";
+    evidence.push("max-age=0");
   } else if (/cookie/i.test(h.vary || "")) {
     mode = "dynamic";
     modeLabel = "Dynamic, per-visitor response";

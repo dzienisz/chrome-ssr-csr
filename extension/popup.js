@@ -36,6 +36,11 @@ const state = {
   page: { url: "", title: "" },
   tab: "overview",
   settings: { ...DEFAULTS },
+  // Incremented per analysis. Auto-analyze on open and the re-run button can
+  // both be in flight at once, and a slower earlier run finishing last would
+  // otherwise replace the newer report, badge, history entry and telemetry
+  // with stale results.
+  runId: 0,
 };
 
 /* ------------------------------------------------------------------ setup */
@@ -109,31 +114,41 @@ function applyTheme(mode) {
 /* --------------------------------------------------------------- analysis */
 
 async function analyze() {
+  const runId = ++state.runId;
+  /** Has a newer analysis started since this one? */
+  const stale = () => runId !== state.runId;
+
+  setBusy(true);
   showStatus();
 
-  const tab = await getActiveTab();
-  if (!tab) {
-    showError("No active tab", "The popup could not find a page to analyze.");
-    return;
-  }
-
-  state.page = { url: tab.url || "", title: tab.title || tab.url || "" };
-
-  if (RESTRICTED_PROTOCOLS.some((protocol) => state.page.url.startsWith(protocol))) {
-    showRestricted();
-    return;
-  }
-
   try {
+    const tab = await getActiveTab();
+    if (stale()) return;
+
+    if (!tab) {
+      showError("No active tab", "The popup could not find a page to analyze.");
+      return;
+    }
+
+    const page = { url: tab.url || "", title: tab.title || tab.url || "" };
+
+    if (RESTRICTED_PROTOCOLS.some((protocol) => page.url.startsWith(protocol))) {
+      state.page = page;
+      showRestricted();
+      return;
+    }
+
     await executeScript({
       target: { tabId: tab.id },
       files: ["src/analyzer-bundle.js"],
     });
+    if (stale()) return;
 
     const [injection] = await executeScript({
       target: { tabId: tab.id },
       func: async () => await window.pageAnalyzer(),
     });
+    if (stale()) return;
 
     const result = injection && injection.result;
     if (!result) {
@@ -144,20 +159,31 @@ async function analyze() {
       return;
     }
 
+    state.page = page;
     state.result = result;
     render(result);
     updateBadge(result.renderType, tab.id);
-    saveToHistory(state.page, result);
+    saveToHistory(page, result);
 
     if (state.settings.shareData) {
-      collectAndSendTelemetry(tab.id, result);
+      collectAndSendTelemetry(tab.id, result, page);
     }
   } catch (error) {
+    if (stale()) return;
     showError(
       window.t("cannotAccess", "Cannot access this page"),
       String((error && error.message) || error),
     );
+  } finally {
+    if (!stale()) setBusy(false);
   }
+}
+
+/** Disable the re-run control while an analysis is in flight. */
+function setBusy(busy) {
+  const button = document.getElementById("rerun");
+  button.disabled = busy;
+  button.setAttribute("aria-busy", String(busy));
 }
 
 function getActiveTab() {
@@ -194,7 +220,7 @@ function executeScript(options) {
  * has left sharing on. Nothing this release added — response headers, region
  * attribution — leaves the device.
  */
-async function collectAndSendTelemetry(tabId, result) {
+async function collectAndSendTelemetry(tabId, result, page) {
   try {
     await executeScript({
       target: { tabId },
@@ -208,18 +234,18 @@ async function collectAndSendTelemetry(tabId, result) {
     });
 
     if (!injection || !injection.result) return;
-    await sendAnalysisData({ ...result, ...injection.result });
+    await sendAnalysisData({ ...result, ...injection.result }, page);
   } catch (e) {
     // Telemetry must never affect what the user sees.
   }
 }
 
-async function sendAnalysisData(results) {
+async function sendAnalysisData(results, page) {
   try {
     let domain = "unknown";
-    let anonymizedUrl = state.page.url;
+    let anonymizedUrl = page.url;
     try {
-      const url = new URL(state.page.url);
+      const url = new URL(page.url);
       domain = url.hostname;
       anonymizedUrl = url.origin;
     } catch {
@@ -346,21 +372,32 @@ function selectTab(name) {
 
 /* ------------------------------------------------------------------ history */
 
+/**
+ * Hand the entry to the background worker rather than writing the store here.
+ *
+ * An append is a read-modify-write of the whole history array, and a
+ * context-menu analysis can land while the popup is doing one. Two writers
+ * taking the same snapshot means one of the entries disappears; the worker
+ * queues every append in a single context instead.
+ */
 function saveToHistory(page, result) {
-  chrome.storage.local.get(["analysisHistory"], (data) => {
-    const history = data.analysisHistory || [];
-    history.unshift({
-      url: page.url,
-      title: page.title || page.url,
-      timestamp: Date.now(),
-      results: result,
+  const entry = {
+    url: page.url,
+    title: page.title || page.url,
+    timestamp: Date.now(),
+    results: result,
+  };
+
+  try {
+    chrome.runtime.sendMessage({ action: "saveAnalysis", entry }, () => {
+      // A worker that is still starting up can drop the first message; the
+      // next analysis will record its own entry, and losing one history row is
+      // not worth surfacing to the user.
+      void chrome.runtime.lastError;
     });
-
-    const limit = state.settings.historyLimit === -1 ? Infinity : state.settings.historyLimit;
-    if (history.length > limit) history.splice(limit);
-
-    chrome.storage.local.set({ analysisHistory: history });
-  });
+  } catch (e) {
+    void e;
+  }
 }
 
 function renderHistoryPanel() {
@@ -457,18 +494,30 @@ function exportAs(format) {
   }
 }
 
+/** Pending "Copied" → label reset, so a second click cannot strand the button. */
+let copyResetTimer = null;
+
 async function copySummary() {
   if (!state.result) return;
   const button = document.getElementById("copy");
-  const original = button.textContent;
+
+  // Restore from the canonical label rather than from whatever the button
+  // currently reads: clicking twice inside the reset window would otherwise
+  // capture "Copied" as the label to restore, and the button would keep
+  // claiming success for good.
+  const idle = window.t("copySummary", "Copy summary");
+  clearTimeout(copyResetTimer);
+
   try {
     await navigator.clipboard.writeText(window.SSRExport.toSummary(state.result, state.page));
     button.textContent = window.t("copied", "Copied");
   } catch {
     button.textContent = window.t("copyFailed", "Copy failed");
   }
-  setTimeout(() => {
-    button.textContent = original;
+
+  copyResetTimer = setTimeout(() => {
+    button.textContent = idle;
+    copyResetTimer = null;
   }, 1400);
 }
 

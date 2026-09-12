@@ -40,7 +40,11 @@ const state = {
   result: null,
   page: { url: "", title: "" },
   bundle: null,
-  running: false,
+  // Incremented per run. A navigation mid-poll must abandon the run in flight
+  // — its document is gone, and the new one carries only the probe content
+  // script, so the old poll would sit there until it timed out while the panel
+  // showed nothing.
+  runId: 0,
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -98,39 +102,56 @@ async function loadBundle() {
 }
 
 async function run() {
-  if (state.running) return;
-  state.running = true;
+  const runId = ++state.runId;
+  /** Has a newer run started — usually because the page navigated? */
+  const stale = () => runId !== state.runId;
+
   showStatus(window.t("analyzing", "Analyzing this page…"));
 
   try {
     const bundle = await loadBundle();
+    if (stale()) return;
+
     // The bundle guards against double injection itself, so re-running after a
     // navigation is cheap and re-running on the same document is a no-op.
     await evaluate(bundle);
+    if (stale()) return;
 
     const started = await evaluate(RUNNER);
+    if (stale()) return;
     if (started && started.status === "missing") {
       throw new Error("The analyzer did not load into this page.");
     }
 
-    const result = await pollForResult();
+    const result = await pollForResult(stale);
+    if (stale() || result === null) return;
     if (result.failed) throw new Error(result.failed);
 
     state.result = result;
     state.page = await readPageIdentity();
+    if (stale()) return;
     render(result);
   } catch (error) {
+    if (stale()) return;
     showError(String((error && error.message) || error));
-  } finally {
-    state.running = false;
   }
 }
 
-async function pollForResult() {
+/**
+ * Poll the page-side store until the analysis lands.
+ *
+ * @param {() => boolean} stale - True once a newer run has superseded this one
+ * @returns {Promise<Object|null>} the result, or null if this run was abandoned
+ */
+async function pollForResult(stale) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   for (;;) {
+    if (stale()) return null;
     const status = await evaluate(RUNNER);
     if (status && status.status === "done") return status.result;
+    // The document was replaced under us: the analyzer is no longer loaded, so
+    // waiting for the old run's result can only end in a timeout.
+    if (status && status.status === "missing") return null;
     if (Date.now() > deadline) throw new Error("Analysis timed out.");
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
   }
@@ -216,17 +237,29 @@ function exportAs(format) {
   }
 }
 
+/** Pending "Copied" → label reset, so a second click cannot strand the button. */
+let copyResetTimer = null;
+
 async function copySummary() {
   if (!state.result) return;
   const button = document.getElementById("copy");
-  const original = button.textContent;
+
+  // Restore from the canonical label rather than from whatever the button
+  // currently reads: clicking twice inside the reset window would otherwise
+  // capture "Copied" as the label to restore, and the button would keep
+  // claiming success for good.
+  const idle = window.t("copySummary", "Copy summary");
+  clearTimeout(copyResetTimer);
+
   try {
     await navigator.clipboard.writeText(window.SSRExport.toSummary(state.result, state.page));
     button.textContent = window.t("copied", "Copied");
   } catch {
     button.textContent = window.t("copyFailed", "Copy failed");
   }
-  setTimeout(() => {
-    button.textContent = original;
+
+  copyResetTimer = setTimeout(() => {
+    button.textContent = idle;
+    copyResetTimer = null;
   }, 1400);
 }

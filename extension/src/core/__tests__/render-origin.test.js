@@ -261,3 +261,103 @@ describe("pageAnalyzer signal aggregation", () => {
     expect(window.detectDomDiff).toHaveBeenCalledWith(null);
   });
 });
+
+describe("response headers never reach the result", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "<p>test page</p>";
+  });
+
+  // The result crosses an executeScript boundary into the popup, gets written
+  // to local history, and can be exported to a file the user shares. Response
+  // headers are read to classify delivery and must not travel with it.
+  it("keeps header values and the headers object out of the serialized result", async () => {
+    stubDetectors({
+      comparison: {
+        rawLength: 900,
+        renderedLength: 1000,
+        contentRatio: 0.9,
+        isLikelyCSR: false,
+        isLikelySSR: true,
+        isDecisiveCSR: false,
+        rawDocument: document.implementation.createHTMLDocument(),
+        rawHTML: "<html><body>raw</body></html>",
+        responseHeaders: {
+          "set-cookie": "session=secret",
+          authorization: "Bearer topsecret",
+          "x-vercel-cache": "HIT",
+        },
+      },
+    });
+
+    const serialized = JSON.stringify(await window.pageAnalyzer());
+
+    expect(serialized).not.toContain("session=secret");
+    expect(serialized).not.toContain("topsecret");
+    expect(serialized).not.toContain("responseHeaders");
+    expect(serialized).not.toContain("rawHTML");
+    expect(serialized).not.toContain("rawDocument");
+  });
+});
+
+describe("decisive-CSR cap arithmetic", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "<p>test page</p>";
+  });
+
+  it("reports the points the cap removed, so the evidence adds up", async () => {
+    stubDetectors({
+      content: {
+        ...empty,
+        ssrScore: 50,
+        signals: [{ id: "content.rich", label: "Rich", impact: "ssr", weight: 50 }],
+      },
+      meta: {
+        ...empty,
+        ssrScore: 40,
+        signals: [{ id: "meta.rich", label: "Meta", impact: "ssr", weight: 40 }],
+      },
+      comparison: {
+        rawLength: 10,
+        renderedLength: 5000,
+        contentRatio: 0,
+        isLikelyCSR: true,
+        isLikelySSR: false,
+        isDecisiveCSR: true,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+    const cap = result.signals.find((s) => s.id === "comparison.decisiveCsr");
+
+    expect(result.detailedInfo.ssrScore).toBe(10);
+    // 90 points of SSR signal, capped to 10, so the cap must account for 80 —
+    // otherwise a reader totalling the evidence list lands 80 points away from
+    // the score the verdict actually used.
+    expect(cap.weight).toBe(80);
+    expect(cap.label).toContain("80");
+    expect(cap.detail).toContain("90");
+  });
+
+  it("does not claim to have removed anything when the score was already low", async () => {
+    stubDetectors({
+      content: { ...empty, ssrScore: 5 },
+      comparison: {
+        rawLength: 10,
+        renderedLength: 5000,
+        contentRatio: 0,
+        isLikelyCSR: true,
+        isLikelySSR: false,
+        isDecisiveCSR: true,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+    const cap = result.signals.find((s) => s.id === "comparison.decisiveCsr");
+
+    expect(result.detailedInfo.ssrScore).toBe(5);
+    expect(cap.weight).toBe(0);
+    expect(cap.label).not.toContain("−");
+  });
+});

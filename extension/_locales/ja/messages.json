@@ -154,5 +154,119 @@
   },
   "shortcutUnset": {
     "message": "未設定"
+  },
+  "pinTitle": {
+    "message": "拡張機能をピン留め"
+  },
+  "pinBody": {
+    "message": "（パズルアイコン → ピン）すると、どのページもワンクリックで確認できます。"
+  },
+  "settingsSubtitle": {
+    "message": "検出の動作、保存する内容、共有する内容について。"
+  },
+  "settingTheme": {
+    "message": "テーマ"
+  },
+  "settingThemeHelp": {
+    "message": "ポップアップ、DevTools パネル、このページに適用されます。"
+  },
+  "settingAutoAnalyze": {
+    "message": "ポップアップを開いたらすぐ解析する"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "先にボタンを押したい場合はオフにしてください。"
+  },
+  "settingHistory": {
+    "message": "履歴の件数"
+  },
+  "settingHistoryHelp": {
+    "message": "この端末にのみ保存され、送信されることはありません。"
+  },
+  "settingNotifications": {
+    "message": "デスクトップ通知"
+  },
+  "settingNotificationsHelp": {
+    "message": "右クリックメニューの「ページのレンダリングを解析」で使われます。"
+  },
+  "settingShare": {
+    "message": "匿名の解析データを共有する"
+  },
+  "settingShareHelp": {
+    "message": "実際のサイトでの検出精度の改善に役立ちます。いつでも無効にできます。"
+  },
+  "privacyWhatTitle": {
+    "message": "オンのときに共有される内容"
+  },
+  "privacyWhatBody": {
+    "message": "ドメイン名（完全な URL は決して含みません）、レンダリング種別と確信度、検出されたフレームワーク、パフォーマンス指標、そしてリクエスト元 IP からサーバー側で導出した国。IP 自体は保存されません。"
+  },
+  "privacyNeverBody": {
+    "message": "決して共有しないもの：ページの内容、個人情報、閲覧履歴、レスポンスヘッダー、および「領域」タブの内訳。これらの解析は端末内にとどまります。"
+  },
+  "privacyPolicyLink": {
+    "message": "プライバシーポリシー全文を読む"
+  },
+  "shortcutOpen": {
+    "message": "レンダリングレポートを開く"
+  },
+  "shortcutOpenHelp": {
+    "message": "ブラウザーの拡張機能ショートカット設定ページで変更できます。"
+  },
+  "welcomeTitle": {
+    "message": "このページはどう描画されている？"
+  },
+  "welcomeSubtitle": {
+    "message": "どのサイトでもワンクリックで答えが出ます。判断の根拠、HTML が生成された場所、JavaScript が組み立てた部分まで分かります。"
+  },
+  "welcomeStep1": {
+    "message": "ツールバーにピン留めする"
+  },
+  "welcomeStep1Body": {
+    "message": "ブラウザーは新しい拡張機能をパズルアイコンの下に隠します。ピン留めすればレポートは常にワンクリックです。"
+  },
+  "pinStepOpen": {
+    "message": "パズルアイコンをクリック"
+  },
+  "pinStepFind": {
+    "message": "CSR vs SSR Detector を探す"
+  },
+  "pinStepPin": {
+    "message": "ピンをクリック"
+  },
+  "welcomeStep2": {
+    "message": "判定を読む"
+  },
+  "welcomeStep2Body": {
+    "message": "バッジが見出しを示し、ポップアップがその根拠を説明します。"
+  },
+  "welcomeSsr": {
+    "message": "コンテンツが最初の HTML に含まれていました。検索エンジンと初回描画に有利です。"
+  },
+  "welcomeCsr": {
+    "message": "ブラウザーが JavaScript でページを組み立てました。アプリのようなシングルページサイトに多い形です。"
+  },
+  "welcomeMix": {
+    "message": "一部はサーバーから届き、残りは後からハイドレートまたは取得されました。"
+  },
+  "welcomeStep3": {
+    "message": "必要なときは深く掘る"
+  },
+  "welcomePrivacy": {
+    "message": "プライバシーについて"
+  },
+  "welcomePrivacyBody": {
+    "message": "匿名の統計（ドメイン、レンダリング種別、パフォーマンス指標。完全な URL やページ内容は含みません）が、実際のウェブに合わせた検出精度の調整に役立ちます。レスポンスヘッダーと領域の内訳は端末外に出ません。いつでも無効にできます。"
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— 判定を動かしたすべての根拠と、その寄与ポイント。"
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— HTML がビルド時に作られたのか、CDN キャッシュから返されたのか、このリクエストのために描画されたのか。レスポンスヘッダーから直接読み取ります。"
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— ページのどの部分をサーバーが送り、どの部分を JavaScript が埋めたか。"
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— 同じレポートを全幅で表示し、ページ遷移ごとに再実行します。DevTools の「Rendering」を開いてください。"
   }
 }

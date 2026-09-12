@@ -162,3 +162,51 @@ describe("detectDomDiff", () => {
     expect(JSON.stringify(result)).not.toContain("<main");
   });
 });
+
+describe("re-running on the same document", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  // The popup's re-run button and the panel's re-run-on-navigation both
+  // analyze a document that is still on screen. The memo is keyed by live
+  // elements that stay reachable, so nothing evicts itself.
+  it("measures the current DOM, not the DOM of the previous run", () => {
+    const raw = rawDocumentFrom('<body><main id="feed"></main></body>');
+    const main = document.createElement("main");
+    main.id = "feed";
+    main.innerHTML = `<p>${PROSE}</p>`;
+    document.body.appendChild(main);
+
+    const first = window.detectDomDiff(raw);
+    const firstChars = first.details.domDiff.regions[0].renderedChars;
+
+    // The page keeps loading: JavaScript appends a second screen of content.
+    main.innerHTML += `<p>${PROSE}</p><p>${PROSE}</p>`;
+
+    const second = window.detectDomDiff(raw);
+    const secondChars = second.details.domDiff.regions[0].renderedChars;
+
+    expect(secondChars).toBeGreaterThan(firstChars);
+    expect(second.details.domDiff.clientChars).toBeGreaterThan(
+      first.details.domDiff.clientChars,
+    );
+  });
+
+  it("reports content that disappeared between runs", () => {
+    const raw = rawDocumentFrom(`<body><main id="feed"><p>${PROSE}</p></main></body>`);
+    const main = document.createElement("main");
+    main.id = "feed";
+    main.innerHTML = `<p>${PROSE}</p>`;
+    document.body.appendChild(main);
+
+    const before = window.detectDomDiff(raw).details.domDiff.regions[0].renderedChars;
+    main.innerHTML = "<p>Short.</p>";
+    const after = window.detectDomDiff(raw).details.domDiff;
+
+    expect(before).toBeGreaterThan(100);
+    // The region is now too small to be reported at all — which is only
+    // visible if the second run re-measured it.
+    expect(after.regions.some((r) => r.renderedChars === before)).toBe(false);
+  });
+});

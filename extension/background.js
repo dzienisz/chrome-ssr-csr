@@ -43,11 +43,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 /**
- * A navigation invalidates the badge: the verdict belonged to the document
+ * A document load invalidates the badge: the verdict belonged to the document
  * that just went away. Clearing it beats showing the previous page's answer.
+ *
+ * Keyed on `status` alone, not on `changeInfo.url`: a reload of the same URL
+ * reports "loading" with no url field, and that page is just as capable of
+ * having changed its rendering as one at a new address.
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === "loading" && changeInfo.url) {
+  if (changeInfo.status === "loading") {
     try {
       chrome.action.setBadgeText({ text: "", tabId });
     } catch (e) {
@@ -111,7 +115,12 @@ async function analyzeTab(tab) {
     }
 
     setBadge(result.renderType, tab.id);
-    await saveToHistory(tab, result);
+    await saveToHistory({
+      url: tab.url,
+      title: tab.title || tab.url,
+      timestamp: Date.now(),
+      results: result,
+    });
 
     const origin = result.renderOrigin ? ` — ${result.renderOrigin.label}` : "";
     notify(`${result.renderType} (${result.confidence}%)`, `${hostOf(url)}${origin}`);
@@ -162,20 +171,33 @@ function notify(title, message) {
 }
 
 /**
+ * The one writer of `analysisHistory`.
+ *
+ * Appending means read-modify-write over the whole array, and the popup and
+ * the context menu can finish analyses at the same time. Two readers taking
+ * the same snapshot means the second `set` silently drops the first entry, so
+ * the popup does not write the store itself — it sends `saveAnalysis` here,
+ * and every append is queued behind the previous one in this single context.
+ */
+let historyQueue = Promise.resolve();
+
+function saveToHistory(entry) {
+  historyQueue = historyQueue.then(() => appendHistoryEntry(entry)).catch(() => {});
+  return historyQueue;
+}
+
+/**
  * Shares the popup's history store and its limit, so entries added from the
  * context menu are trimmed by the same rule rather than a hardcoded ten.
+ *
+ * @param {{url: string, title: string, timestamp: number, results: Object}} entry
  */
-function saveToHistory(tab, result) {
+function appendHistoryEntry(entry) {
   return new Promise((resolve) => {
     chrome.storage.sync.get({ historyLimit: 10 }, (settings) => {
       chrome.storage.local.get(["analysisHistory"], (data) => {
         const history = data.analysisHistory || [];
-        history.unshift({
-          url: tab.url,
-          title: tab.title || tab.url,
-          timestamp: Date.now(),
-          results: result,
-        });
+        history.unshift(entry);
 
         const limit = settings.historyLimit === -1 ? Infinity : settings.historyLimit;
         if (history.length > limit) history.splice(limit);
@@ -185,3 +207,11 @@ function saveToHistory(tab, result) {
     });
   });
 }
+
+// The popup's analyses come through here too, so both entry points append in
+// one place and in one order.
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (!message || message.action !== "saveAnalysis") return false;
+  saveToHistory(message.entry).then(() => sendResponse({ ok: true }));
+  return true; // keep the message channel open for the async response
+});

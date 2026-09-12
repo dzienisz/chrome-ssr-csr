@@ -35,10 +35,12 @@ shoot social-diff 1600 900 social-diff-1600x900.png
 
 # Store screenshots. These compose popup captures from raw/, which are produced
 # by the extension itself:  cd .. && npm run preview -- --promo
-if [ ! -f "$DIR/raw/popup-verdict.png" ]; then
-  echo "! raw/popup-verdict.png missing — run 'npm run preview -- --promo' in extension/ first" >&2
-  exit 1
-fi
+for capture in popup-verdict popup-delivery popup-regions; do
+  if [ ! -f "$DIR/raw/$capture.png" ]; then
+    echo "! raw/$capture.png missing — run 'npm run preview -- --promo' in extension/ first" >&2
+    exit 1
+  fi
+done
 for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn; do
   shoot "$n" 1280 800 "$n-1280x800.png"
 done

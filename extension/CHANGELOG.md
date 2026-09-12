@@ -31,9 +31,11 @@ it did.
   JavaScript filled is reported whole, because that boundary is the finding.
   Also score-neutral.
 - **"Rendered where"** — a one-line verdict combining the rendering
-  classification with the delivery evidence: built in the browser, rendered at
-  build time, rendered once and served from cache, rendered per request, or
-  server-rendered with client islands.
+  classification with the delivery evidence: built in the browser, rendered
+  ahead of the request, served as a static file, served from a cache, answered
+  by the origin, not reusable by caches, or server-rendered with client
+  islands. The wording claims only what the headers prove: a cache hit says a
+  cache answered *this* visit, not that the HTML was rendered exactly once.
 - **Explainable evidence.** Every detector now emits structured signals
   (`{id, label, impact, weight, detail}`) alongside its indicators, so the UI
   shows the arithmetic behind a verdict — which signal contributed how many
@@ -90,6 +92,49 @@ it did.
   previous document's verdict.
 - `popup.html` loaded a script (`analyzer.js`) that has not existed since the
   modular rewrite.
+- **Region measurements went stale on a second analysis of the same page.** The
+  per-run memo was module state keyed by live DOM elements, which nothing
+  evicts, so the popup's re-run button and the panel's re-run-on-navigation
+  reported the first run's text lengths — and every number derived from them.
+- **A navigation during a DevTools analysis hung the panel** until the 20-second
+  timeout: the run in flight held a busy flag, and its poll waited for a
+  result from a document that no longer existed.
+- **Overlapping analyses could show the older result.** Auto-analyze on open
+  and the re-run button can both be in flight; the slower one finishing last
+  replaced the newer report, badge, history entry and telemetry.
+- **Concurrent analyses could drop a history entry.** The popup and the
+  background worker both read-modify-wrote the whole `analysisHistory` array.
+  All appends now go through the worker, which serializes them.
+- `public, max-age=0, s-maxage=86400` — the canonical ISR header pair — was
+  classified as a dynamic, uncacheable response. `s-maxage` is now read before
+  the `max-age=0` fallback.
+- The decisive-CSR cap now reports the points it removed, so the evidence list
+  adds up to the score the verdict used instead of landing 80 points away
+  from it with nothing to explain the gap.
+- The toolbar badge is cleared on same-URL reloads, which report `loading`
+  with no `url` field.
+- Clicking Copy twice inside the reset window left the button permanently
+  reading "Copied".
+### Security
+
+- **CSV exports no longer carry executable cells.** Page titles, element ids and
+  header values flow into the export; a page titled `=HYPERLINK(…)` produced a
+  correctly quoted CSV field that Excel, LibreOffice and Sheets all execute on
+  open. Values starting with `=`, `+`, `-` or `@` — after any leading
+  whitespace or control characters — are now prefixed so the cell stays text.
+
+### Accessibility
+
+- Every control on the settings page has an accessible name. The switches were
+  labelled by a neighbouring `<div>`, so a screen reader announced each one as
+  an unnamed checkbox.
+- Each page sets `documentElement.lang` from the UI locale. The markup ships
+  English and is rewritten at runtime, so a Polish or Japanese interface was
+  being announced with English pronunciation rules.
+- The welcome and settings pages are fully localized: 38 further message keys
+  across all eight locales, and a test that fails when markup asks for a key no
+  catalog defines.
+
 ### Privacy
 
 - Unchanged. The telemetry payload is exactly what it was in 3.12.0: nothing

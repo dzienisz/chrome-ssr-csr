@@ -45,8 +45,15 @@ body {
   padding-top: 2px;
 }
 
+/* A <label>, so the control it names is announced with it. Labels are inline
+   by default; the row layout expects a block. */
 .setting-label {
+  display: block;
   font-weight: 600;
+}
+
+label.setting-label {
+  cursor: pointer;
 }
 
 .setting-help {

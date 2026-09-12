@@ -86,20 +86,20 @@ function analyzeContent() {
     indicators.push("high script-to-content ratio (CSR)");
     signals.push({
       id: "content.scriptRatio.high",
-      label: "More script than markup",
+      label: "High script-to-element ratio",
       impact: "csr",
       weight: config.scoring.highScriptRatio,
-      detail: `${scriptElements} script tags against ${allElements} elements.`,
+      detail: `${scriptElements} script tags against ${allElements} elements — above the ${Math.round(config.scriptRatio.high * 100)}% threshold.`,
     });
   } else if (scriptRatio < config.scriptRatio.low) {
     ssrScore += config.scoring.lowScriptRatio;
     indicators.push("low script-to-content ratio (SSR)");
     signals.push({
       id: "content.scriptRatio.low",
-      label: "Markup dominates script",
+      label: "Low script-to-element ratio",
       impact: "ssr",
       weight: config.scoring.lowScriptRatio,
-      detail: `${scriptElements} script tags against ${allElements} elements.`,
+      detail: `${scriptElements} script tags against ${allElements} elements — below the ${Math.round(config.scriptRatio.low * 100)}% threshold.`,
     });
   }
 

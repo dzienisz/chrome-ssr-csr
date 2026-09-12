@@ -39,7 +39,10 @@ function describeRenderOrigin(renderType, delivery, diff) {
       detail:
         mode === "unknown"
           ? "The server sent a shell and JavaScript assembled the page on this device."
-          : `The document was delivered ${delivery.modeLabel.toLowerCase()}${where}, but its content is assembled by JavaScript on this device.`,
+          : // The delivery label is a noun phrase ("Uncacheable response",
+            // "Served from CDN cache"), so it gets its own clause rather than
+            // being spliced into the middle of a sentence.
+            `${delivery.modeLabel}${where} — but the content you see is assembled by JavaScript on this device.`,
     };
   }
 
@@ -71,33 +74,48 @@ function describeRenderOrigin(renderType, delivery, diff) {
     };
   }
 
+  // Say only what the headers prove. A cache hit proves a cache answered this
+  // visit — not that the HTML was rendered exactly once; a miss proves the
+  // request reached the origin — not that the origin generated anything for
+  // it, since a static file behind a cold cache produces the same miss. Only a
+  // prerender header names generation time outright.
   switch (mode) {
     case "prerendered":
+      return {
+        id: "build",
+        label: "Rendered ahead of the request",
+        detail: `The response is marked as a prerender: the HTML existed before this visit and was served as a static artifact${where}.`,
+      };
     case "static":
       return {
         id: "build",
-        label: "Rendered at build time",
-        detail: `The HTML was generated before anyone asked for it and served as a static artifact${where}.`,
+        label: "Served as a static file",
+        detail: `The document arrives with a validator and no cache negotiation, the way a file on disk is served${where}.`,
       };
     case "edge-cached":
       return {
         id: "edge",
-        label: "Rendered once, served from cache",
-        detail: `A cache${where} answered this request, so no server render happened for this visit.`,
+        label: "Served from a cache",
+        detail: `A cache${where} answered this request, so the origin did no work for this visit. When the cached copy was produced is not something the headers say.`,
       };
     case "origin":
+      return {
+        id: "server",
+        label: "Answered by the origin",
+        detail: `The request reached the origin server${where} rather than being answered by a cache.`,
+      };
     case "dynamic":
       return {
         id: "server",
-        label: "Rendered per request",
-        detail: `The origin server produced this HTML for this request${where}.`,
+        label: "Not reusable by caches",
+        detail: `Cache headers keep shared caches from reusing this document${where}, so every visitor reaches the origin.`,
       };
     default:
       return {
         id: "server",
         label: "Rendered on the server",
         detail:
-          "The content arrived as finished HTML. Cache headers were not conclusive about when it was produced.",
+          "The content arrived as finished HTML. The response headers say nothing conclusive about when or where it was produced.",
       };
   }
 }
@@ -236,15 +254,24 @@ async function pageAnalyzer() {
     // SSR signal above reads the post-JS DOM, where a booted CSR app looks
     // like an SSR page — cap their combined contribution.
     if (comparisonResults?.isDecisiveCSR) {
+      const cappedFrom = ssrScore;
       ssrScore = Math.min(ssrScore, config.scoring.decisiveCsrSsrCap);
+      const removed = cappedFrom - ssrScore;
       indicators.push('raw HTML nearly empty vs rendered - SSR signals capped (CSR)');
+      // The weight is the number of points this branch actually took away.
+      // Reporting 0 would leave the evidence list adding up to a score the
+      // verdict never used — a reader could total the SSR signals at 90 while
+      // the report showed an SSR score of 10, with nothing to explain the gap.
       signals.push({
         id: "comparison.decisiveCsr",
-        label: "Server-side signals capped",
+        label:
+          removed > 0
+            ? `Server-side signals capped (\u2212${removed})`
+            : "Server-side signals capped",
         impact: "csr",
-        weight: 0,
+        weight: removed,
         detail:
-          "The served HTML held under 10% of the visible text, so signals read from the post-JavaScript DOM were not allowed to outvote that.",
+          `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
     }
 

@@ -54,6 +54,35 @@ describe("detectDelivery", () => {
       expect(details.delivery.sMaxAge).toBe(600);
     });
 
+    // `public, max-age=0, s-maxage=86400` is the canonical ISR header pair:
+    // browsers revalidate, shared caches hold it for a day. Reading the
+    // max-age=0 first would file every incrementally regenerated page under
+    // "dynamic" — the opposite of what those headers mean.
+    it("does not let max-age=0 mask a positive s-maxage", () => {
+      const { details } = run({
+        "cache-control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=59",
+      });
+
+      expect(details.delivery.mode).toBe("edge-cached");
+      expect(details.delivery.sMaxAge).toBe(86400);
+    });
+
+    it("still treats a bare max-age=0 as revalidate-on-every-visit", () => {
+      const { details } = run({ "cache-control": "public, max-age=0" });
+
+      expect(details.delivery.mode).toBe("dynamic");
+      expect(details.delivery.modeLabel).toMatch(/revalidat/i);
+    });
+
+    it("keeps no-store and private as dynamic overrides even with s-maxage", () => {
+      expect(run({ "cache-control": "no-store, s-maxage=600" }).details.delivery.mode).toBe(
+        "dynamic",
+      );
+      expect(run({ "cache-control": "private, s-maxage=600" }).details.delivery.mode).toBe(
+        "dynamic",
+      );
+    });
+
     it("treats vary: cookie as a per-visitor response", () => {
       const { details } = run({ vary: "Cookie, Accept-Encoding" });
 

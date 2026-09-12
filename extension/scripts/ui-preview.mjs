@@ -20,6 +20,7 @@
  */
 import { chromium } from "playwright";
 import { createServer } from "node:http";
+import fs from "node:fs";
 import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -38,8 +39,29 @@ const PROMO_SHOTS = [
   { fixture: "isr-prerender", tab: "delivery", file: "popup-delivery.png" },
 ];
 
-/** Viewport for a promo capture: the frame in the screenshot source is 400x640. */
+/**
+ * The screenshot frame in promo-images/src is a 400x640 window, and the popup
+ * is captured at that size so nothing has to be cropped. The capture itself is
+ * 2x (800x1280) because the frame displays it at `width: 400px` — a retina
+ * source downscales crisply into the 1280x800 store screenshot where a 1x one
+ * would look soft. PROMO_SCALE keeps that relationship checkable rather than
+ * incidental: Playwright's screenshot `scale` default is "device", and a
+ * change there would silently halve the resolution of every store asset.
+ */
 const PROMO_VIEWPORT = { width: 400, height: 640 };
+const PROMO_SCALE = 2;
+
+/** Width and height of a PNG, straight out of its IHDR chunk. */
+function pngSize(file) {
+  const header = Buffer.alloc(24);
+  const fd = fs.openSync(file, "r");
+  try {
+    fs.readSync(fd, header, 0, 24, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+  return { width: header.readUInt32BE(16), height: header.readUInt32BE(20) };
+}
 const BUNDLE = readFileSync(join(EXTENSION_DIR, "src/analyzer-bundle.js"), "utf8");
 const VERSION = JSON.parse(readFileSync(join(EXTENSION_DIR, "manifest.json"), "utf8")).version;
 
@@ -271,7 +293,22 @@ if (PROMO) {
       // capture taller than the frame would just be cropped by CSS anyway.
       fullPage: false,
     });
-    console.log(`promo capture: promo-images/raw/${shot.file}`);
+
+    const path = join(PROMO_RAW_DIR, shot.file);
+    const { width, height } = pngSize(path);
+    const expected = {
+      width: PROMO_VIEWPORT.width * PROMO_SCALE,
+      height: PROMO_VIEWPORT.height * PROMO_SCALE,
+    };
+    if (width !== expected.width || height !== expected.height) {
+      console.error(
+        `promo capture ${shot.file} is ${width}x${height}, expected ` +
+          `${expected.width}x${expected.height} (${PROMO_VIEWPORT.width}x${PROMO_VIEWPORT.height} at ${PROMO_SCALE}x). ` +
+          `The screenshot frames size it by width, so a different ratio would distort it.`,
+      );
+      process.exitCode = 1;
+    }
+    console.log(`promo capture: promo-images/raw/${shot.file} (${width}x${height})`);
   }
 }
 

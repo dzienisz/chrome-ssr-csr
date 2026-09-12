@@ -154,5 +154,119 @@
   },
   "shortcutUnset": {
     "message": "Não definido"
+  },
+  "pinTitle": {
+    "message": "Fixe a extensão"
+  },
+  "pinBody": {
+    "message": "(ícone de quebra-cabeça → fixar) para analisar qualquer página com um clique."
+  },
+  "settingsSubtitle": {
+    "message": "Como o detector se comporta, o que ele guarda e o que ele compartilha."
+  },
+  "settingTheme": {
+    "message": "Tema"
+  },
+  "settingThemeHelp": {
+    "message": "Vale para o popup, o painel do DevTools e esta página."
+  },
+  "settingAutoAnalyze": {
+    "message": "Analisar assim que o popup abrir"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "Desative se preferir clicar em um botão antes."
+  },
+  "settingHistory": {
+    "message": "Entradas no histórico"
+  },
+  "settingHistoryHelp": {
+    "message": "Ficam só neste dispositivo, nunca são enviadas."
+  },
+  "settingNotifications": {
+    "message": "Notificações da área de trabalho"
+  },
+  "settingNotificationsHelp": {
+    "message": "Usadas pelo item de menu “Analisar a renderização da página”."
+  },
+  "settingShare": {
+    "message": "Compartilhar dados de análise anônimos"
+  },
+  "settingShareHelp": {
+    "message": "Ajuda a calibrar a detecção com sites reais. Desative quando quiser."
+  },
+  "privacyWhatTitle": {
+    "message": "O que é compartilhado quando isto está ativo"
+  },
+  "privacyWhatBody": {
+    "message": "O nome do domínio (nunca a URL completa), o tipo de renderização e a confiança, os frameworks detectados, métricas de desempenho e um país derivado no servidor a partir do IP da requisição, que não é armazenado."
+  },
+  "privacyNeverBody": {
+    "message": "Nunca compartilhado: conteúdo da página, informações pessoais, histórico de navegação, cabeçalhos de resposta ou o detalhamento por região da aba Regiões — essa análise fica no seu dispositivo."
+  },
+  "privacyPolicyLink": {
+    "message": "Ler a política de privacidade completa"
+  },
+  "shortcutOpen": {
+    "message": "Abrir o relatório de renderização"
+  },
+  "shortcutOpenHelp": {
+    "message": "Altere na página de atalhos de extensões do seu navegador."
+  },
+  "welcomeTitle": {
+    "message": "Como esta página é renderizada?"
+  },
+  "welcomeSubtitle": {
+    "message": "Abra qualquer site e tenha a resposta com um clique — com as evidências, onde o HTML foi produzido e quais partes da página o JavaScript construiu."
+  },
+  "welcomeStep1": {
+    "message": "Fixe na barra de ferramentas"
+  },
+  "welcomeStep1Body": {
+    "message": "Os navegadores escondem extensões novas atrás do ícone de quebra-cabeça. Fixe para deixar o relatório a um clique."
+  },
+  "pinStepOpen": {
+    "message": "Clique no ícone de quebra-cabeça"
+  },
+  "pinStepFind": {
+    "message": "encontre CSR vs SSR Detector"
+  },
+  "pinStepPin": {
+    "message": "clique no alfinete"
+  },
+  "welcomeStep2": {
+    "message": "Leia o veredito"
+  },
+  "welcomeStep2Body": {
+    "message": "O selo dá a manchete; o popup explica como se chegou a ela."
+  },
+  "welcomeSsr": {
+    "message": "O conteúdo veio no HTML inicial. Bom para buscadores e para a primeira pintura."
+  },
+  "welcomeCsr": {
+    "message": "O navegador montou a página com JavaScript. Típico de sites de página única no estilo aplicativo."
+  },
+  "welcomeMix": {
+    "message": "Parte da página veio do servidor; o resto foi hidratado ou buscado depois."
+  },
+  "welcomeStep3": {
+    "message": "Aprofunde quando precisar"
+  },
+  "welcomePrivacy": {
+    "message": "Sua privacidade"
+  },
+  "welcomePrivacyBody": {
+    "message": "Estatísticas anônimas — domínio, tipo de renderização, métricas de desempenho, nunca URLs completas ou conteúdo — ajudam a calibrar a detecção com a web real. Cabeçalhos de resposta e o detalhamento por região nunca saem do seu dispositivo. Desative quando quiser."
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— cada evidência que moveu o veredito, com os pontos que somou."
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— se o HTML foi construído no build, servido de um cache de CDN ou renderizado para esta requisição, lido direto dos cabeçalhos de resposta."
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— quais partes da página o servidor enviou e quais o JavaScript preencheu."
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— o mesmo relatório em largura total, rodando de novo a cada navegação. Procure “Rendering” no DevTools."
   }
 }

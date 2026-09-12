@@ -51,26 +51,40 @@ AMO. Listing copy lives in `../amo-listing.md`.
 - `firefox-hero.html`, `firefox-tile.html` — Firefox promo art (same design
   system, with a Firefox-orange "Now on Firefox 128+" badge).
 - `screenshot-frame.css` + `screenshot-*.html` — store screenshots. Each frame
-  crops the popup out of a full-browser capture in `raw/` via CSS variables
-  (`--x1/--y1/--x2/--y2` = popup bounding box in the 4K capture, `--s` = scale).
+  is a headline plus a 400×640 window holding one popup capture from `raw/`,
+  shown at its natural size. No crop offsets: the capture is already the right
+  shape (see below).
 - `icon.html` — the extension icon as SVG: split page, rose outline (CSR:
   empty until JS runs) vs emerald solid (SSR: content in the HTML).
 
 ## Raw captures (`raw/`)
 
-**Local inputs only — gitignored, not in the repo** (throwaway 4K binaries that
-get replaced after every popup UI change would bloat git history permanently).
-The committed `screenshot-*-1280x800.png` outputs are the durable artifacts.
+**Local inputs only — gitignored, not in the repo.** They are reproducible in
+one command, so committing them would only add churn; the
+`screenshot-*-1280x800.png` outputs are the durable artifacts.
 
-To (re)generate screenshots: take full-browser 4K screenshots (3840×2160,
-retina 1920×1080) with the popup open, anchored top-right, and save them as:
+Regenerate them from the shipping popup:
 
-- `raw/nextjs-ssr.png` — nextjs.org with a confident SSR verdict
-- `raw/google-mix.png` — google.com with the Hybrid/MIX verdict
-- `raw/nextjs-preanalysis.png` — popup before analysis (built-in explainer visible)
+```bash
+cd ..                        # extension/
+npm run preview -- --promo
+```
 
-Then re-run `./build.sh`. If the popup moved, adjust the `--x1/--y1/--x2/--y2`
-variables in the matching `src/screenshot-*.html`.
+That renders the real popup against a real analysis of the offline fixtures and
+writes exactly the three files the frames expect:
+
+| File | Fixture | Tab |
+|------|---------|-----|
+| `raw/popup-verdict.png` | `ssr-next-edge` | Overview |
+| `raw/popup-delivery.png` | `isr-prerender` | Delivery |
+| `raw/popup-regions.png` | `csr-spa` | Regions |
+
+Then re-run `./build.sh`. Nothing needs adjusting when the popup layout
+changes: the capture is taken at the frame's own 400×640 size, and the frame
+fades the bottom edge where the popup runs past it.
+
+To feature a different fixture or tab, edit `PROMO_SHOTS` in
+`../scripts/ui-preview.mjs`.
 
 ## Listing text
 
