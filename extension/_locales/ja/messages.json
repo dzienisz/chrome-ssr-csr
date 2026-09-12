@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— 同じレポートを全幅で表示し、ページ遷移ごとに再実行します。DevTools の「Rendering」を開いてください。"
+  },
+  "cacheLayers": {
+    "message": "キャッシュ階層"
+  },
+  "pageChanged": {
+    "message": "解析中にページが遷移しました。もう一度実行してください。"
   }
 }

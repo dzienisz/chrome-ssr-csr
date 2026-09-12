@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— ten sam raport na pełnej szerokości, uruchamiany ponownie przy każdej nawigacji. Szukaj „Rendering” w DevTools."
+  },
+  "cacheLayers": {
+    "message": "Warstwy cache"
+  },
+  "pageChanged": {
+    "message": "Strona zmieniła adres w trakcie analizy. Uruchom ponownie."
   }
 }

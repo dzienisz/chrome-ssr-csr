@@ -39,6 +39,18 @@ const CACHE_BYPASS = "BYPASS";
 const CACHE_PRERENDER = "PRERENDER";
 
 /**
+ * Which state wins when tiers disagree, strongest evidence first. "Strongest"
+ * means closest to "the browser did not wait for the origin".
+ */
+const CACHE_PRECEDENCE = [
+  CACHE_PRERENDER,
+  CACHE_HIT,
+  CACHE_STALE,
+  CACHE_MISS,
+  CACHE_BYPASS,
+];
+
+/**
  * CDNs and hosts, in priority order — the first match wins, so specific
  * vendors come before the generic `server:` sniffs at the end.
  * @type {Array<{name: string, test: (h: Object) => boolean}>}
@@ -242,9 +254,16 @@ function detectDelivery(headers) {
     if (state) cacheLayers.push({ header, state });
   }
 
-  // The headline state is the first tier in CACHE_HEADERS order — the most
-  // specific vendor header present. `cacheLayers` keeps the rest.
-  const vendorCache = cacheLayers.length ? cacheLayers[0].state : null;
+  // The headline state is the strongest thing any tier reported, not the
+  // first one in header order. Cloudflare in front of Vercel answering
+  // `cf-cache-status: HIT` with a stale `x-vercel-cache: MISS` attached means
+  // the browser got a cached response and the origin did no work — reading
+  // the Vercel header first would file that under "answered by the origin",
+  // which is the opposite of what happened. Either way round, one tier
+  // serving from cache is enough: a hit anywhere means no origin render for
+  // this visit.
+  const vendorCache =
+    CACHE_PRECEDENCE.find((state) => cacheLayers.some((layer) => layer.state === state)) || null;
 
   const cacheControl = parseCacheControl(h["cache-control"]);
   const age = h.age != null ? parseInt(h.age, 10) : null;

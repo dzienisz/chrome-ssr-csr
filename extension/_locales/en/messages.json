@@ -358,5 +358,13 @@
   "welcomeFeaturePanelBody": {
     "message": "— the same report, full width, re-running on every navigation. Look for “Rendering” in DevTools.",
     "description": "Onboarding: what the DevTools panel offers; follows the bold label"
+  },
+  "cacheLayers": {
+    "message": "Cache layers",
+    "description": "Label for the per-tier cache states row in the Delivery tab"
+  },
+  "pageChanged": {
+    "message": "The page navigated while it was being analyzed. Run it again.",
+    "description": "Shown when the page navigated while it was being analyzed"
   }
 }

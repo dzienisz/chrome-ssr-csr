@@ -275,7 +275,7 @@ function renderOverview(result, options = {}) {
   }
 
   const top = showTopSignals
-    ? (result.signals || []).filter((s) => s.weight > 0).slice(0, 3)
+    ? (result.signals || []).filter((s) => s.weight).slice(0, 3)
     : [];
   if (top.length) {
     frag.appendChild(
@@ -295,6 +295,22 @@ function renderOverview(result, options = {}) {
   return frag;
 }
 
+/**
+ * The points a signal contributed, with its side and its sign.
+ *
+ * Weights can be negative: the decisive-CSR cap removes SSR points rather than
+ * adding CSR ones, and rendering that as "CSR +80" would claim evidence that
+ * was never found.
+ *
+ * @param {{impact: string, weight: number}} signal
+ * @returns {string}
+ */
+function formatWeight(signal) {
+  const side = { csr: "CSR", hybrid: "HYB" }[signal.impact] || "SSR";
+  const sign = signal.weight < 0 ? "\u2212" : "+";
+  return `${side} ${sign}${Math.abs(signal.weight)}`;
+}
+
 /** One evidence row. */
 function renderSignal(signal) {
   return el("div", {
@@ -309,10 +325,10 @@ function renderSignal(signal) {
             className: "signal-head",
             children: [
               el("div", { className: "signal-label", text: signal.label }),
-              signal.weight > 0
+              signal.weight
                 ? el("span", {
                     className: "signal-weight",
-                    text: `${signal.impact === "csr" ? "CSR" : signal.impact === "hybrid" ? "HYB" : "SSR"} +${signal.weight}`,
+                    text: formatWeight(signal),
                   })
                 : null,
             ],
@@ -334,8 +350,8 @@ function renderSignals(result) {
     return el("div", { className: "empty", text: "No signals were recorded." });
   }
 
-  const scored = signals.filter((s) => s.weight > 0);
-  const context = signals.filter((s) => !(s.weight > 0));
+  const scored = signals.filter((s) => s.weight);
+  const context = signals.filter((s) => !s.weight);
   const frag = document.createDocumentFragment();
 
   if (scored.length) {
@@ -425,7 +441,7 @@ function renderDelivery(result) {
           // Only when more than one tier answered: a single layer is already
           // the line above it, and repeating it reads like a second fact.
           [
-            "Cache layers",
+            label("cacheLayers", "Cache layers"),
             delivery.cacheLayers && delivery.cacheLayers.length > 1
               ? delivery.cacheLayers.map((l) => `${l.header}: ${l.state}`).join(" · ")
               : null,

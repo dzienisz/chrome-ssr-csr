@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— o mesmo relatório em largura total, rodando de novo a cada navegação. Procure “Rendering” no DevTools."
+  },
+  "cacheLayers": {
+    "message": "Camadas de cache"
+  },
+  "pageChanged": {
+    "message": "A página navegou enquanto era analisada. Execute de novo."
   }
 }

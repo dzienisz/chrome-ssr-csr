@@ -136,9 +136,15 @@ async function run() {
     if (stale() || result === null) return;
     if (result.failed) throw new Error(result.failed);
 
-    state.result = result;
-    state.page = await readPageIdentity();
+    // Read the identity first, then check, then commit both together. An
+    // obsolete run that assigned state before awaiting could overwrite
+    // state.page after a newer run had already rendered, and Copy summary
+    // would then label the new analysis with the previous page.
+    const identity = await readPageIdentity();
     if (stale()) return;
+
+    state.result = result;
+    state.page = identity;
     render(result);
   } catch (error) {
     if (stale()) return;

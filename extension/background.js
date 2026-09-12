@@ -114,6 +114,19 @@ async function analyzeTab(tab) {
       return;
     }
 
+    // Same hazard as the popup: the tab id survives a navigation, so a result
+    // produced after one describes a document that `tab` no longer names.
+    // Recording it under the click-time url would file the wrong verdict
+    // against the wrong site.
+    const current = await getTab(tab.id);
+    if (!current || (current.url && current.url !== url)) {
+      notify(
+        "Analysis discarded",
+        "The page navigated while it was being analyzed.",
+      );
+      return;
+    }
+
     setBadge(result.renderType, tab.id);
     await saveToHistory({
       url: tab.url,
@@ -127,6 +140,19 @@ async function analyzeTab(tab) {
   } catch (error) {
     notify("Analysis failed", String((error && error.message) || error));
   }
+}
+
+/**
+ * @param {number} tabId
+ * @returns {Promise<chrome.tabs.Tab|null>}
+ */
+function getTab(tabId) {
+  return new Promise((resolve) => {
+    chrome.tabs.get(tabId, (tab) => {
+      void chrome.runtime.lastError;
+      resolve(tab || null);
+    });
+  });
 }
 
 function hostOf(url) {
@@ -182,7 +208,23 @@ function notify(title, message) {
 let historyQueue = Promise.resolve();
 
 function saveToHistory(entry) {
-  historyQueue = historyQueue.then(() => appendHistoryEntry(entry)).catch(() => {});
+  return enqueueHistoryWrite(() => appendHistoryEntry(entry));
+}
+
+/**
+ * Clearing has to share the queue with appending. A clear issued straight to
+ * storage can land between an append's read and its write, and the append then
+ * writes the pre-clear array back — the user presses "Clear history" and the
+ * entries reappear.
+ */
+function clearHistory() {
+  return enqueueHistoryWrite(
+    () => new Promise((resolve) => chrome.storage.local.set({ analysisHistory: [] }, resolve)),
+  );
+}
+
+function enqueueHistoryWrite(operation) {
+  historyQueue = historyQueue.then(operation).catch(() => {});
   return historyQueue;
 }
 
@@ -211,7 +253,17 @@ function appendHistoryEntry(entry) {
 // The popup's analyses come through here too, so both entry points append in
 // one place and in one order.
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (!message || message.action !== "saveAnalysis") return false;
-  saveToHistory(message.entry).then(() => sendResponse({ ok: true }));
-  return true; // keep the message channel open for the async response
+  if (!message) return false;
+
+  if (message.action === "saveAnalysis") {
+    saveToHistory(message.entry).then(() => sendResponse({ ok: true }));
+    return true; // keep the message channel open for the async response
+  }
+
+  if (message.action === "clearAnalysisHistory") {
+    clearHistory().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+
+  return false;
 });

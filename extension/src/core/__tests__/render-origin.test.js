@@ -331,12 +331,23 @@ describe("decisive-CSR cap arithmetic", () => {
     const cap = result.signals.find((s) => s.id === "comparison.decisiveCsr");
 
     expect(result.detailedInfo.ssrScore).toBe(10);
-    // 90 points of SSR signal, capped to 10, so the cap must account for 80 —
-    // otherwise a reader totalling the evidence list lands 80 points away from
-    // the score the verdict actually used.
-    expect(cap.weight).toBe(80);
-    expect(cap.label).toContain("80");
+    // 90 points of SSR signal, capped to 10, so the cap accounts for −80.
+    // Negative and on the SSR side, not positive on the CSR side: the branch
+    // takes SSR points away and adds nothing to csrScore, so "CSR +80" would
+    // claim evidence that was never found.
+    expect(cap.weight).toBe(-80);
+    expect(cap.impact).toBe("ssr");
     expect(cap.detail).toContain("90");
+
+    // The SSR signals now total the score the verdict actually used.
+    const ssrTotal = result.signals
+      .filter((s) => s.impact === "ssr")
+      .reduce((sum, s) => sum + s.weight, 0);
+    expect(ssrTotal).toBe(result.detailedInfo.ssrScore);
+
+    // A removal that large belongs near the top of the evidence, not below
+    // every zero-weight note.
+    expect(result.signals.indexOf(cap)).toBeLessThan(2);
   });
 
   it("does not claim to have removed anything when the score was already low", async () => {
@@ -357,7 +368,7 @@ describe("decisive-CSR cap arithmetic", () => {
     const cap = result.signals.find((s) => s.id === "comparison.decisiveCsr");
 
     expect(result.detailedInfo.ssrScore).toBe(5);
-    expect(cap.weight).toBe(0);
-    expect(cap.label).not.toContain("−");
+    expect(cap.weight).toBe(-0);
+    expect(cap.detail).toContain("5");
   });
 });

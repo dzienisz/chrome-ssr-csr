@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— derselbe Bericht in voller Breite, der bei jeder Navigation neu läuft. Suchen Sie in den DevTools nach „Rendering“."
+  },
+  "cacheLayers": {
+    "message": "Cache-Ebenen"
+  },
+  "pageChanged": {
+    "message": "Die Seite hat während der Analyse navigiert. Bitte erneut ausführen."
   }
 }

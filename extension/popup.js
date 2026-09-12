@@ -156,6 +156,22 @@ async function analyze() {
     });
     if (stale()) return;
 
+    // A tab id outlives the document in it. If the page navigated while the
+    // analysis was running, the result describes a document that `page` does
+    // not name — and labelling one page's report with another page's URL is
+    // worse than showing nothing, because it also gets written to history and
+    // sent as telemetry.
+    if (await documentChanged(tab.id, page.url)) {
+      showError(
+        window.t("analysisFailed", "Analysis failed"),
+        window.t(
+          "pageChanged",
+          "The page navigated while it was being analyzed. Run it again.",
+        ),
+      );
+      return;
+    }
+
     const result = injection && injection.result;
     if (!result) {
       showError(
@@ -202,6 +218,30 @@ function setBusy(busy) {
 function getActiveTab() {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs && tabs[0]));
+  });
+}
+
+/**
+ * Did the tab move to a different document while we were analyzing it?
+ *
+ * Compared by url rather than by the documentId in the injection results:
+ * those are Chromium-only, and this has to hold on Firefox too.
+ *
+ * @param {number} tabId
+ * @param {string} expectedUrl
+ * @returns {Promise<boolean>}
+ */
+function documentChanged(tabId, expectedUrl) {
+  return new Promise((resolve) => {
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab) {
+        // The tab is gone, which is at least as disqualifying as a navigation.
+        void chrome.runtime.lastError;
+        resolve(true);
+        return;
+      }
+      resolve(Boolean(tab.url) && tab.url !== expectedUrl);
+    });
   });
 }
 
@@ -467,8 +507,14 @@ function renderHistoryPanel() {
       className: "btn",
       text: window.t("clearHistory", "Clear history"),
     });
+    // Through the worker, like every other write: a clear sent straight to
+    // storage can land between a queued append's read and its write, and the
+    // append then puts the cleared entries back.
     clear.addEventListener("click", () => {
-      chrome.storage.local.set({ analysisHistory: [] }, renderHistoryPanel);
+      chrome.runtime.sendMessage({ action: "clearAnalysisHistory" }, () => {
+        void chrome.runtime.lastError;
+        renderHistoryPanel();
+      });
     });
 
     panel.replaceChildren(

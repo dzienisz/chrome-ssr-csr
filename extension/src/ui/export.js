@@ -144,7 +144,10 @@ function toMarkdown(result, page, version) {
   if (signals.length) {
     lines.push("## Evidence", "");
     for (const signal of signals) {
-      const weight = signal.weight > 0 ? ` _(${signal.impact.toUpperCase()} +${signal.weight})_` : "";
+      // Signed: a capped signal removes points rather than adding them.
+      const weight = signal.weight
+        ? ` _(${signal.impact.toUpperCase()} ${signal.weight < 0 ? "−" : "+"}${Math.abs(signal.weight)})_`
+        : "";
       lines.push(`- **${signal.label}**${weight}${signal.detail ? ` — ${signal.detail}` : ""}`);
     }
     lines.push("");

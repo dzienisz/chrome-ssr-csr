@@ -409,6 +409,18 @@ const CACHE_BYPASS = "BYPASS";
 const CACHE_PRERENDER = "PRERENDER";
 
 /**
+ * Which state wins when tiers disagree, strongest evidence first. "Strongest"
+ * means closest to "the browser did not wait for the origin".
+ */
+const CACHE_PRECEDENCE = [
+  CACHE_PRERENDER,
+  CACHE_HIT,
+  CACHE_STALE,
+  CACHE_MISS,
+  CACHE_BYPASS,
+];
+
+/**
  * CDNs and hosts, in priority order — the first match wins, so specific
  * vendors come before the generic `server:` sniffs at the end.
  * @type {Array<{name: string, test: (h: Object) => boolean}>}
@@ -612,9 +624,16 @@ function detectDelivery(headers) {
     if (state) cacheLayers.push({ header, state });
   }
 
-  // The headline state is the first tier in CACHE_HEADERS order — the most
-  // specific vendor header present. `cacheLayers` keeps the rest.
-  const vendorCache = cacheLayers.length ? cacheLayers[0].state : null;
+  // The headline state is the strongest thing any tier reported, not the
+  // first one in header order. Cloudflare in front of Vercel answering
+  // `cf-cache-status: HIT` with a stale `x-vercel-cache: MISS` attached means
+  // the browser got a cached response and the origin did no work — reading
+  // the Vercel header first would file that under "answered by the origin",
+  // which is the opposite of what happened. Either way round, one tier
+  // serving from cache is enough: a hit anywhere means no origin render for
+  // this visit.
+  const vendorCache =
+    CACHE_PRECEDENCE.find((state) => cacheLayers.some((layer) => layer.state === state)) || null;
 
   const cacheControl = parseCacheControl(h["cache-control"]);
   const age = h.age != null ? parseInt(h.age, 10) : null;
@@ -2673,18 +2692,16 @@ async function pageAnalyzer() {
       ssrScore = Math.min(ssrScore, config.scoring.decisiveCsrSsrCap);
       const removed = cappedFrom - ssrScore;
       indicators.push('raw HTML nearly empty vs rendered - SSR signals capped (CSR)');
-      // The weight is the number of points this branch actually took away.
-      // Reporting 0 would leave the evidence list adding up to a score the
-      // verdict never used — a reader could total the SSR signals at 90 while
-      // the report showed an SSR score of 10, with nothing to explain the gap.
+      // A negative SSR weight, not a positive CSR one. The branch takes points
+      // away from the SSR side; it adds nothing to the CSR side, and labelling
+      // the removal "CSR +80" would claim evidence that does not exist. With
+      // the sign, the SSR signals still total the score the verdict used —
+      // which is the whole point of showing it at all.
       signals.push({
         id: "comparison.decisiveCsr",
-        label:
-          removed > 0
-            ? `Server-side signals capped (\u2212${removed})`
-            : "Server-side signals capped",
-        impact: "csr",
-        weight: removed,
+        label: "Server-side signals capped",
+        impact: "ssr",
+        weight: -removed,
         detail:
           `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
@@ -2726,7 +2743,10 @@ async function pageAnalyzer() {
     );
 
     // Strongest first, so a reader sees the evidence that decided the verdict
-    // before the supporting detail. Purely informational signals sort last.
+    // before the supporting detail. By magnitude, not by value: a signal that
+    // removed 80 points is one of the most important facts about the verdict,
+    // and ordering by raw weight would bury it below every zero-weight note.
+    // Purely informational signals still sort last.
     //
     // No tiebreak on purpose: Array.prototype.sort has been required to be
     // stable since ES2019, so equal weights keep the order the modules were
@@ -2735,7 +2755,7 @@ async function pageAnalyzer() {
     // zero-weight signals alphabetically by id would scatter it.
     const orderedSignals = signals
       .slice()
-      .sort((a, b) => (b.weight || 0) - (a.weight || 0));
+      .sort((a, b) => Math.abs(b.weight || 0) - Math.abs(a.weight || 0));
 
     return {
       renderType,

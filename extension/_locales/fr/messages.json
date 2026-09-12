@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— le même rapport en pleine largeur, relancé à chaque navigation. Cherchez « Rendering » dans les DevTools."
+  },
+  "cacheLayers": {
+    "message": "Niveaux de cache"
+  },
+  "pageChanged": {
+    "message": "La page a changé pendant l'analyse. Relancez-la."
   }
 }

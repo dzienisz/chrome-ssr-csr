@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— 같은 보고서를 전체 너비로 보여주며 페이지를 이동할 때마다 다시 실행합니다. DevTools에서 'Rendering'을 찾으세요."
+  },
+  "cacheLayers": {
+    "message": "캐시 계층"
+  },
+  "pageChanged": {
+    "message": "분석 중에 페이지가 이동했습니다. 다시 실행하세요."
   }
 }

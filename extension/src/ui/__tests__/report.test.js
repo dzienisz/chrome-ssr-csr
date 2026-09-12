@@ -255,6 +255,42 @@ describe("renderSignals", () => {
     expect(container.querySelector(".signal-weight").textContent).toBe("SSR +30");
   });
 
+  // The decisive-CSR cap removes SSR points rather than adding CSR ones.
+  // Rendering it as "CSR +80" would claim evidence that was never found.
+  it("renders a negative weight as a signed adjustment on its own side", () => {
+    const data = result();
+    data.signals = [
+      {
+        id: "comparison.decisiveCsr",
+        label: "Server-side signals capped",
+        impact: "ssr",
+        weight: -80,
+        detail: "Cut from 90 to 10.",
+      },
+    ];
+
+    const container = document.createElement("div");
+    container.appendChild(renderSignals(data));
+
+    expect(container.querySelector(".signal-weight").textContent).toBe("SSR \u221280");
+    expect(container.querySelector(".signal").dataset.impact).toBe("ssr");
+  });
+
+  it("counts a negative weight as scored evidence, not as context", () => {
+    const data = result();
+    data.signals = [
+      { id: "cap", label: "Capped", impact: "ssr", weight: -80, detail: "" },
+      { id: "info", label: "Info", impact: "info", weight: 0, detail: "" },
+    ];
+
+    const container = document.createElement("div");
+    container.appendChild(renderSignals(data));
+
+    const cards = container.querySelectorAll(".card");
+    expect(cards[0].textContent).toContain("Capped");
+    expect(cards[1].textContent).toContain("Info");
+  });
+
   it("reports an empty state rather than an empty card", () => {
     const node = renderSignals(result({ signals: [] }));
 

@@ -219,13 +219,47 @@ describe("detectDelivery", () => {
         "cf-ray": "abc",
       });
 
-      // Headline stays the most specific vendor header; the rest is kept so
-      // the report can say Cloudflare served it while Vercel did the work.
-      expect(details.delivery.cacheState).toBe("MISS");
+      // Every tier is kept, in header order, so the report can show that
+      // Cloudflare served it while the Vercel header still says MISS.
       expect(details.delivery.cacheLayers).toEqual([
         { header: "x-vercel-cache", state: "MISS" },
         { header: "cf-cache-status", state: "HIT" },
       ]);
+    });
+
+    // One tier serving from cache is enough: the browser got a cached
+    // response and the origin did no work, whichever header says so.
+    it("lets a hit at any tier decide the headline and the mode", () => {
+      const { details } = run({
+        "x-vercel-cache": "MISS",
+        "cf-cache-status": "HIT",
+        "cf-ray": "abc",
+      });
+
+      expect(details.delivery.cacheState).toBe("HIT");
+      expect(details.delivery.mode).toBe("edge-cached");
+    });
+
+    it("reaches the origin only when no tier served from cache", () => {
+      const { details } = run({
+        "x-vercel-cache": "MISS",
+        "cf-cache-status": "MISS",
+        "cf-ray": "abc",
+      });
+
+      expect(details.delivery.cacheState).toBe("MISS");
+      expect(details.delivery.mode).toBe("origin");
+    });
+
+    it("prefers a prerender over any other tier's state", () => {
+      const { details } = run({
+        "x-nextjs-cache": "PRERENDER",
+        "cf-cache-status": "MISS",
+        "cf-ray": "abc",
+      });
+
+      expect(details.delivery.cacheState).toBe("PRERENDER");
+      expect(details.delivery.mode).toBe("prerendered");
     });
 
     it("reports a single layer as a one-entry list", () => {

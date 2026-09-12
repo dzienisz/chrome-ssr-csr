@@ -268,5 +268,11 @@
   },
   "welcomeFeaturePanelBody": {
     "message": "— el mismo informe a todo lo ancho, repitiéndose en cada navegación. Busca «Rendering» en las DevTools."
+  },
+  "cacheLayers": {
+    "message": "Capas de caché"
+  },
+  "pageChanged": {
+    "message": "La página navegó mientras se analizaba. Vuelve a ejecutarlo."
   }
 }
