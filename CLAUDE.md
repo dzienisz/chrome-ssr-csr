@@ -96,7 +96,9 @@ npm run build:firefox        # writes dist/firefox/ (add --zip for the AMO zip)
 Manifest differences (applied by `scripts/build-firefox.js`): `background.scripts`
 event page instead of `service_worker`, and `browser_specific_settings.gecko`
 (AMO id, `strict_min_version: 128` for `world: "MAIN"` content scripts,
-data-collection disclosure). Validate with `npx web-ext lint --source-dir dist/firefox`.
+data-collection disclosure). `npx web-ext lint --source-dir dist/firefox` is
+what AMO runs on submission; CI runs it on every pull request with
+`--warnings-as-errors`, and the package currently reports zero of all three.
 
 Cross-browser code rules: use `func:` (not the Chrome-only `function:` alias)
 in `chrome.scripting.executeScript`; use `options_ui` (not `options_page`);
@@ -223,7 +225,10 @@ that no longer exists. It has to stay green too.
 `validate:live` grades against real sites that rewrite themselves without
 warning, so it reports a statistic rather than passing or failing.
 
-All three need Playwright's Chromium (`npx playwright install chromium`).
+All three need Playwright's Chromium (`npx playwright install chromium`). Set
+`CHROMIUM_PATH` to point any of them at a browser Playwright did not install —
+note that `chromium-headless-shell` cannot load extensions, so
+`validate:extension` needs the full build.
 
 Selectors with a colon in the attribute name (`wire:id`, `q:container`) cannot
 be unit-tested — jsdom's selector engine never matches them, in any escaping.
@@ -369,11 +374,13 @@ tag never fails over missing credentials. Required repository secrets:
 | `CWS_PUBLISHER_ID` | only for a group publisher; omit otherwise |
 | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` | addons.mozilla.org → Manage API Keys |
 
+`web-ext lint` already ran on the pull request, so a package that would fail
+AMO validation cannot reach a tag.
+
 **Listing copy is still edited by hand** — the APIs ship the package, not the
 store page. `store-listing.md` (+ `store-listings.md` translations) and the
 "What's new" field from the CHANGELOG entry for Chrome; `amo-listing.md` for
-AMO. Validate a package locally before tagging with
-`npx web-ext lint --source-dir extension/dist/firefox`.
+AMO.
 
 Keep privacy wording consistent across `privacy-policy.md`, both listing files,
 and the manifest's `data_collection_permissions` (AMO cross-checks them).

@@ -71,7 +71,11 @@ function bucket(renderType) {
   return 'ERROR';
 }
 
-const browser = await chromium.launch();
+// Same escape hatch as the other two harnesses: CHROMIUM_PATH points at a
+// browser playwright did not install itself.
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+);
 const results = [];
 
 for (const site of SITES) {
