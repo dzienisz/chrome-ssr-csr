@@ -84,8 +84,11 @@ jobs:
         run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      # Both browsers: the fixture harness is happy with the headless shell,
+      # but it cannot load extensions, so validate:extension needs the full
+      # Chromium build (see the channel note in scripts/validate-extension.mjs).
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium chromium-headless-shell
       - name: Grade detection against the offline fixtures
         run: npm run validate:local
       # Installs the unpacked extension in a throwaway profile: the manifest,

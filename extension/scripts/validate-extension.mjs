@@ -82,8 +82,18 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 /* --------------------------------------------------------------- install */
 
 const profile = mkdtempSync(join(tmpdir(), "ssr-detector-profile-"));
+
+// `headless: true` makes Playwright reach for chromium-headless-shell, which
+// cannot load extensions at all — the profile comes up with nothing installed
+// and every check below fails for a reason that has nothing to do with this
+// extension. `channel: "chromium"` selects the full Chromium build and its new
+// headless mode, which supports them.
+const browserChoice = process.env.CHROMIUM_PATH
+  ? { executablePath: process.env.CHROMIUM_PATH }
+  : { channel: "chromium" };
+
 const context = await chromium.launchPersistentContext(profile, {
-  executablePath: process.env.CHROMIUM_PATH || undefined,
+  ...browserChoice,
   headless: true,
   args: [
     `--disable-extensions-except=${EXTENSION_DIR}`,
@@ -100,10 +110,20 @@ if (!worker) {
 check(Boolean(worker), "the service worker registers (the manifest is accepted)");
 
 if (!worker) {
+  const version = context.browser() ? context.browser().version() : "unknown";
   await context.close();
   server.close();
   rmSync(profile, { recursive: true, force: true });
+
   console.error("FAIL  extension did not load; nothing else can be checked");
+  console.error(`      browser: ${version}`);
+  console.error(
+    `      launched with: ${JSON.stringify(browserChoice)}\n` +
+      "      A browser that cannot load extensions produces exactly this.\n" +
+      "      chromium-headless-shell is the usual culprit: run with the full\n" +
+      "      Chromium build (channel: \"chromium\", or CHROMIUM_PATH pointing at\n" +
+      "      chrome rather than headless_shell).",
+  );
   process.exit(1);
 }
 

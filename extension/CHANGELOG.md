@@ -59,6 +59,11 @@ it did.
   not exist, the shared renderer works under the real extension origin, and the
   popup→worker history contract survives concurrent writes. Also runs in CI.
   Every check was verified to fail when the thing it guards is broken.
+- **The Firefox build fails when the package is incomplete.** The shipped-file
+  list is maintained by hand in two places, so adding a directory without
+  updating both produces a package that installs and then breaks. The build now
+  resolves every file the manifest and the packaged HTML pages reference and
+  refuses to write a package that is missing one.
 - **Localized UI.** 50 interface strings across all eight shipped locales (en,
   ja, ko, fr, de, es, pt-BR, pl). Longer explanatory prose stays in English and
   falls back cleanly.
