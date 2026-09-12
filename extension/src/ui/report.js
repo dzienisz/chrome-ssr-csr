@@ -16,6 +16,11 @@
 /**
  * Create an element.
  * @param {string} tag
+ * Text only, never markup: there is deliberately no `html` option. Nothing
+ * this renderer draws comes from anywhere but the analysis result, and that
+ * result is full of strings the inspected page chose. An escape hatch nobody
+ * used was still one an AMO reviewer had to take on trust.
+ *
  * @param {Object} [props] - className, text, attrs, dataset, children
  * @returns {HTMLElement}
  */
@@ -23,7 +28,6 @@ function el(tag, props = {}) {
   const node = document.createElement(tag);
   if (props.className) node.className = props.className;
   if (props.text != null) node.textContent = String(props.text);
-  if (props.html) node.innerHTML = props.html; // literal markup only (icons)
   if (props.attrs) {
     for (const [key, value] of Object.entries(props.attrs)) {
       if (value != null) node.setAttribute(key, String(value));
