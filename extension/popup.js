@@ -188,7 +188,7 @@ async function analyze() {
     saveToHistory(page, result);
 
     if (state.settings.shareData) {
-      collectAndSendTelemetry(tab.id, result, page);
+      collectAndSendTelemetry(tab.id, result, page, injection.documentId);
     }
   } catch (error) {
     if (stale()) return;
@@ -285,7 +285,7 @@ function executeScript(options) {
  * has left sharing on. Nothing this release added — response headers, region
  * attribution — leaves the device.
  */
-async function collectAndSendTelemetry(tabId, result, page) {
+async function collectAndSendTelemetry(tabId, result, page, documentId) {
   try {
     await executeScript({
       target: { tabId },
@@ -299,6 +299,12 @@ async function collectAndSendTelemetry(tabId, result, page) {
     });
 
     if (!injection || !injection.result) return;
+
+    // These run after the verdict has already been shown, so a navigation in
+    // between would pair this page's metrics with the previous page's origin.
+    // Send nothing rather than something wrong: telemetry is a nice-to-have,
+    // and a mislabelled row is worse than a missing one.
+    if (documentId && injection.documentId && injection.documentId !== documentId) return;
     await sendAnalysisData({ ...result, ...injection.result }, page);
   } catch (e) {
     // Telemetry must never affect what the user sees.
