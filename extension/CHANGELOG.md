@@ -51,6 +51,14 @@ it did.
   — unlike the 22-site live harness, which needs the open internet and sites
   that rewrite themselves without warning. `npm run preview` renders every
   surface against a real analysis result and screenshots it.
+- **Extension install harness** (`npm run validate:extension`). Installs the
+  extension unpacked in a throwaway Chromium profile and checks what only a
+  real install can show: the manifest is accepted, the service worker starts
+  clean, `probe.js` runs in the page's MAIN world at `document_start`, every
+  extension page loads with no script errors and no requests for files that do
+  not exist, the shared renderer works under the real extension origin, and the
+  popup→worker history contract survives concurrent writes. Also runs in CI.
+  Every check was verified to fail when the thing it guards is broken.
 - **Localized UI.** 50 interface strings across all eight shipped locales (en,
   ja, ko, fr, de, es, pt-BR, pl). Longer explanatory prose stays in English and
   falls back cleanly.

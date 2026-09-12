@@ -60,11 +60,11 @@ jobs:
       - name: Verify committed bundles match source
         run: git diff --exit-code -- src/analyzer-bundle.js src/telemetry-bundle.js
 
-  # End-to-end detection: the committed bundle is injected into real pages in
-  # a real browser and graded against fixtures whose rendering strategy and
-  # delivery headers are known by construction. Unit tests cannot catch a
-  # regression that only appears once fetch, DOMParser and the live DOM are
-  # all involved.
+  # End-to-end: the committed bundle is graded against fixtures whose rendering
+  # strategy and delivery headers are known by construction, and then the whole
+  # extension is installed in a real browser. Unit tests cannot catch a
+  # regression that only appears once fetch, DOMParser, the live DOM, the
+  # manifest and the service worker are all involved.
   detection:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -88,3 +88,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Grade detection against the offline fixtures
         run: npm run validate:local
+      # Installs the unpacked extension in a throwaway profile: the manifest,
+      # the service worker, probe.js as a real content script and every
+      # extension page. The harness above never loads the extension at all, so
+      # a manifest Chromium rejects would sail past it.
+      - name: Verify the extension installs and runs
+        run: npm run validate:extension

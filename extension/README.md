@@ -148,6 +148,7 @@ extension/
 │   ├── build-firefox.js     # Generates the Firefox/Gecko package in dist/firefox/ (npm run build:firefox)
 │   ├── validate-detection.mjs  # 22-site live ground-truth harness (npm run validate:live)
 │   ├── validate-local.mjs      # Offline fixture harness, runs in CI (npm run validate:local)
+│   ├── validate-extension.mjs  # Loads the extension for real, runs in CI (npm run validate:extension)
 │   ├── fixtures/pages.mjs      # Hand-written ground-truth pages + expected headers
 │   └── ui-preview.mjs          # Screenshots every surface from a real result (npm run preview)
 ├── src/
@@ -202,12 +203,16 @@ extension/
    - **Firefox** — re-run `npm run build:firefox`, then reload the add-on in `about:debugging`
 5. For detection changes, run the harnesses:
    - `npm run validate:local` — offline fixtures in real Chromium; deterministic,
-     runs in CI, and the one that has to stay green
+     runs in CI, and one of the two that have to stay green
+   - `npm run validate:extension` — installs the extension unpacked in a
+     throwaway profile and checks the manifest, the service worker, `probe.js`
+     as a content script, every extension page and the popup→worker message
+     contract; the only harness that loads the extension *as* an extension
    - `npm run validate:live` — the 22-site live suite; needs the open internet
 6. For UI changes, `npm run preview` renders every surface against a real
    analysis result and writes screenshots to `scripts/preview-out/`
 
-Both harnesses need Playwright's Chromium (`npx playwright install chromium`).
+All of them need Playwright's Chromium (`npx playwright install chromium`).
 
 ### Adding Framework Detection
 

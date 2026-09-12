@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "validate:local": "node scripts/validate-local.mjs",
+    "validate:extension": "node scripts/validate-extension.mjs",
     "validate:live": "node scripts/validate-detection.mjs",
     "preview": "node scripts/ui-preview.mjs"
   },

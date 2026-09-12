@@ -36,6 +36,7 @@ npm run build         # rebuild bundles after editing src/
 npm run build:firefox # generate the Firefox variant in dist/firefox/
 npm run test:run      # unit tests
 npm run validate:local # grade detection against offline fixtures in Chromium
+npm run validate:extension # install the extension for real and check it runs
 npm run preview       # screenshot every UI surface from a real analysis
 # Chrome: load extension/ folder in chrome://extensions (Developer Mode)
 # Firefox: load extension/dist/firefox/ in about:debugging#/runtime/this-firefox

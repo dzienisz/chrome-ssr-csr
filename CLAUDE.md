@@ -196,23 +196,34 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 | `hydration-detector.js` | Hydration tracking |
 | `navigation-detector.js` | SPA navigation detection |
 
-### Validating Detection Changes
+### Validating Changes
 
-Two harnesses, and they are not interchangeable:
+Three harnesses, and they are not interchangeable:
 
 ```bash
-npm run validate:local   # 8 offline fixtures in Chromium — deterministic, runs in CI
-npm run validate:live    # 22 real sites — honest, needs the open internet
-npm run preview          # screenshot every UI surface from a real analysis result
+npm run validate:local      # 8 offline fixtures in Chromium — deterministic, runs in CI
+npm run validate:extension  # installs the extension for real — runs in CI
+npm run validate:live       # 22 real sites — honest, needs the open internet
+npm run preview             # screenshot every UI surface from a real analysis result
 ```
 
 `validate:local` serves hand-written pages with known response headers and
 grades the verdict, the delivery mode and the region attribution against what
 each fixture declares (`scripts/fixtures/pages.mjs`). It has to stay green.
+
+`validate:extension` is the only one that loads the extension *as* an
+extension: unpacked into a throwaway profile, so it exercises the manifest, the
+service worker, `probe.js` as a real `world: "MAIN"` content script, every
+extension page (console errors and 404s included), the shared renderer under
+the real extension origin, and the popup→worker `saveAnalysis` contract under
+concurrent writes. The other harnesses inject the bundle with `addScriptTag`
+and would not notice a manifest Chromium rejects or a page referencing a file
+that no longer exists. It has to stay green too.
+
 `validate:live` grades against real sites that rewrite themselves without
 warning, so it reports a statistic rather than passing or failing.
 
-Both need Playwright's Chromium (`npx playwright install chromium`).
+All three need Playwright's Chromium (`npx playwright install chromium`).
 
 Selectors with a colon in the attribute name (`wire:id`, `q:container`) cannot
 be unit-tested — jsdom's selector engine never matches them, in any escaping.
