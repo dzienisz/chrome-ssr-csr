@@ -9,6 +9,7 @@
  */
 function detectHybridPatterns() {
   const indicators = [];
+  const signals = [];
   let hybridScore = 0;
   const details = {};
 
@@ -21,6 +22,13 @@ function detectHybridPatterns() {
     indicators.push(
       `Astro islands architecture (${astroIslands.length} islands)`,
     );
+    signals.push({
+      id: "hybrid.astroIslands",
+      label: `Astro islands (${astroIslands.length})`,
+      impact: "hybrid",
+      weight: 30,
+      detail: "Static HTML with independently hydrated interactive components dropped into it.",
+    });
     details.astroIslands = astroIslands.length;
   }
 
@@ -33,6 +41,13 @@ function detectHybridPatterns() {
     indicators.push(
       `Partial hydration pattern (${hydrationTargets.length} targets)`,
     );
+    signals.push({
+      id: "hybrid.partialHydration",
+      label: `Partial hydration (${hydrationTargets.length} targets)`,
+      impact: "hybrid",
+      weight: 25,
+      detail: "Only marked regions get JavaScript; the rest of the page stays static server markup.",
+    });
     details.hydrationTargets = hydrationTargets.length;
   }
 
@@ -42,6 +57,13 @@ function detectHybridPatterns() {
   if (hasServerComponents) {
     hybridScore += 20;
     indicators.push("React Server Components detected");
+    signals.push({
+      id: "hybrid.rsc",
+      label: "React Server Components",
+      impact: "hybrid",
+      weight: 20,
+      detail: "Components rendered on the server stream into a client tree that never ships their code.",
+    });
     details.hasRSC = true;
   }
 
@@ -55,6 +77,13 @@ function detectHybridPatterns() {
   if (suspenseBoundaries.length > 0 || streamingComments) {
     hybridScore += 15;
     indicators.push("Streaming SSR with Suspense boundaries");
+    signals.push({
+      id: "hybrid.streaming",
+      label: "Streaming SSR with Suspense",
+      impact: "hybrid",
+      weight: 15,
+      detail: "The server flushed the shell first and filled the slow parts in as they resolved.",
+    });
     details.hasStreaming = true;
   }
 
@@ -65,6 +94,13 @@ function detectHybridPatterns() {
   if (enhancementMarkers.length > 0) {
     hybridScore += 15;
     indicators.push("Progressive enhancement pattern");
+    signals.push({
+      id: "hybrid.progressive",
+      label: "Progressive enhancement",
+      impact: "hybrid",
+      weight: 15,
+      detail: "Server markup is enhanced in place (Turbo/Stimulus-style) instead of replaced by a client app.",
+    });
     details.progressiveEnhancement = true;
   }
 
@@ -73,6 +109,13 @@ function detectHybridPatterns() {
   if (qwikContainer) {
     hybridScore += 25;
     indicators.push("Qwik resumability (hybrid architecture)");
+    signals.push({
+      id: "hybrid.qwik",
+      label: "Qwik resumability",
+      impact: "hybrid",
+      weight: 25,
+      detail: "State is serialized into the HTML so the client resumes rather than re-executing the app.",
+    });
     details.qwikResumability = true;
   }
 
@@ -88,11 +131,19 @@ function detectHybridPatterns() {
   if (hasRichContent && hasClientInteractivity) {
     hybridScore += 10;
     indicators.push("Mixed SSR content with client interactivity");
+    signals.push({
+      id: "hybrid.mixed",
+      label: "Server content plus client interactivity",
+      impact: "hybrid",
+      weight: 10,
+      detail: "A real document body alongside enough interactive controls to need a client runtime.",
+    });
   }
 
   return {
     hybridScore,
     indicators,
+    signals,
     details,
   };
 }

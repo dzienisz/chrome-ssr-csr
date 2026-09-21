@@ -4,5 +4,275 @@
   },
   "appDesc": {
     "message": "웹페이지가 클라이언트 사이드 렌더링(CSR)인지 서버 사이드 렌더링(SSR)인지 감지합니다"
+  },
+  "analyzing": {
+    "message": "페이지를 분석하는 중…"
+  },
+  "analyzePage": {
+    "message": "이 페이지 분석"
+  },
+  "rerun": {
+    "message": "다시 분석"
+  },
+  "analyzeAgain": {
+    "message": "다시 분석"
+  },
+  "settings": {
+    "message": "설정"
+  },
+  "dismiss": {
+    "message": "닫기"
+  },
+  "confidence": {
+    "message": "신뢰도"
+  },
+  "fromServer": {
+    "message": "서버에서"
+  },
+  "fromJavaScript": {
+    "message": "JavaScript가 추가"
+  },
+  "detectedStack": {
+    "message": "감지된 스택"
+  },
+  "whyThisVerdict": {
+    "message": "이 판정의 근거"
+  },
+  "scoredEvidence": {
+    "message": "점수에 반영된 근거"
+  },
+  "context": {
+    "message": "참고 정보"
+  },
+  "transport": {
+    "message": "전달 방식"
+  },
+  "regions": {
+    "message": "영역"
+  },
+  "tabOverview": {
+    "message": "개요"
+  },
+  "tabSignals": {
+    "message": "근거"
+  },
+  "tabDelivery": {
+    "message": "전달"
+  },
+  "tabDiff": {
+    "message": "영역"
+  },
+  "tabHistory": {
+    "message": "기록"
+  },
+  "devToolsPanel": {
+    "message": "DevTools 패널"
+  },
+  "copySummary": {
+    "message": "요약 복사"
+  },
+  "copied": {
+    "message": "복사됨"
+  },
+  "copyFailed": {
+    "message": "복사하지 못했습니다"
+  },
+  "historyEmpty": {
+    "message": "분석한 페이지가 여기에 표시됩니다."
+  },
+  "clearHistory": {
+    "message": "기록 지우기"
+  },
+  "analysisFailed": {
+    "message": "분석에 실패했습니다"
+  },
+  "cannotAccess": {
+    "message": "이 페이지에 접근할 수 없습니다"
+  },
+  "restrictedTitle": {
+    "message": "이 페이지는 분석할 수 없습니다"
+  },
+  "giveFeedback": {
+    "message": "피드백 보내기 · 1분"
+  },
+  "contextMenuAnalyze": {
+    "message": "페이지 렌더링 분석"
+  },
+  "rerunOnNavigation": {
+    "message": "페이지 이동 시 다시 실행"
+  },
+  "saveSettings": {
+    "message": "설정 저장"
+  },
+  "resetDefaults": {
+    "message": "기본값으로 재설정"
+  },
+  "settingsSaved": {
+    "message": "설정을 저장했습니다"
+  },
+  "settingsReset": {
+    "message": "설정을 기본값으로 되돌렸습니다"
+  },
+  "settingsTitle": {
+    "message": "설정"
+  },
+  "sectionAppearance": {
+    "message": "모양"
+  },
+  "sectionAnalysis": {
+    "message": "분석"
+  },
+  "sectionPrivacy": {
+    "message": "개인정보 및 데이터"
+  },
+  "sectionShortcuts": {
+    "message": "단축키"
+  },
+  "themeAuto": {
+    "message": "시스템 설정 따르기"
+  },
+  "themeLight": {
+    "message": "밝게"
+  },
+  "themeDark": {
+    "message": "어둡게"
+  },
+  "unlimited": {
+    "message": "무제한"
+  },
+  "openSettings": {
+    "message": "설정 열기"
+  },
+  "privacyPolicy": {
+    "message": "개인정보 처리방침"
+  },
+  "pinNotPinned": {
+    "message": "아직 고정되지 않음"
+  },
+  "pinPinned": {
+    "message": "고정 완료 — 준비되었습니다."
+  },
+  "shortcutUnset": {
+    "message": "설정되지 않음"
+  },
+  "pinTitle": {
+    "message": "확장 프로그램 고정"
+  },
+  "pinBody": {
+    "message": "(퍼즐 아이콘 → 고정)하면 어떤 페이지든 한 번의 클릭으로 확인할 수 있습니다."
+  },
+  "settingsSubtitle": {
+    "message": "감지 동작, 저장하는 정보, 공유하는 정보입니다."
+  },
+  "settingTheme": {
+    "message": "테마"
+  },
+  "settingThemeHelp": {
+    "message": "팝업, DevTools 패널, 이 페이지에 적용됩니다."
+  },
+  "settingAutoAnalyze": {
+    "message": "팝업을 열면 바로 분석"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "버튼을 먼저 누르고 싶다면 끄세요."
+  },
+  "settingHistory": {
+    "message": "기록 항목 수"
+  },
+  "settingHistoryHelp": {
+    "message": "이 기기에만 보관되며 전송되지 않습니다."
+  },
+  "settingNotifications": {
+    "message": "데스크톱 알림"
+  },
+  "settingNotificationsHelp": {
+    "message": "우클릭 메뉴의 '페이지 렌더링 분석'에서 사용합니다."
+  },
+  "settingShare": {
+    "message": "익명 분석 데이터 공유"
+  },
+  "settingShareHelp": {
+    "message": "실제 사이트에서 감지 정확도를 다듬는 데 도움이 됩니다. 언제든 끌 수 있습니다."
+  },
+  "privacyWhatTitle": {
+    "message": "켜져 있을 때 공유되는 정보"
+  },
+  "privacyWhatBody": {
+    "message": "도메인 이름(전체 URL은 절대 아님), 렌더링 유형과 신뢰도, 감지된 프레임워크, 성능 지표, 그리고 요청 IP에서 서버 측으로 도출한 국가. IP 자체는 저장하지 않습니다."
+  },
+  "privacyNeverBody": {
+    "message": "절대 공유하지 않는 것: 페이지 내용, 개인정보, 검색 기록, 응답 헤더, '영역' 탭의 분석 결과 — 이 분석은 기기에 남습니다."
+  },
+  "privacyPolicyLink": {
+    "message": "전체 개인정보 처리방침 읽기"
+  },
+  "shortcutOpen": {
+    "message": "렌더링 보고서 열기"
+  },
+  "shortcutOpenHelp": {
+    "message": "브라우저의 확장 프로그램 단축키 페이지에서 변경하세요."
+  },
+  "welcomeTitle": {
+    "message": "이 페이지는 어떻게 렌더링되나요?"
+  },
+  "welcomeSubtitle": {
+    "message": "어떤 사이트든 한 번의 클릭으로 답을 확인하세요. 판단 근거, HTML이 만들어진 위치, JavaScript가 만든 부분까지 보여줍니다."
+  },
+  "welcomeStep1": {
+    "message": "도구 모음에 고정하기"
+  },
+  "welcomeStep1Body": {
+    "message": "브라우저는 새 확장 프로그램을 퍼즐 아이콘 뒤에 숨깁니다. 고정하면 보고서가 항상 한 번의 클릭 거리에 있습니다."
+  },
+  "pinStepOpen": {
+    "message": "퍼즐 아이콘 클릭"
+  },
+  "pinStepFind": {
+    "message": "CSR vs SSR Detector 찾기"
+  },
+  "pinStepPin": {
+    "message": "핀 클릭"
+  },
+  "welcomeStep2": {
+    "message": "판정 읽기"
+  },
+  "welcomeStep2Body": {
+    "message": "배지가 결론을 알려주고, 팝업이 그 근거를 설명합니다."
+  },
+  "welcomeSsr": {
+    "message": "콘텐츠가 최초 HTML에 담겨 왔습니다. 검색 엔진과 첫 렌더링에 유리합니다."
+  },
+  "welcomeCsr": {
+    "message": "브라우저가 JavaScript로 페이지를 만들었습니다. 앱 같은 단일 페이지 사이트에서 흔합니다."
+  },
+  "welcomeMix": {
+    "message": "일부는 서버에서 왔고 나머지는 이후에 하이드레이션되거나 불러왔습니다."
+  },
+  "welcomeStep3": {
+    "message": "필요할 때 더 깊이 보기"
+  },
+  "welcomePrivacy": {
+    "message": "개인정보 보호"
+  },
+  "welcomePrivacyBody": {
+    "message": "익명 통계(도메인, 렌더링 유형, 성능 지표이며 전체 URL이나 페이지 내용은 포함하지 않음)가 실제 웹에 맞춰 감지를 다듬는 데 쓰입니다. 응답 헤더와 영역 분석은 기기를 벗어나지 않습니다. 언제든 끌 수 있습니다."
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— 판정을 움직인 모든 근거와 기여한 점수."
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— HTML이 빌드 시점에 만들어졌는지, CDN 캐시에서 왔는지, 이번 요청을 위해 렌더링됐는지를 응답 헤더에서 바로 읽습니다."
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— 페이지의 어느 부분을 서버가 보냈고 어느 부분을 JavaScript가 채웠는지."
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— 같은 보고서를 전체 너비로 보여주며 페이지를 이동할 때마다 다시 실행합니다. DevTools에서 'Rendering'을 찾으세요."
+  },
+  "cacheLayers": {
+    "message": "캐시 계층"
+  },
+  "pageChanged": {
+    "message": "분석 중에 페이지가 이동했습니다. 다시 실행하세요."
   }
 }

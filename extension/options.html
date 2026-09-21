@@ -1,430 +1,151 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>CSR vs SSR Detector - Settings</title>
-  <style>
-    :root {
-      --bg-primary: #ffffff;
-      --bg-secondary: #f3f4f6;
-      --text-primary: #1f2937;
-      --text-secondary: #6b7280;
-      --border-color: #e5e7eb;
-      --accent-color: #2563eb;
-      --accent-hover: #1d4ed8;
-      --success-color: #059669;
-      --danger-color: #dc2626;
-    }
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CSR vs SSR Detector — Settings</title>
+    <link rel="stylesheet" href="src/ui/theme.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <h1>
+          <img src="icon48.png" alt="" width="26" height="26" />
+          <span data-i18n="settingsTitle">Settings</span>
+        </h1>
+        <p class="subtitle" data-i18n="settingsSubtitle">
+          How the detector behaves, what it stores, and what it shares.
+        </p>
+      </header>
 
-    [data-theme="dark"] {
-      --bg-primary: #1f2937;
-      --bg-secondary: #111827;
-      --text-primary: #f9fafb;
-      --text-secondary: #9ca3af;
-      --border-color: #374151;
-      --accent-color: #3b82f6;
-      --accent-hover: #2563eb;
-      --success-color: #10b981;
-      --danger-color: #ef4444;
-    }
+      <section class="card">
+        <h2 class="card-title" data-i18n="sectionAppearance">Appearance</h2>
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-secondary);
-      color: var(--text-primary);
-      padding: 20px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background-color: var(--bg-primary);
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-      transition: background-color 0.3s;
-    }
-
-    header {
-      border-bottom: 2px solid var(--border-color);
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-
-    h1 {
-      color: var(--accent-color);
-      font-size: 28px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h1 img {
-      width: 32px;
-      height: 32px;
-    }
-
-    .subtitle {
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
-
-    .section {
-      margin-bottom: 30px;
-      padding: 20px;
-      background-color: var(--bg-secondary);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      transition: background-color 0.3s, border-color 0.3s;
-    }
-
-    .section h2 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: var(--text-primary);
-    }
-
-    .setting-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 0;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .setting-item:last-child {
-      border-bottom: none;
-    }
-
-    .setting-info {
-      flex: 1;
-    }
-
-    .setting-label {
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-
-    .setting-description {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.4;
-    }
-
-    .setting-control {
-      margin-left: 20px;
-    }
-
-    /* Toggle Switch */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.3s;
-      border-radius: 26px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.3s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: var(--accent-color);
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-
-    /* Select Dropdown */
-    select {
-      padding: 8px 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    /* Dark mode select styling */
-    [data-theme="dark"] select {
-      background-color: #1f2937;
-      color: #f9fafb;
-      border-color: #374151;
-    }
-
-    select:hover {
-      border-color: var(--accent-color);
-    }
-
-    select:focus {
-      outline: none;
-      border-color: var(--accent-color);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    /* Dropdown options styling for light mode */
-    select option {
-      background-color: #ffffff;
-      color: #1f2937;
-    }
-
-    /* Dropdown options styling for dark mode */
-    [data-theme="dark"] select option {
-      background-color: #1f2937;
-      color: #f9fafb;
-    }
-
-    /* Buttons */
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background-color: var(--accent-color);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      background-color: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background-color: var(--border-color);
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color);
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background-color: #b91c1c;
-    }
-
-    /* Status Message */
-    .status-message {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      border-radius: 6px;
-      background-color: var(--success-color);
-      color: white;
-      font-weight: 600;
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: all 0.3s;
-      z-index: 1000;
-    }
-
-    .status-message.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* Privacy Notice */
-    .privacy-notice {
-      background-color: #fef3c7;
-      border: 1px solid #fbbf24;
-      border-radius: 6px;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 13px;
-      color: #92400e;
-    }
-
-    [data-theme="dark"] .privacy-notice {
-      background-color: #451a03;
-      border-color: #78350f;
-      color: #fbbf24;
-    }
-
-    .privacy-notice strong {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      font-size: 13px;
-    }
-
-    footer a {
-      color: var(--accent-color);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>
-        <img src="icon48.png" alt="Logo">
-        Settings
-      </h1>
-      <p class="subtitle">Customize your CSR vs SSR Detector experience</p>
-    </header>
-
-    <!-- Appearance Section -->
-    <div class="section">
-      <h2>🎨 Appearance</h2>
-
-      <div class="setting-item">
-        <div class="setting-info">
-          <div class="setting-label">Theme</div>
-          <div class="setting-description">Choose theme or sync with system preferences</div>
-        </div>
-        <div class="setting-control">
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="darkMode" data-i18n="settingTheme">Theme</label>
+            <div class="setting-help" data-i18n="settingThemeHelp">
+              Applies to the popup, the DevTools panel and this page.
+            </div>
+          </div>
           <select id="darkMode">
-            <option value="auto" selected>Auto (System)</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
+            <option value="auto" data-i18n="themeAuto">Match the system</option>
+            <option value="light" data-i18n="themeLight">Light</option>
+            <option value="dark" data-i18n="themeDark">Dark</option>
           </select>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- Analysis Section -->
-    <div class="section">
-      <h2>📊 Analysis Settings</h2>
+      <section class="card">
+        <h2 class="card-title" data-i18n="sectionAnalysis">Analysis</h2>
 
-      <div class="setting-item">
-        <div class="setting-info">
-          <div class="setting-label">History Limit</div>
-          <div class="setting-description">Number of past analyses to store</div>
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="autoAnalyze" data-i18n="settingAutoAnalyze">
+              Analyze as soon as the popup opens
+            </label>
+            <div class="setting-help" data-i18n="settingAutoAnalyzeHelp">
+              Turn this off if you would rather press a button first.
+            </div>
+          </div>
+          <input type="checkbox" id="autoAnalyze" class="switch" />
         </div>
-        <div class="setting-control">
+
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="historyLimit" data-i18n="settingHistory">History entries</label>
+            <div class="setting-help" data-i18n="settingHistoryHelp">
+              Kept on this device only, never uploaded.
+            </div>
+          </div>
           <select id="historyLimit">
-            <option value="5">5 entries</option>
-            <option value="10" selected>10 entries</option>
-            <option value="25">25 entries</option>
-            <option value="50">50 entries</option>
-            <option value="100">100 entries</option>
-            <option value="-1">Unlimited</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="-1" data-i18n="unlimited">Unlimited</option>
           </select>
         </div>
+
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="notifications" data-i18n="settingNotifications">Desktop notifications</label>
+            <div class="setting-help" data-i18n="settingNotificationsHelp">
+              Used by the right-click “Analyze page rendering” entry.
+            </div>
+          </div>
+          <input type="checkbox" id="notifications" class="switch" />
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title" data-i18n="sectionPrivacy">Privacy &amp; data</h2>
+
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="shareData" data-i18n="settingShare">Share anonymous analysis data</label>
+            <div class="setting-help" data-i18n="settingShareHelp">
+              Helps tune detection against real sites. Opt out any time.
+            </div>
+          </div>
+          <input type="checkbox" id="shareData" class="switch" />
+        </div>
+
+        <div class="notice privacy">
+          <div>
+            <strong data-i18n="privacyWhatTitle">What is shared when this is on</strong>
+            <p data-i18n="privacyWhatBody">
+              The domain name (never the full URL), the render type and confidence, detected
+              frameworks, performance metrics, and a country derived server-side from the request
+              IP, which is not stored.
+            </p>
+            <p data-i18n="privacyNeverBody">
+              Never shared: page content, personal information, browsing history, response headers,
+              or the region breakdown shown in the Regions tab — that analysis stays on your device.
+            </p>
+            <p>
+              <a
+                href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/extension/privacy-policy.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-i18n="privacyPolicyLink"
+                >Read the full privacy policy</a
+              >
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title" data-i18n="sectionShortcuts">Shortcuts</h2>
+        <div class="setting">
+          <div>
+            <div class="setting-label" data-i18n="shortcutOpen">Open the rendering report</div>
+            <div class="setting-help" data-i18n="shortcutOpenHelp">
+              Change it in your browser's extension shortcuts page.
+            </div>
+          </div>
+          <kbd id="shortcut">Ctrl+Shift+Y</kbd>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="save" data-i18n="saveSettings">Save settings</button>
+        <button class="btn" id="reset" data-i18n="resetDefaults">Reset to defaults</button>
       </div>
 
-      <div class="setting-item">
-        <div class="setting-info">
-          <div class="setting-label">Desktop Notifications</div>
-          <div class="setting-description">Show notifications when analysis completes</div>
-        </div>
-        <div class="setting-control">
-          <label class="switch">
-            <input type="checkbox" id="notifications" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
+      <footer class="page-footer">
+        <span>CSR vs SSR Detector <span id="version"></span></span>
+        <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank" rel="noopener noreferrer"
+          >GitHub</a
+        >
+      </footer>
     </div>
 
-    <!-- Data Sharing Section -->
-    <div class="section">
-      <h2>🔒 Privacy & Data</h2>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-      <div class="setting-item">
-        <div class="setting-info">
-          <div class="setting-label">Share Anonymous Data</div>
-          <div class="setting-description">Help improve detection by sharing anonymous analysis data</div>
-        </div>
-        <div class="setting-control">
-          <label class="switch">
-            <input type="checkbox" id="shareData">
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="privacy-notice">
-        <strong>🔒 What data is shared?</strong>
-        When enabled, we collect: domain name only (never full URLs), render type, confidence score, detected frameworks, performance metrics, and country-level statistics (derived server-side from the request IP, which is never stored).
-        <strong>We never collect:</strong> personal information, browsing history, or page content.
-        <br><br>
-        See the <a href="https://github.com/dzienisz/chrome-ssr-csr/blob/main/extension/privacy-policy.md" target="_blank">privacy policy</a> for full details.
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="button-group">
-      <button class="btn-primary" id="saveButton">Save Settings</button>
-      <button class="btn-danger" id="resetButton">Reset to Defaults</button>
-    </div>
-
-    <footer>
-      <p>
-        CSR vs SSR Detector <span id="version"></span> |
-        <a href="https://github.com/dzienisz/chrome-ssr-csr" target="_blank">GitHub</a> |
-        <a href="privacy-policy.md" target="_blank">Privacy Policy</a>
-      </p>
-    </footer>
-  </div>
-
-  <div class="status-message" id="statusMessage">Settings saved!</div>
-
-  <script src="options.js"></script>
-</body>
+    <script src="src/ui/i18n.js"></script>
+    <script src="options.js"></script>
+  </body>
 </html>

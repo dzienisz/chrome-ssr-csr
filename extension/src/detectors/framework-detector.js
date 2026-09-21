@@ -18,6 +18,16 @@ function collectScriptSource(doc) {
   try {
     const parts = [];
     doc.querySelectorAll("script").forEach((script) => {
+      // The src and id attributes count as script source. Several frameworks
+      // are only identifiable by the path they load their runtime from
+      // (_framework/blazor, qwikloader) or by the id they hang their
+      // hydration payload on (__FRSH_STATE, vike_pageContext) — the JSON
+      // inside that tag says nothing about who wrote it.
+      const src = script.getAttribute("src");
+      if (src) parts.push(src);
+      const id = script.getAttribute("id");
+      if (id) parts.push(id);
+
       const text = script.textContent || "";
       if (!text) return;
       if (
@@ -44,6 +54,7 @@ function collectScriptSource(doc) {
 function detectFrameworks(rawDocument) {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let ssrScore = 0;
   let csrScore = 0;
   const detailedInfo = {};
@@ -113,10 +124,26 @@ function detectFrameworks(rawDocument) {
       indicators.push(
         `${hydratedFrameworks.join(", ")} hydration markers in raw HTML (SSR)`,
       );
+      signals.push({
+        id: "framework.hydrated",
+        label: `${hydratedFrameworks.join(", ")} hydration markers in the served HTML`,
+        impact: "ssr",
+        weight: config.scoring.frameworkMarkers,
+        detail:
+          "The framework's markers are already in the bytes the server sent, so the browser hydrated existing markup rather than building it.",
+      });
     } else {
       indicators.push(
         `${foundFrameworks.join(", ")} markers only in rendered DOM (not SSR evidence)`,
       );
+      signals.push({
+        id: "framework.renderedOnly",
+        label: `${foundFrameworks.join(", ")} markers appear only after scripts run`,
+        impact: "csr",
+        weight: 0,
+        detail:
+          "The framework is there, but nothing it emits was in the served HTML — the signature of a client-rendered app.",
+      });
     }
   }
 
@@ -140,6 +167,13 @@ function detectFrameworks(rawDocument) {
     indicators.push(
       `${foundGenerators.join(", ")} static site generator detected (SSR)`,
     );
+    signals.push({
+      id: "framework.staticGenerator",
+      label: `Built by ${foundGenerators.join(", ")}`,
+      impact: "ssr",
+      weight: config.scoring.staticGenerator,
+      detail: "A static site generator produced this HTML ahead of the request.",
+    });
     detailedInfo.generators = foundGenerators;
   }
 
@@ -153,6 +187,14 @@ function detectFrameworks(rawDocument) {
   if (hasInlineData) {
     ssrScore += config.scoring.serializedData;
     indicators.push("serialized data detected (SSR)");
+    signals.push({
+      id: "framework.serializedData",
+      label: "Server state embedded in the page",
+      impact: "ssr",
+      weight: config.scoring.serializedData,
+      detail:
+        "A serialized data payload (__NEXT_DATA__, __INITIAL_STATE__, an RSC stream) ships with the document so the client can resume from it.",
+    });
   }
 
   // Analyze script patterns
@@ -191,9 +233,23 @@ function detectFrameworks(rawDocument) {
     if (hasLazyChunks || hasHydrationScripts) {
       ssrScore += config.scoring.ssrHydrationScripts;
       indicators.push("SSR hydration scripts detected");
+      signals.push({
+        id: "framework.hydrationScripts",
+        label: "Hydration/chunked framework bundles",
+        impact: "ssr",
+        weight: config.scoring.ssrHydrationScripts,
+        detail: "Script names follow the code-split hydration layout meta-frameworks emit.",
+      });
     } else {
       csrScore += config.scoring.csrFrameworkScripts;
       indicators.push("CSR framework scripts detected");
+      signals.push({
+        id: "framework.csrScripts",
+        label: "Framework loaded as a plain bundle",
+        impact: "csr",
+        weight: config.scoring.csrFrameworkScripts,
+        detail: "A framework runtime is loaded with none of the hydration plumbing a server-rendered build produces.",
+      });
     }
   }
 
@@ -209,12 +265,20 @@ function detectFrameworks(rawDocument) {
   if (hasClientRouting) {
     csrScore += config.scoring.clientRouting;
     indicators.push("client-side routing detected (CSR)");
+    signals.push({
+      id: "framework.clientRouting",
+      label: "Client-side router outlet",
+      impact: "csr",
+      weight: config.scoring.clientRouting,
+      detail: "A router outlet element is present, so navigation swaps views in the browser instead of loading documents.",
+    });
   }
 
   return {
     ssrScore,
     csrScore,
     indicators,
+    signals,
     details: detailedInfo,
   };
 }

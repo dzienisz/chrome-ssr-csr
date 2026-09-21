@@ -37,3 +37,6 @@ out/
 
 # Raw marketing screenshot captures (local inputs only — retake to regenerate)
 extension/promo-images/raw/
+
+# Local UI preview screenshots (extension/scripts/ui-preview.mjs)
+extension/scripts/preview-out/

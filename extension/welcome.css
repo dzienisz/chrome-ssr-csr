@@ -1,0 +1,127 @@
+/* Onboarding page layout. Tokens and components come from src/ui/theme.css. */
+
+body {
+  background: var(--bg-sunken);
+  padding: 36px 16px 48px;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.hero h1 {
+  font-size: 24px;
+  margin: 10px 0 8px;
+}
+
+.hero p {
+  margin: 0 auto;
+  max-width: 52ch;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.card {
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.card p {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pin-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.pin-step {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.pin-status {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pin-status.pinned {
+  color: var(--ssr);
+}
+
+.verdict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.verdict-grid p {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+}
+
+.feature-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.feature-list li {
+  margin-bottom: 7px;
+}
+
+.feature-list strong {
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 12px;
+}

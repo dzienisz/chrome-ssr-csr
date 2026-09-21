@@ -5,6 +5,169 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-09-11
+
+The release answers a question the extension could not answer before: not just
+*what* kind of rendering a page uses, but *where* its HTML was produced, *which
+parts of the page* came from the server, and *why* the verdict came out the way
+it did.
+
+### Added
+
+- **Delivery classification** (`src/detectors/delivery-detector.js`). The
+  response headers of the document are now read and turned into a plain
+  answer: prerendered at build time, served from a CDN cache, rendered by the
+  origin, or dynamic and uncacheable. Identifies the CDN (Vercel, Netlify,
+  Cloudflare, Fastly, CloudFront, Akamai, GitHub Pages, S3, Fly.io, Firebase,
+  Bunny, KeyCDN, Varnish) and the origin runtime, parses `Cache-Control`,
+  `Age`, RFC 9211 `Cache-Status` and the vendor cache headers, and reports
+  TTFB and Server-Timing. Deliberately contributes **zero** to the SSR/CSR
+  score — transport is not rendering.
+- **Region attribution** (`src/detectors/dom-diff-detector.js`). The
+  pre-JavaScript document is now lined up against the live DOM region by
+  region, so the report can say that the header and footer came from the
+  server and `#root` gained 12,400 characters after the scripts ran. A
+  container the server filled is split into its landmarks; a container
+  JavaScript filled is reported whole, because that boundary is the finding.
+  Also score-neutral.
+- **"Rendered where"** — a one-line verdict combining the rendering
+  classification with the delivery evidence: built in the browser, rendered
+  ahead of the request, served as a static file, served from a cache, answered
+  by the origin, not reusable by caches, or server-rendered with client
+  islands. The wording claims only what the headers prove: a cache hit says a
+  cache answered *this* visit, not that the HTML was rendered exactly once.
+- **Explainable evidence.** Every detector now emits structured signals
+  (`{id, label, impact, weight, detail}`) alongside its indicators, so the UI
+  shows the arithmetic behind a verdict — which signal contributed how many
+  points, and what it actually observed — instead of a bare percentage.
+- **DevTools panel** ("Rendering"). The same report at full width, re-running
+  on every navigation. Reaches the page through
+  `devtools.inspectedWindow.eval`, so it needs no additional permissions.
+- **Right-click entry** ("Analyze page rendering") and a keyboard shortcut
+  (`Ctrl/Cmd+Shift+Y`) that opens the report.
+- **Offline detection harness** (`npm run validate:local`). Eight hand-written
+  fixture pages, served with known headers, analyzed by the real bundle in real
+  Chromium, graded on verdict, delivery mode and region attribution. Runs in CI
+  — unlike the 22-site live harness, which needs the open internet and sites
+  that rewrite themselves without warning. `npm run preview` renders every
+  surface against a real analysis result and screenshots it.
+- **Extension install harness** (`npm run validate:extension`). Installs the
+  extension unpacked in a throwaway Chromium profile and checks what only a
+  real install can show: the manifest is accepted, the service worker starts
+  clean, `probe.js` runs in the page's MAIN world at `document_start`, every
+  extension page loads with no script errors and no requests for files that do
+  not exist, the shared renderer works under the real extension origin, and the
+  popup→worker history contract survives concurrent writes. Also runs in CI.
+  Every check was verified to fail when the thing it guards is broken.
+- **The Firefox build fails when the package is incomplete.** The shipped-file
+  list is maintained by hand in two places, so adding a directory without
+  updating both produces a package that installs and then breaks. The build now
+  resolves every file the manifest and the packaged HTML pages reference and
+  refuses to write a package that is missing one.
+- **Localized UI.** 50 interface strings across all eight shipped locales (en,
+  ja, ko, fr, de, es, pt-BR, pl). Longer explanatory prose stays in English and
+  falls back cleanly.
+
+### Changed
+
+- **The popup analyzes the moment it opens.** Asking you to press a button
+  first was asking you to confirm the only question the popup exists to answer.
+  Settings → Analysis turns it back off.
+- **Popup rewritten** around a verdict hero (badge, confidence dial, render
+  origin, server/client split bar) and five tabs: Overview, Evidence, Delivery,
+  Regions, History. Keyboard-navigable tabs, live regions for the verdict, and
+  a shared stylesheet with the panel, the settings page and onboarding.
+- **Settings and onboarding** rebuilt on that shared design system, with the
+  new auto-analyze toggle and the configured keyboard shortcut.
+- Exports carry the new data: Markdown gains delivery, evidence and a region
+  table; CSV gains delivery and server-share columns; a one-line "Copy summary"
+  is new.
+- History rows open the report they describe, and honor the configured limit
+  when written from the context menu (they previously used a hardcoded ten).
+- Framework coverage extended to SvelteKit 2, Deno Fresh, Vike, TanStack Start,
+  Blazor, Phoenix LiveView, Turbo/Hotwire, Livewire, Inertia, Stimulus, Unpoly,
+  Marko, Ember and Angular's `ng-server-context`; generator coverage to Astro,
+  Gatsby, VitePress, Zola, Sphinx, Middleman, Bridgetown, Nikola, Publii,
+  Quarto and Antora. Script `src` and `id` attributes now count as framework
+  evidence, which is the only way to see Blazor, Deno Fresh and Vike.
+
+### Fixed
+
+- **The popup no longer renders page-derived strings as HTML.** Results were
+  previously formatted into an HTML string inside the inspected page and
+  assigned to the popup's `innerHTML`; a page chooses its own element ids and
+  header values. Rendering is now DOM construction with text nodes, on the
+  extension side.
+- `chrome.action.onClicked` in the background worker was unreachable — the
+  action has a popup, so that event never fires, and the analysis pipeline
+  behind it could never run. Replaced with the context-menu entry.
+- The toolbar badge is cleared when a tab navigates, instead of showing the
+  previous document's verdict.
+- `popup.html` loaded a script (`analyzer.js`) that has not existed since the
+  modular rewrite.
+- **Region measurements went stale on a second analysis of the same page.** The
+  per-run memo was module state keyed by live DOM elements, which nothing
+  evicts, so the popup's re-run button and the panel's re-run-on-navigation
+  reported the first run's text lengths — and every number derived from them.
+- **A navigation during a DevTools analysis hung the panel** until the 20-second
+  timeout: the run in flight held a busy flag, and its poll waited for a
+  result from a document that no longer existed.
+- **Overlapping analyses could show the older result.** Auto-analyze on open
+  and the re-run button can both be in flight; the slower one finishing last
+  replaced the newer report, badge, history entry and telemetry.
+- **Concurrent analyses could drop a history entry.** The popup and the
+  background worker both read-modify-wrote the whole `analysisHistory` array.
+  All appends now go through the worker, which serializes them.
+- `public, max-age=0, s-maxage=86400` — the canonical ISR header pair — was
+  classified as a dynamic, uncacheable response. `s-maxage` is now read before
+  the `max-age=0` fallback.
+- **Multi-tier cache headers were read from the wrong end.** A request crossing
+  a shield and an edge gets one token per tier, origin-first (`X-Cache: MISS,
+  HIT`), and keyword-searching the whole string reported the tier the browser
+  never talked to. The edge-most token decides now, and every tier that
+  reported a state is kept — a site behind Cloudflare *and* Vercel can answer
+  HIT at one and MISS at the other, and the Delivery tab shows both.
+- The decisive-CSR cap now reports the points it removed, so the evidence list
+  adds up to the score the verdict used instead of landing 80 points away
+  from it with nothing to explain the gap.
+- **The "this page cannot be analyzed" message never appeared on the pages it
+  was written for.** `tabs` is not among the permissions, so a tab's address is
+  only visible once `activeTab` has been granted — which never happens for a
+  `chrome://` or extension page. The restricted branch tested a url it could
+  not see, and the user got Chrome's raw "Extension manifest must request
+  permission to access the respective host" instead. An unreadable url is now
+  treated as restricted, and an injection refusal shows the same explanation.
+- The toolbar badge is cleared on same-URL reloads, which report `loading`
+  with no `url` field.
+- Clicking Copy twice inside the reset window left the button permanently
+  reading "Copied".
+### Security
+
+- **CSV exports no longer carry executable cells.** Page titles, element ids and
+  header values flow into the export; a page titled `=HYPERLINK(…)` produced a
+  correctly quoted CSV field that Excel, LibreOffice and Sheets all execute on
+  open. Values starting with `=`, `+`, `-` or `@` — after any leading
+  whitespace or control characters — are now prefixed so the cell stays text.
+
+### Accessibility
+
+- Every control on the settings page has an accessible name. The switches were
+  labelled by a neighbouring `<div>`, so a screen reader announced each one as
+  an unnamed checkbox.
+- Each page sets `documentElement.lang` from the UI locale. The markup ships
+  English and is rewritten at runtime, so a Polish or Japanese interface was
+  being announced with English pronunciation rules.
+- The welcome and settings pages are fully localized: 38 further message keys
+  across all eight locales, and a test that fails when markup asks for a key no
+  catalog defines.
+
+### Privacy
+
+- Unchanged. The telemetry payload is exactly what it was in 3.12.0: nothing
+  added in this release — response headers, region attribution, delivery
+  classification — is ever sent anywhere. It is computed on your device, shown
+  to you, and discarded.
+
 ## [3.12.0] - 2026-09-09
 
 ### Privacy

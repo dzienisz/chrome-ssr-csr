@@ -6,6 +6,9 @@ The language list there is derived from `_locales/` in the uploaded package
 convenience). Screenshots can stay English everywhere initially; localize them
 later only for the top markets.
 
+Last updated for v4.0.0 (delivery classification, region breakdown, DevTools
+panel). Keep the bullet lists in step with `store-listing.md`.
+
 ---
 
 ## English (en) — default
@@ -19,7 +22,10 @@ Instantly see how any webpage is rendered — server-side (SSR), client-side (CS
 The extension fetches the page's raw HTML and compares it with the rendered DOM, combining framework hydration markers, timing signals, and content analysis into a confidence-scored verdict. Detects React, Vue, Angular, Next.js, Nuxt, Svelte, and more.
 
 - One-click analysis with an SSR/CSR/MIX badge on the icon
-- Confidence score with detailed indicators
+- Confidence score, plus every signal behind it and the points it contributed
+- "Rendered where": build time, CDN cache, or this request — from the response headers
+- Region breakdown: what the server sent vs what JavaScript built
+- DevTools panel that re-runs on every navigation
 - Framework and static-site-generator detection
 - Analysis history and JSON/CSV/Markdown export
 - Dark mode
@@ -39,7 +45,10 @@ Built for developers, SEO specialists, and the curious. Privacy-friendly: option
 この拡張機能はページの生のHTMLを取得してレンダリング後のDOMと比較し、フレームワークのハイドレーションマーカー、タイミングシグナル、コンテンツ分析を組み合わせて、信頼度スコア付きの判定を行います。React、Vue、Angular、Next.js、Nuxt、Svelteなどを検出します。
 
 - ワンクリック分析、アイコンにSSR/CSR/MIXバッジを表示
-- 詳細なインジケーター付き信頼度スコア
+- 信頼度スコアと、判定を動かしたすべての根拠（寄与ポイント付き）
+- 「どこでレンダリングされたか」：ビルド時・CDNキャッシュ・このリクエスト時（レスポンスヘッダーから判定）
+- 領域別の内訳：サーバーが送った部分とJavaScriptが生成した部分
+- ページ遷移ごとに再解析するDevToolsパネル
 - フレームワークと静的サイトジェネレーターの検出
 - 分析履歴とJSON/CSV/Markdownエクスポート
 - ダークモード対応
@@ -59,7 +68,10 @@ Built for developers, SEO specialists, and the curious. Privacy-friendly: option
 이 확장 프로그램은 페이지의 원본 HTML을 가져와 렌더링된 DOM과 비교하고, 프레임워크 하이드레이션 마커, 타이밍 신호, 콘텐츠 분석을 결합하여 신뢰도 점수가 포함된 판정을 제공합니다. React, Vue, Angular, Next.js, Nuxt, Svelte 등을 감지합니다.
 
 - 원클릭 분석, 아이콘에 SSR/CSR/MIX 배지 표시
-- 상세 지표가 포함된 신뢰도 점수
+- 신뢰도 점수와 판정을 움직인 모든 근거(기여 점수 포함)
+- "어디서 렌더링됐는가": 빌드 시점, CDN 캐시, 또는 이번 요청 — 응답 헤더에서 판독
+- 영역별 분석: 서버가 보낸 부분과 JavaScript가 만든 부분
+- 페이지 이동마다 다시 실행되는 DevTools 패널
 - 프레임워크 및 정적 사이트 생성기 감지
 - 분석 기록 및 JSON/CSV/Markdown 내보내기
 - 다크 모드 지원
@@ -79,7 +91,10 @@ Découvrez instantanément comment une page web est rendue — côté serveur (S
 L'extension récupère le HTML brut de la page et le compare au DOM rendu, en combinant les marqueurs d'hydratation des frameworks, les signaux de timing et l'analyse du contenu pour produire un verdict avec score de confiance. Détecte React, Vue, Angular, Next.js, Nuxt, Svelte et plus encore.
 
 - Analyse en un clic avec badge SSR/CSR/MIX sur l'icône
-- Score de confiance avec indicateurs détaillés
+- Score de confiance, et chaque indice qui l'a fait bouger, avec ses points
+- « Rendu où ? » : au build, en cache CDN, ou pour cette requête — d'après les en-têtes
+- Découpage par zone : ce que le serveur a envoyé et ce que JavaScript a construit
+- Panneau DevTools qui se relance à chaque navigation
 - Détection des frameworks et des générateurs de sites statiques
 - Historique des analyses et export JSON/CSV/Markdown
 - Mode sombre
@@ -99,7 +114,10 @@ Sehen Sie sofort, wie eine Webseite gerendert wird — serverseitig (SSR), clien
 Die Erweiterung lädt das rohe HTML der Seite und vergleicht es mit dem gerenderten DOM. Framework-Hydration-Marker, Timing-Signale und Inhaltsanalyse fließen in ein Urteil mit Konfidenzwert ein. Erkennt React, Vue, Angular, Next.js, Nuxt, Svelte und mehr.
 
 - Ein-Klick-Analyse mit SSR/CSR/MIX-Badge auf dem Icon
-- Konfidenzwert mit detaillierten Indikatoren
+- Konfidenzwert samt aller Belege, die ihn bewegt haben, mit ihren Punkten
+- „Wo gerendert?“: zur Build-Zeit, aus dem CDN-Cache oder für diese Anfrage — aus den Response-Headern
+- Aufschlüsselung nach Bereichen: was der Server geliefert hat und was JavaScript gebaut hat
+- DevTools-Panel, das bei jeder Navigation neu läuft
 - Erkennung von Frameworks und Static-Site-Generatoren
 - Analyseverlauf und Export als JSON/CSV/Markdown
 - Dark Mode
@@ -119,7 +137,10 @@ Descubre al instante cómo se renderiza cualquier página web: en el servidor (S
 La extensión obtiene el HTML sin procesar de la página y lo compara con el DOM renderizado, combinando marcadores de hidratación de frameworks, señales de tiempo y análisis de contenido en un veredicto con puntuación de confianza. Detecta React, Vue, Angular, Next.js, Nuxt, Svelte y más.
 
 - Análisis con un clic e insignia SSR/CSR/MIX en el icono
-- Puntuación de confianza con indicadores detallados
+- Puntuación de confianza y cada indicio que la movió, con los puntos que aportó
+- «¿Renderizado dónde?»: en el build, en caché CDN o en esta petición — según las cabeceras
+- Desglose por regiones: qué envió el servidor y qué construyó JavaScript
+- Panel de DevTools que se repite en cada navegación
 - Detección de frameworks y generadores de sitios estáticos
 - Historial de análisis y exportación a JSON/CSV/Markdown
 - Modo oscuro
@@ -139,7 +160,10 @@ Veja instantaneamente como qualquer página web é renderizada — no servidor (
 A extensão busca o HTML bruto da página e o compara com o DOM renderizado, combinando marcadores de hidratação de frameworks, sinais de tempo e análise de conteúdo em um veredito com pontuação de confiança. Detecta React, Vue, Angular, Next.js, Nuxt, Svelte e mais.
 
 - Análise com um clique e selo SSR/CSR/MIX no ícone
-- Pontuação de confiança com indicadores detalhados
+- Pontuação de confiança e cada evidência que a moveu, com os pontos que somou
+- "Renderizado onde?": no build, em cache de CDN ou nesta requisição — pelos cabeçalhos
+- Detalhamento por região: o que o servidor enviou e o que o JavaScript construiu
+- Painel do DevTools que roda de novo a cada navegação
 - Detecção de frameworks e geradores de sites estáticos
 - Histórico de análises e exportação em JSON/CSV/Markdown
 - Modo escuro
@@ -159,7 +183,10 @@ Sprawdź natychmiast, jak renderowana jest dowolna strona — po stronie serwera
 Rozszerzenie pobiera surowy HTML strony i porównuje go z wyrenderowanym DOM, łącząc markery hydratacji frameworków, sygnały czasowe i analizę treści w werdykt z oceną pewności. Wykrywa React, Vue, Angular, Next.js, Nuxt, Svelte i inne.
 
 - Analiza jednym kliknięciem z plakietką SSR/CSR/MIX na ikonie
-- Ocena pewności ze szczegółowymi wskaźnikami
+- Ocena pewności i każda przesłanka, która na nią wpłynęła, wraz z punktami
+- „Gdzie wyrenderowano?”: przy budowaniu, z cache CDN albo dla tego żądania — na podstawie nagłówków
+- Podział na obszary: co wysłał serwer, a co zbudował JavaScript
+- Panel DevTools uruchamiany ponownie przy każdej nawigacji
 - Wykrywanie frameworków i generatorów stron statycznych
 - Historia analiz oraz eksport do JSON/CSV/Markdown
 - Tryb ciemny

@@ -1,10 +1,16 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "3.12.0",
+  "version": "4.0.0",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
-  "permissions": ["activeTab", "scripting", "storage", "notifications"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications",
+    "contextMenus"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -20,6 +26,16 @@
   "background": {
     "service_worker": "background.js"
   },
+  "devtools_page": "devtools/devtools.html",
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open the rendering report for this page"
+    }
+  },
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -27,8 +43,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/probe.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/probe.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     }

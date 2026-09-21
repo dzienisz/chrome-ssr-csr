@@ -1,0 +1,135 @@
+/* Popup-only layout. Everything visual lives in src/ui/theme.css. */
+
+body {
+  width: 400px;
+  min-height: 220px;
+  padding: 12px 14px 10px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.app-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 640;
+}
+
+.app-actions {
+  display: flex;
+  gap: 2px;
+}
+
+#pin-banner {
+  margin-bottom: 10px;
+}
+
+.panels {
+  min-height: 120px;
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.export-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.export-row .btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+
+.export-row .btn:first-child {
+  flex: 1.6;
+}
+
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* History entries are buttons: clicking one re-opens that report. */
+.history-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 9px 2px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.history-item:first-child {
+  border-top: none;
+}
+
+.history-item:hover {
+  background: var(--bg-hover);
+}
+
+.history-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.error-box {
+  border: 1px solid color-mix(in srgb, var(--csr) 35%, transparent);
+  background: var(--csr-soft);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 12.5px;
+}
+
+.error-box h2 {
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.error-box code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}

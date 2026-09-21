@@ -456,14 +456,18 @@
     <span class="sec-eyebrow">What you get</span>
     <h2>A verdict plus the whole stack behind it.</h2>
     <div class="features reveal">
-      <div class="feat"><span class="ic">%</span><div><b>Confidence + evidence</b><p>Every verdict lists the indicators that drove it — no black box. Inspect each signal and its weight.</p></div></div>
+      <div class="feat"><span class="ic">%</span><div><b>Confidence + evidence</b><p>Every verdict lists the signals that drove it, with the points each contributed and what it actually observed — no black box.</p></div></div>
+      <div class="feat"><span class="ic">◎</span><div><b>Rendered where</b><p>Built at build time, served from a CDN cache, or rendered for this request — read from the document's own response headers, with the CDN, cache state, age and TTFB.</p></div></div>
+      <div class="feat"><span class="ic">▚</span><div><b>Region breakdown</b><p>Which parts of the page the server sent and which ones JavaScript built, character by character. <code style="font-family:var(--mono);font-size:.85em;">#root</code> gained 12,400 characters after the scripts ran.</p></div></div>
+      <div class="feat"><span class="ic">⌗</span><div><b>DevTools panel</b><p>The whole report at full width in a “Rendering” panel, re-running on every navigation while you work.</p></div></div>
       <div class="feat"><span class="ic">⬡</span><div><b>Framework detection</b><p>Next.js (incl. App Router), Nuxt, React, Vue, Angular, SvelteKit, Astro, Gatsby, WordPress and more.</p></div></div>
       <div class="feat"><span class="ic">⚡</span><div><b>Core Web Vitals</b><p>LCP, CLS, INP and TTFB measured on the live page — plus Long Animation Frame stats.</p></div></div>
       <div class="feat"><span class="ic">◈</span><div><b>Tech stack</b><p>CSS framework, state management, build tool, hosting — Tailwind, Redux, Vite, Vercel…</p></div></div>
       <div class="feat"><span class="ic">🔍</span><div><b>SEO &amp; a11y spot-check</b><p>Meta tags, Open Graph, structured data, alt-text coverage — the stuff crawlers and screen readers see.</p></div></div>
       <div class="feat"><span class="ic">⇄</span><div><b>SPA navigation aware</b><p>Tracks client-side route changes, soft navigations and the Navigation API — not just the first load.</p></div></div>
       <div class="feat"><span class="ic">⏱</span><div><b>Prerender-correct timing</b><p>Timing is rebased on <code style="font-family:var(--mono);font-size:.85em;">activationStart</code> and skipped for speculative loads, so prerendered pages don't read as impossibly fast.</p></div></div>
-      <div class="feat"><span class="ic">▤</span><div><b>History &amp; export</b><p>Recent analyses kept locally, exportable to JSON, CSV or Markdown for audits and reports.</p></div></div>
+      <div class="feat"><span class="ic">▤</span><div><b>History &amp; export</b><p>Recent analyses kept locally, exportable to JSON, CSV or Markdown — or copied as one line into a pull request.</p></div></div>
+      <div class="feat"><span class="ic">⌨</span><div><b>One keystroke away</b><p><code style="font-family:var(--mono);font-size:.85em;">Ctrl/Cmd+Shift+Y</code>, a right-click entry, or the toolbar icon — and the analysis starts the moment the popup opens.</p></div></div>
     </div>
   </section>
 
@@ -484,11 +488,15 @@
     <div class="faq reveal">
       <details>
         <summary>What exactly leaves my browser?</summary>
-        <p>Detection itself: nothing — the diff and scoring run locally. If telemetry is on (it is by default), the extension sends one anonymous record per analysis: render type, confidence, frameworks, Web Vitals, and the site's <strong>origin</strong> (e.g. <code>example.com</code>) — never the full URL, path, or page content. Disable it in settings with one toggle.</p>
+        <p>Detection itself: nothing — the diff and scoring run locally. If telemetry is on (it is by default), the extension sends one anonymous record per analysis: render type, confidence, frameworks, Web Vitals, and the site's <strong>origin</strong> (e.g. <code>example.com</code>) — never the full URL, path, or page content. Response headers and the region breakdown are never sent at all; they are computed on your device, shown to you, and discarded. Disable telemetry in settings with one toggle.</p>
       </details>
       <details>
         <summary>Why not just look for hydration markers?</summary>
         <p>Because frameworks lie. A Next.js App Router page ships no identifiable element, and a CSR app can leave SSR-looking meta behind. The raw-vs-rendered text diff is the ground truth: either the bytes the server sent contain the content, or they don't. Markers and timing only refine that verdict — and since v3.7 they require raw-HTML evidence before they can vote.</p>
+      </details>
+      <details>
+        <summary>SSR tells me nothing about caching. Can it?</summary>
+        <p>That's exactly what the Delivery tab is for. “SSR” covers a page rendered once at build time and served from an S3 bucket, a page answered by a warm CDN cache, and a page the origin renders on every request — three very different systems. The extension reads the document's own response headers and says which one you're looking at, along with the CDN, the cache state, how old the copy is and how long the first byte took. It is reported separately and never allowed to vote on the SSR/CSR verdict: how a document travelled is not the same question as where it was rendered.</p>
       </details>
       <details>
         <summary>Does it work on SPAs and client-side navigations?</summary>

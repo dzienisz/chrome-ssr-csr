@@ -334,3 +334,119 @@ describe('detectFrameworks', () => {
     });
   });
 });
+
+describe('v4 stack coverage', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+  });
+
+  describe('server-rendered stacks that enhance markup', () => {
+    // Every one of these puts its markers in the HTML the server sends, so the
+    // raw-evidence rule should credit them as SSR rather than as a client app.
+    //
+    // Selectors with a colon in the attribute name (Livewire's `wire:id`,
+    // Qwik's `q:container`) are missing here on purpose: jsdom's selector
+    // engine does not match them at all, in any escaping. They are covered by
+    // the ssr-enhanced fixture in the real-browser harness instead
+    // (scripts/fixtures/pages.mjs).
+    const cases = [
+      ['turbo', '<turbo-frame id="messages">Inbox</turbo-frame>'],
+      ['phoenix', '<div data-phx-main>LiveView</div>'],
+      ['htmx', '<button hx-get="/more">Load more</button>'],
+      ['unpoly', '<a up-follow href="/next">Next</a>'],
+      ['stimulus', '<div data-controller="dropdown" data-action="click->dropdown#toggle">Menu</div>'],
+      ['marko', '<div data-marko-key="@0">Marko</div>'],
+    ];
+
+    it.each(cases)('detects %s from the served markup', (framework, markup) => {
+      document.body.innerHTML = markup;
+
+      const result = window.detectFrameworks(parseRaw(markup));
+
+      expect(result.details.frameworks).toContain(framework);
+      expect(result.indicators.join(' ')).toContain('hydration markers in raw HTML');
+    });
+  });
+
+  describe('frameworks identified from script contents', () => {
+    const cases = [
+      ['sveltekit', '<script>__sveltekit_1a2b3c = { base: "" };</script>'],
+      ['fresh', '<script id="__FRSH_STATE" type="application/json">{}</script>'],
+      ['vike', '<script id="vike_pageContext" type="application/json">{}</script>'],
+      ['tanstackStart', '<script>window.__TSR_SSR__ = {};</script>'],
+    ];
+
+    it.each(cases)('detects %s from an inline payload', (framework, markup) => {
+      document.body.innerHTML = markup;
+
+      const result = window.detectFrameworks(parseRaw(markup));
+
+      expect(result.details.frameworks).toContain(framework);
+    });
+  });
+
+  it('detects Blazor from the path its runtime loads from', () => {
+    // Blazor leaves no element and no inline script — only a src, which is why
+    // collectScriptSource reads src attributes as well as script text.
+    const markup = '<script src="_framework/blazor.web.js"></script>';
+    document.body.innerHTML = markup;
+
+    const result = window.detectFrameworks(parseRaw(markup));
+
+    expect(result.details.frameworks).toContain('blazor');
+  });
+
+  it('detects Angular SSR from ng-server-context', () => {
+    const raw = parseRaw('<html ng-server-context="ssr"><body><app-root>Hi</app-root></body></html>');
+    document.documentElement.setAttribute('ng-server-context', 'ssr');
+
+    try {
+      const result = window.detectFrameworks(raw);
+      expect(result.details.frameworks).toContain('angular');
+    } finally {
+      document.documentElement.removeAttribute('ng-server-context');
+    }
+  });
+
+  it('does not credit a framework that only appears after scripts run', () => {
+    document.body.innerHTML = '<turbo-frame id="messages">Inbox</turbo-frame>';
+
+    const result = window.detectFrameworks(parseRaw('<div id="app"></div>'));
+
+    expect(result.details.frameworks).toContain('turbo');
+    expect(result.ssrScore).toBe(0);
+    expect(result.indicators.join(' ')).toContain('only in rendered DOM');
+  });
+
+  it('emits a structured signal alongside every indicator it scores', () => {
+    const markup = '<turbo-frame id="messages">Inbox</turbo-frame>';
+    document.body.innerHTML = markup;
+
+    const result = window.detectFrameworks(parseRaw(markup));
+
+    expect(result.signals.length).toBeGreaterThan(0);
+    expect(result.signals[0]).toMatchObject({ impact: 'ssr', weight: expect.any(Number) });
+  });
+});
+
+describe('static site generators', () => {
+  beforeEach(() => {
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
+  });
+
+  it.each([
+    ['astro', 'Astro v4.10.2'],
+    ['gatsby', 'Gatsby 5.13.0'],
+    ['vitepress', 'VitePress v1.2.0'],
+    ['zola', 'Zola v0.18.0'],
+    ['quarto', 'Quarto-1.4.550'],
+  ])('detects %s from its generator meta tag', (generator, content) => {
+    document.head.innerHTML = `<meta name="generator" content="${content}">`;
+
+    const result = window.detectFrameworks(parseRaw(''));
+
+    expect(result.details.generators).toContain(generator);
+  });
+});

@@ -50,20 +50,27 @@ body {
   font-weight: 600;
 }
 
-/* The cropped popup. The inner img is the full 4K capture; the wrapper
-   clips it to the popup's bounding box, scaled by --s. */
+/* The popup, captured at exactly this size by `npm run preview -- --promo`.
+   It used to be a hand-tuned crop out of a 4K browser screenshot, with four
+   magic pixel offsets per file that went stale the moment the popup layout
+   changed. The capture is now the right shape to begin with. */
 .shot {
   flex: none;
+  width: 400px;
+  height: 640px;
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid #3b4a66;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-  width: calc((var(--x2) - var(--x1)) * var(--s) * 1px);
-  height: calc((var(--y2) - var(--y1)) * var(--s) * 1px);
 }
 .shot img {
   display: block;
-  width: 3840px;
-  transform-origin: 0 0;
-  transform: scale(var(--s)) translate(calc(var(--x1) * -1px), calc(var(--y1) * -1px));
+  width: 400px;
+}
+
+/* The popup is taller than the frame, so the capture is cut off. Fade the
+   last few percent rather than ending on a hard slice through a card. */
+.shot {
+  -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 90%, transparent 100%);
 }

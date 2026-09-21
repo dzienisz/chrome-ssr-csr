@@ -15,6 +15,7 @@
 function analyzePerformance() {
   const config = window.DETECTOR_CONFIG;
   const indicators = [];
+  const signals = [];
   let ssrScore = 0;
   let csrScore = 0;
   const detailedInfo = {};
@@ -44,13 +45,20 @@ function analyzePerformance() {
     // timing heuristics entirely rather than score them wrong.
     if (!navContext.timingIsReliable) {
       indicators.push('speculative navigation - timing signals skipped');
+      signals.push({
+        id: 'performance.speculative',
+        label: 'Timing signals skipped',
+        impact: 'info',
+        weight: 0,
+        detail: 'This document was prerendered or prefetched, so its timings describe the speculation, not this visit.'
+      });
       detailedInfo.timing = {
         domContentLoaded: Math.round(domContentLoadedTime),
         firstContentfulPaint: fcpTime != null ? Math.round(fcpTime) : null,
         adjustedForActivation: navContext.activationStart > 0,
         deliveryType: navContext.deliveryType
       };
-      return { ssrScore, csrScore, indicators, details: detailedInfo };
+      return { ssrScore, csrScore, indicators, signals, details: detailedInfo };
     }
 
     // Key CSR indicator: Fast DOM ready + slow FCP
@@ -60,11 +68,25 @@ function analyzePerformance() {
         fcpTime && fcpTime > config.performance.slowFCP) {
       csrScore += config.scoring.fastDomSlowFcp;
       indicators.push("fast DOM ready but slow FCP (CSR pattern)");
+      signals.push({
+        id: 'performance.fastDomSlowFcp',
+        label: 'Empty document parsed fast, painted late',
+        impact: 'csr',
+        weight: config.scoring.fastDomSlowFcp,
+        detail: `DOM ready in ${Math.round(domContentLoadedTime)}ms but nothing painted until ${Math.round(fcpTime)}ms — the browser had to build the page.`
+      });
     }
     // Fast FCP with reasonable DOM time suggests SSR (content was in initial HTML)
     else if (fcpTime && fcpTime < config.performance.fastFCP) {
       ssrScore += config.scoring.fastFCP;
       indicators.push("fast first contentful paint (SSR)");
+      signals.push({
+        id: 'performance.fastFcp',
+        label: `First paint at ${Math.round(fcpTime)}ms`,
+        impact: 'ssr',
+        weight: config.scoring.fastFCP,
+        detail: 'Content appeared almost immediately, which means it was in the HTML rather than assembled by script.'
+      });
     }
 
     // Very slow DOM ready can indicate heavy server processing (SSR) or slow network
@@ -75,6 +97,13 @@ function analyzePerformance() {
       if (fcpTime && fcpTime < config.performance.fastFCP) {
         ssrScore += 10;
         indicators.push("slow DOM but fast paint (SSR)");
+        signals.push({
+          id: 'performance.slowDomFastPaint',
+          label: 'Server took time, content was ready',
+          impact: 'ssr',
+          weight: 10,
+          detail: `DOM ready took ${Math.round(domContentLoadedTime)}ms but paint landed at ${Math.round(fcpTime)}ms.`
+        });
       }
     }
 
@@ -90,6 +119,7 @@ function analyzePerformance() {
     ssrScore,
     csrScore,
     indicators,
+    signals,
     details: detailedInfo
   };
 }

@@ -4,5 +4,275 @@
   },
   "appDesc": {
     "message": "Wykrywa, czy strona używa renderowania po stronie klienta (CSR), czy po stronie serwera (SSR)"
+  },
+  "analyzing": {
+    "message": "Analizowanie strony…"
+  },
+  "analyzePage": {
+    "message": "Przeanalizuj tę stronę"
+  },
+  "rerun": {
+    "message": "Analizuj ponownie"
+  },
+  "analyzeAgain": {
+    "message": "Analizuj ponownie"
+  },
+  "settings": {
+    "message": "Ustawienia"
+  },
+  "dismiss": {
+    "message": "Zamknij"
+  },
+  "confidence": {
+    "message": "pewność"
+  },
+  "fromServer": {
+    "message": "z serwera"
+  },
+  "fromJavaScript": {
+    "message": "dodane przez JavaScript"
+  },
+  "detectedStack": {
+    "message": "Wykryty stack"
+  },
+  "whyThisVerdict": {
+    "message": "Dlaczego taki werdykt"
+  },
+  "scoredEvidence": {
+    "message": "Punktowane przesłanki"
+  },
+  "context": {
+    "message": "Kontekst"
+  },
+  "transport": {
+    "message": "Dostarczenie"
+  },
+  "regions": {
+    "message": "Obszary"
+  },
+  "tabOverview": {
+    "message": "Przegląd"
+  },
+  "tabSignals": {
+    "message": "Przesłanki"
+  },
+  "tabDelivery": {
+    "message": "Dostarczenie"
+  },
+  "tabDiff": {
+    "message": "Obszary"
+  },
+  "tabHistory": {
+    "message": "Historia"
+  },
+  "devToolsPanel": {
+    "message": "Panel DevTools"
+  },
+  "copySummary": {
+    "message": "Kopiuj podsumowanie"
+  },
+  "copied": {
+    "message": "Skopiowano"
+  },
+  "copyFailed": {
+    "message": "Nie udało się skopiować"
+  },
+  "historyEmpty": {
+    "message": "Tutaj pojawią się przeanalizowane strony."
+  },
+  "clearHistory": {
+    "message": "Wyczyść historię"
+  },
+  "analysisFailed": {
+    "message": "Analiza nie powiodła się"
+  },
+  "cannotAccess": {
+    "message": "Brak dostępu do tej strony"
+  },
+  "restrictedTitle": {
+    "message": "Tej strony nie można przeanalizować"
+  },
+  "giveFeedback": {
+    "message": "Prześlij opinię · 1 min"
+  },
+  "contextMenuAnalyze": {
+    "message": "Przeanalizuj renderowanie strony"
+  },
+  "rerunOnNavigation": {
+    "message": "Powtarzaj przy nawigacji"
+  },
+  "saveSettings": {
+    "message": "Zapisz ustawienia"
+  },
+  "resetDefaults": {
+    "message": "Przywróć domyślne"
+  },
+  "settingsSaved": {
+    "message": "Ustawienia zapisane"
+  },
+  "settingsReset": {
+    "message": "Przywrócono ustawienia domyślne"
+  },
+  "settingsTitle": {
+    "message": "Ustawienia"
+  },
+  "sectionAppearance": {
+    "message": "Wygląd"
+  },
+  "sectionAnalysis": {
+    "message": "Analiza"
+  },
+  "sectionPrivacy": {
+    "message": "Prywatność i dane"
+  },
+  "sectionShortcuts": {
+    "message": "Skróty klawiszowe"
+  },
+  "themeAuto": {
+    "message": "Jak w systemie"
+  },
+  "themeLight": {
+    "message": "Jasny"
+  },
+  "themeDark": {
+    "message": "Ciemny"
+  },
+  "unlimited": {
+    "message": "Bez limitu"
+  },
+  "openSettings": {
+    "message": "Otwórz ustawienia"
+  },
+  "privacyPolicy": {
+    "message": "Polityka prywatności"
+  },
+  "pinNotPinned": {
+    "message": "Jeszcze nie przypięto"
+  },
+  "pinPinned": {
+    "message": "Przypięto — gotowe."
+  },
+  "shortcutUnset": {
+    "message": "Nie ustawiono"
+  },
+  "pinTitle": {
+    "message": "Przypnij rozszerzenie"
+  },
+  "pinBody": {
+    "message": "(ikona puzzla → przypnij), aby sprawdzić dowolną stronę jednym kliknięciem."
+  },
+  "settingsSubtitle": {
+    "message": "Jak działa detektor, co przechowuje i co udostępnia."
+  },
+  "settingTheme": {
+    "message": "Motyw"
+  },
+  "settingThemeHelp": {
+    "message": "Dotyczy okienka, panelu DevTools i tej strony."
+  },
+  "settingAutoAnalyze": {
+    "message": "Analizuj zaraz po otwarciu okienka"
+  },
+  "settingAutoAnalyzeHelp": {
+    "message": "Wyłącz, jeśli wolisz najpierw kliknąć przycisk."
+  },
+  "settingHistory": {
+    "message": "Wpisy w historii"
+  },
+  "settingHistoryHelp": {
+    "message": "Pozostają tylko na tym urządzeniu, nigdy nie są wysyłane."
+  },
+  "settingNotifications": {
+    "message": "Powiadomienia systemowe"
+  },
+  "settingNotificationsHelp": {
+    "message": "Używa ich pozycja menu „Przeanalizuj renderowanie strony”."
+  },
+  "settingShare": {
+    "message": "Udostępniaj anonimowe dane z analiz"
+  },
+  "settingShareHelp": {
+    "message": "Pomaga dostroić wykrywanie na prawdziwych stronach. Możesz wyłączyć w każdej chwili."
+  },
+  "privacyWhatTitle": {
+    "message": "Co jest udostępniane, gdy opcja jest włączona"
+  },
+  "privacyWhatBody": {
+    "message": "Nazwa domeny (nigdy pełny adres URL), rodzaj renderowania i pewność, wykryte frameworki, metryki wydajności oraz kraj ustalony po stronie serwera na podstawie adresu IP żądania, który nie jest przechowywany."
+  },
+  "privacyNeverBody": {
+    "message": "Nigdy nie są udostępniane: treść strony, dane osobowe, historia przeglądania, nagłówki odpowiedzi ani podział na obszary z karty Obszary — ta analiza zostaje na Twoim urządzeniu."
+  },
+  "privacyPolicyLink": {
+    "message": "Przeczytaj pełną politykę prywatności"
+  },
+  "shortcutOpen": {
+    "message": "Otwórz raport renderowania"
+  },
+  "shortcutOpenHelp": {
+    "message": "Zmienisz go na stronie skrótów rozszerzeń w przeglądarce."
+  },
+  "welcomeTitle": {
+    "message": "Jak renderowana jest ta strona?"
+  },
+  "welcomeSubtitle": {
+    "message": "Otwórz dowolną witrynę i poznaj odpowiedź jednym kliknięciem — wraz z przesłankami, miejscem powstania HTML-a i tym, które fragmenty strony zbudował JavaScript."
+  },
+  "welcomeStep1": {
+    "message": "Przypnij do paska narzędzi"
+  },
+  "welcomeStep1Body": {
+    "message": "Przeglądarki chowają nowe rozszerzenia za ikoną puzzla. Przypnij je, aby raport był zawsze o jedno kliknięcie."
+  },
+  "pinStepOpen": {
+    "message": "Kliknij ikonę puzzla"
+  },
+  "pinStepFind": {
+    "message": "znajdź CSR vs SSR Detector"
+  },
+  "pinStepPin": {
+    "message": "kliknij pinezkę"
+  },
+  "welcomeStep2": {
+    "message": "Przeczytaj werdykt"
+  },
+  "welcomeStep2Body": {
+    "message": "Plakietka podaje nagłówek; okienko wyjaśnia, skąd się wziął."
+  },
+  "welcomeSsr": {
+    "message": "Treść przyszła w pierwotnym HTML-u. Dobre dla wyszukiwarek i pierwszego wyświetlenia."
+  },
+  "welcomeCsr": {
+    "message": "Przeglądarka zbudowała stronę z JavaScriptu. Typowe dla aplikacyjnych stron jednodokumentowych."
+  },
+  "welcomeMix": {
+    "message": "Część strony przyszła z serwera, reszta została zhydratyzowana lub pobrana później."
+  },
+  "welcomeStep3": {
+    "message": "Wejdź głębiej, gdy potrzebujesz"
+  },
+  "welcomePrivacy": {
+    "message": "Twoja prywatność"
+  },
+  "welcomePrivacyBody": {
+    "message": "Anonimowe statystyki — domena, rodzaj renderowania, metryki wydajności, nigdy pełne adresy URL ani treść — pomagają dostroić wykrywanie do prawdziwego internetu. Nagłówki odpowiedzi i podział na obszary nigdy nie opuszczają Twojego urządzenia. Możesz wyłączyć w każdej chwili."
+  },
+  "welcomeFeatureEvidenceBody": {
+    "message": "— każda przesłanka, która wpłynęła na werdykt, wraz z punktami."
+  },
+  "welcomeFeatureDeliveryBody": {
+    "message": "— czy HTML powstał przy budowaniu, przyszedł z cache CDN, czy został wyrenderowany dla tego żądania; odczytane wprost z nagłówków odpowiedzi."
+  },
+  "welcomeFeatureRegionsBody": {
+    "message": "— które fragmenty strony wysłał serwer, a które wypełnił JavaScript."
+  },
+  "welcomeFeaturePanelBody": {
+    "message": "— ten sam raport na pełnej szerokości, uruchamiany ponownie przy każdej nawigacji. Szukaj „Rendering” w DevTools."
+  },
+  "cacheLayers": {
+    "message": "Warstwy cache"
+  },
+  "pageChanged": {
+    "message": "Strona zmieniła adres w trakcie analizy. Uruchom ponownie."
   }
 }
