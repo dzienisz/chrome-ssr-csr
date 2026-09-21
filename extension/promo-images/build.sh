@@ -1,21 +1,18 @@
 #!/bin/bash
 # Regenerate Chrome Web Store marketing assets from the HTML sources in src/.
-# Requires Google Chrome. Run from anywhere:
+# Requires the extension's dev dependencies (Playwright). Run from anywhere:
 #   ./build.sh            → promo tiles + store screenshots
 #   ./build.sh icons      → ALSO overwrite ../icon16/48/128.png (the extension icon)
 set -euo pipefail
 
-# Override for a non-macOS machine, e.g.
-#   CHROME=$(node -e "console.log(require('playwright').chromium.executablePath())") ./build.sh
+# Set CHROMIUM_PATH to render with a specific Chrome binary (same variable as
+# scripts/ui-preview.mjs); otherwise Playwright's bundled Chromium is used.
+# CHROME is still honoured for the icon step below.
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 shoot() { # src-name width height out-name
-  "$CHROME" --headless --disable-gpu --hide-scrollbars \
-    --force-device-scale-factor=1 \
-    --window-size="$2,$3" \
-    --screenshot="$DIR/$4" \
-    "file://$DIR/src/$1.html" 2>/dev/null
+  node "$DIR/shoot.mjs" "$1" "$2" "$3" "$4"
   echo "✓ $4"
 }
 
@@ -35,13 +32,13 @@ shoot social-diff 1600 900 social-diff-1600x900.png
 
 # Store screenshots. These compose popup captures from raw/, which are produced
 # by the extension itself:  cd .. && npm run preview -- --promo
-for capture in popup-verdict popup-delivery popup-regions; do
+for capture in popup-verdict popup-delivery popup-regions popup-evidence; do
   if [ ! -f "$DIR/raw/$capture.png" ]; then
     echo "! raw/$capture.png missing — run 'npm run preview -- --promo' in extension/ first" >&2
     exit 1
   fi
 done
-for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn; do
+for n in screenshot-1-verdict screenshot-2-hybrid screenshot-3-learn screenshot-4-evidence; do
   shoot "$n" 1280 800 "$n-1280x800.png"
 done
 
