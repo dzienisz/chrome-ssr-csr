@@ -37,6 +37,7 @@ const PROMO_SHOTS = [
   { fixture: "ssr-next-edge", tab: null, file: "popup-verdict.png" },
   { fixture: "csr-spa", tab: "diff", file: "popup-regions.png" },
   { fixture: "isr-prerender", tab: "delivery", file: "popup-delivery.png" },
+  { fixture: "hybrid-islands", tab: "signals", file: "popup-evidence.png" },
 ];
 
 /**
@@ -127,6 +128,7 @@ function chromeStub({ result, page, history, version }) {
     },
     tabs: {
       query: (_query, callback) => callback([{ id: 1, url: page.url, title: page.title }]),
+      get: (_tabId, callback) => callback({ id: 1, url: page.url, title: page.title }),
     },
     scripting: {
       // Callback form, matching how the extension actually calls it (Firefox's

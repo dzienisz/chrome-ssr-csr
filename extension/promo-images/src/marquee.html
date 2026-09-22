@@ -22,6 +22,9 @@
   .chip-row { gap: 9px; margin-top: 18px; }
   .chip { font-size: 14px; padding: 7px 11px; }
   .metric-row { gap: 22px; margin-top: 20px; font-size: 14px; }
+  .where-row { margin-top: 16px; font-size: 14px; }
+  .share-bar { margin-top: 16px; }
+  .share-legend { margin-top: 8px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -36,16 +39,17 @@
       <span class="pill csr"><i class="dot"></i>CSR</span>
       <span class="pill mix"><i class="dot"></i>MIX</span>
     </div>
-    <div class="sub"><b>Raw HTML vs rendered DOM</b> · framework &amp; tech stack · Core Web Vitals · open source</div>
+    <div class="sub"><b>Raw HTML vs rendered DOM</b> · where the HTML was built · what JS filled in · DevTools panel · open source</div>
   </div>
   <div class="verdict-card">
     <div class="vc-head"><span class="traffic"><i></i><i></i><i></i></span>nextjs.org</div>
     <div class="vc-body">
       <div class="verdict-badge"><span class="check">✓</span>Server-Side Rendered</div>
-      <div class="vc-row"><span class="confidence">Confidence <b>92%</b></span></div>
-      <div class="conf-bar"><i></i></div>
-      <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Vercel</span></div>
-      <div class="metric-row"><span>LCP <b class="good">1.8s</b></span><span>CLS <b class="good">0.02</b></span><span>TTFB <b class="good">320ms</b></span></div>
+      <div class="vc-row"><span class="confidence">Confidence <b>95%</b></span><span class="confidence">8 signals</span></div>
+      <div class="where-row"><span class="where-label">Where</span><b>Prerendered at build time</b><span class="cdn">Vercel · HIT</span></div>
+      <div class="share-bar"><i class="srv" style="width:100%"></i></div>
+      <div class="share-legend"><span><b>100%</b> from server</span><span><b>0%</b> added by JavaScript</span></div>
+      <div class="chip-row"><span class="chip">Next.js</span><span class="chip">React</span><span class="chip">Vercel</span></div>
     </div>
   </div>
 </body>

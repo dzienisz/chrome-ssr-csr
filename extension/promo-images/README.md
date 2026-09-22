@@ -11,10 +11,11 @@ cd promo-images
 ./build.sh icons               # also regenerate ../icon16/48/128.png
 ```
 
-Requires Google Chrome (used headless for rendering); set `CHROME=` to point at
-another binary, e.g. Playwright's Chromium.
+Rendering goes through Playwright (`shoot.mjs`, an extension dev dependency) so
+every PNG is exactly its declared size; set `CHROMIUM_PATH=` to use a specific
+Chrome binary. `./build.sh icons` still needs Google Chrome via `CHROME=`.
 
-The three store screenshots frame a real popup capture. Those captures used to
+The store screenshots frame a real popup capture. Those captures used to
 be hand-cropped out of a 4K browser screenshot with four pixel offsets per
 file, which went stale the moment the popup layout changed. `npm run preview
 -- --promo` now renders the shipping popup against a real analysis result, at
@@ -31,6 +32,7 @@ product.
 | `screenshot-1-verdict-1280x800.png` | 1280×800 | Screenshot 1 — verdict and evidence |
 | `screenshot-2-hybrid-1280x800.png` | 1280×800 | Screenshot 2 — delivery: where the HTML was produced |
 | `screenshot-3-learn-1280x800.png` | 1280×800 | Screenshot 3 — regions: what JavaScript built |
+| `screenshot-4-evidence-1280x800.png` | 1280×800 | Screenshot 4 — evidence: scored signals on a hybrid page |
 | `firefox-hero-1400x560.png` | 1400×560 | Firefox "now on Firefox" hero (GitHub release / social) |
 | `firefox-tile-440x280.png` | 440×280 | Firefox compact social tile |
 | `social-landscape-1600x900.png` | 1600×900 | Social card — X/LinkedIn/Mastodon landscape |
@@ -38,7 +40,7 @@ product.
 | `social-diff-1600x900.png` | 1600×900 | Social card — raw-vs-rendered diff explainer |
 
 **AMO note:** addons.mozilla.org has no promo-tile slots — only the icon and
-screenshots show in the listing. The three `screenshot-*-1280x800.png` files are
+screenshots show in the listing. The four `screenshot-*-1280x800.png` files are
 browser-neutral popup crops, so they double as the Firefox screenshots. The
 `firefox-*` images are for the GitHub release and social posts, not required by
 AMO. Listing copy lives in `../amo-listing.md`.
@@ -71,13 +73,14 @@ npm run preview -- --promo
 ```
 
 That renders the real popup against a real analysis of the offline fixtures and
-writes exactly the three files the frames expect:
+writes exactly the four files the frames expect:
 
 | File | Fixture | Tab |
 |------|---------|-----|
 | `raw/popup-verdict.png` | `ssr-next-edge` | Overview |
 | `raw/popup-delivery.png` | `isr-prerender` | Delivery |
 | `raw/popup-regions.png` | `csr-spa` | Regions |
+| `raw/popup-evidence.png` | `hybrid-islands` | Evidence |
 
 Then re-run `./build.sh`. Nothing needs adjusting when the popup layout
 changes: the capture is taken at the frame's own 400×640 size, and the frame
