@@ -42,7 +42,7 @@ Then it tells you the parts nobody else does.
 • A verdict with a confidence score — and every signal behind it, with the points it contributed and what it observed. No black box.
 • RENDERED WHERE: built in the browser, rendered at build time, served from a CDN cache, or rendered for this request — read from the document's own response headers, along with the CDN, cache state, age and TTFB
 • REGIONS: which parts of the page the server sent and which ones JavaScript filled in, character by character
-• Framework detection: Next.js, Nuxt, React, Vue, Angular, Gatsby, SvelteKit, Astro, Qwik, Remix, Turbo/Hotwire, Livewire, Phoenix LiveView, WordPress and more
+• Framework detection: which rendering framework or static-site generator built the page, backed by markers found in the served HTML
 • Tech stack: CSS framework, state management, build tool, hosting (Tailwind, Redux, Vite, Vercel…)
 • Core Web Vitals: LCP, CLS, INP, TTFB measured on the live page
 • SEO & accessibility spot-check: meta tags, Open Graph, structured data, alt-text coverage

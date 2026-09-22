@@ -33,8 +33,8 @@ Then it tells you the parts nobody else does.
 • A verdict with a confidence score — and every signal behind it, with the points it contributed and what it observed. No black box.
 • RENDERED WHERE: built in the browser, rendered at build time, rendered once and served from a CDN cache, or rendered for this request — read from the document's own response headers, along with the CDN, cache state, age and TTFB
 • REGIONS: which parts of the page the server sent and which ones JavaScript filled in, character by character. "#root gained 12,400 characters after the scripts ran" is a very different bug report from "CSR, 88%".
-• Framework detection: Next.js, Nuxt, React, Vue, Angular, Gatsby, SvelteKit, Astro, Qwik, Remix, Turbo/Hotwire, Livewire, Phoenix LiveView, WordPress and more
-• Tech stack: CSS framework, state management, build tool, hosting (Tailwind, Redux, Vite, Vercel…)
+• Framework detection: which rendering framework or static-site generator built the page, backed by markers found in the served HTML
+• Tech stack: CSS framework, state management, build tool and hosting provider
 • Core Web Vitals: LCP, CLS, INP, TTFB measured on the live page
 • SEO & accessibility spot-check: meta tags, Open Graph, structured data, alt-text coverage
 • SSR/CSR/MIX badge right on the toolbar icon
@@ -56,5 +56,8 @@ Analysis runs locally in your browser. The extension optionally shares anonymous
   privacy-policy.md. Keep them consistent.
 - No unverifiable accuracy percentages ("95% accuracy") — the method
   description sells better and can't be contradicted by a review.
+- No lists of framework/library names — CWS rejected 4.0.0 for "keyword
+  spam" over exactly such a list ("Next.js, Nuxt, React, Vue, … and more").
+  Describe the capability, not the brand names.
 - Don't paste changelog/release notes into the description; that's what the
   store's "What's new" field and CHANGELOG.md are for.
