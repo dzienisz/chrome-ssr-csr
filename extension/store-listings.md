@@ -19,7 +19,7 @@ panel). Keep the bullet lists in step with `store-listing.md`.
 
 Instantly see how any webpage is rendered — server-side (SSR), client-side (CSR), or hybrid.
 
-The extension fetches the page's raw HTML and compares it with the rendered DOM, combining framework hydration markers, timing signals, and content analysis into a confidence-scored verdict. Detects React, Vue, Angular, Next.js, Nuxt, Svelte, and more.
+The extension fetches the page's raw HTML and compares it with the rendered DOM, combining framework hydration markers, timing signals, and content analysis into a confidence-scored verdict. It also identifies the framework that built the page.
 
 - One-click analysis with an SSR/CSR/MIX badge on the icon
 - Confidence score, plus every signal behind it and the points it contributed
@@ -42,7 +42,7 @@ Built for developers, SEO specialists, and the curious. Privacy-friendly: option
 
 ウェブページのレンダリング方式 — サーバーサイド（SSR）、クライアントサイド（CSR）、ハイブリッド — を瞬時に判定します。
 
-この拡張機能はページの生のHTMLを取得してレンダリング後のDOMと比較し、フレームワークのハイドレーションマーカー、タイミングシグナル、コンテンツ分析を組み合わせて、信頼度スコア付きの判定を行います。React、Vue、Angular、Next.js、Nuxt、Svelteなどを検出します。
+この拡張機能はページの生のHTMLを取得してレンダリング後のDOMと比較し、フレームワークのハイドレーションマーカー、タイミングシグナル、コンテンツ分析を組み合わせて、信頼度スコア付きの判定を行います。ページを構築したフレームワークも識別します。
 
 - ワンクリック分析、アイコンにSSR/CSR/MIXバッジを表示
 - 信頼度スコアと、判定を動かしたすべての根拠（寄与ポイント付き）
@@ -65,7 +65,7 @@ Built for developers, SEO specialists, and the curious. Privacy-friendly: option
 
 웹페이지의 렌더링 방식 — 서버 사이드(SSR), 클라이언트 사이드(CSR), 하이브리드 — 를 즉시 확인하세요.
 
-이 확장 프로그램은 페이지의 원본 HTML을 가져와 렌더링된 DOM과 비교하고, 프레임워크 하이드레이션 마커, 타이밍 신호, 콘텐츠 분석을 결합하여 신뢰도 점수가 포함된 판정을 제공합니다. React, Vue, Angular, Next.js, Nuxt, Svelte 등을 감지합니다.
+이 확장 프로그램은 페이지의 원본 HTML을 가져와 렌더링된 DOM과 비교하고, 프레임워크 하이드레이션 마커, 타이밍 신호, 콘텐츠 분석을 결합하여 신뢰도 점수가 포함된 판정을 제공합니다. 페이지를 구축한 프레임워크도 식별합니다.
 
 - 원클릭 분석, 아이콘에 SSR/CSR/MIX 배지 표시
 - 신뢰도 점수와 판정을 움직인 모든 근거(기여 점수 포함)
@@ -88,7 +88,7 @@ Built for developers, SEO specialists, and the curious. Privacy-friendly: option
 
 Découvrez instantanément comment une page web est rendue — côté serveur (SSR), côté client (CSR) ou hybride.
 
-L'extension récupère le HTML brut de la page et le compare au DOM rendu, en combinant les marqueurs d'hydratation des frameworks, les signaux de timing et l'analyse du contenu pour produire un verdict avec score de confiance. Détecte React, Vue, Angular, Next.js, Nuxt, Svelte et plus encore.
+L'extension récupère le HTML brut de la page et le compare au DOM rendu, en combinant les marqueurs d'hydratation des frameworks, les signaux de timing et l'analyse du contenu pour produire un verdict avec score de confiance. Elle identifie aussi le framework qui a construit la page.
 
 - Analyse en un clic avec badge SSR/CSR/MIX sur l'icône
 - Score de confiance, et chaque indice qui l'a fait bouger, avec ses points
@@ -111,7 +111,7 @@ Conçu pour les développeurs, les spécialistes SEO et les curieux. Respectueux
 
 Sehen Sie sofort, wie eine Webseite gerendert wird — serverseitig (SSR), clientseitig (CSR) oder hybrid.
 
-Die Erweiterung lädt das rohe HTML der Seite und vergleicht es mit dem gerenderten DOM. Framework-Hydration-Marker, Timing-Signale und Inhaltsanalyse fließen in ein Urteil mit Konfidenzwert ein. Erkennt React, Vue, Angular, Next.js, Nuxt, Svelte und mehr.
+Die Erweiterung lädt das rohe HTML der Seite und vergleicht es mit dem gerenderten DOM. Framework-Hydration-Marker, Timing-Signale und Inhaltsanalyse fließen in ein Urteil mit Konfidenzwert ein. Außerdem erkennt sie das Framework, das die Seite erzeugt hat.
 
 - Ein-Klick-Analyse mit SSR/CSR/MIX-Badge auf dem Icon
 - Konfidenzwert samt aller Belege, die ihn bewegt haben, mit ihren Punkten
@@ -134,7 +134,7 @@ Für Entwickler, SEO-Spezialisten und Neugierige. Datenschutzfreundlich: nur opt
 
 Descubre al instante cómo se renderiza cualquier página web: en el servidor (SSR), en el cliente (CSR) o de forma híbrida.
 
-La extensión obtiene el HTML sin procesar de la página y lo compara con el DOM renderizado, combinando marcadores de hidratación de frameworks, señales de tiempo y análisis de contenido en un veredicto con puntuación de confianza. Detecta React, Vue, Angular, Next.js, Nuxt, Svelte y más.
+La extensión obtiene el HTML sin procesar de la página y lo compara con el DOM renderizado, combinando marcadores de hidratación de frameworks, señales de tiempo y análisis de contenido en un veredicto con puntuación de confianza. También identifica el framework que construyó la página.
 
 - Análisis con un clic e insignia SSR/CSR/MIX en el icono
 - Puntuación de confianza y cada indicio que la movió, con los puntos que aportó
@@ -157,7 +157,7 @@ Para desarrolladores, especialistas en SEO y curiosos. Respetuosa con la privaci
 
 Veja instantaneamente como qualquer página web é renderizada — no servidor (SSR), no cliente (CSR) ou de forma híbrida.
 
-A extensão busca o HTML bruto da página e o compara com o DOM renderizado, combinando marcadores de hidratação de frameworks, sinais de tempo e análise de conteúdo em um veredito com pontuação de confiança. Detecta React, Vue, Angular, Next.js, Nuxt, Svelte e mais.
+A extensão busca o HTML bruto da página e o compara com o DOM renderizado, combinando marcadores de hidratação de frameworks, sinais de tempo e análise de conteúdo em um veredito com pontuação de confiança. Também identifica o framework que construiu a página.
 
 - Análise com um clique e selo SSR/CSR/MIX no ícone
 - Pontuação de confiança e cada evidência que a moveu, com os pontos que somou
@@ -180,7 +180,7 @@ Feita para desenvolvedores, especialistas em SEO e curiosos. Amigável à privac
 
 Sprawdź natychmiast, jak renderowana jest dowolna strona — po stronie serwera (SSR), klienta (CSR) czy hybrydowo.
 
-Rozszerzenie pobiera surowy HTML strony i porównuje go z wyrenderowanym DOM, łącząc markery hydratacji frameworków, sygnały czasowe i analizę treści w werdykt z oceną pewności. Wykrywa React, Vue, Angular, Next.js, Nuxt, Svelte i inne.
+Rozszerzenie pobiera surowy HTML strony i porównuje go z wyrenderowanym DOM, łącząc markery hydratacji frameworków, sygnały czasowe i analizę treści w werdykt z oceną pewności. Rozpoznaje też framework, który zbudował stronę.
 
 - Analiza jednym kliknięciem z plakietką SSR/CSR/MIX na ikonie
 - Ocena pewności i każda przesłanka, która na nią wpłynęła, wraz z punktami
