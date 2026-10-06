@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 // Import the detector module
 import "../comparison-detector.js";
@@ -170,6 +170,62 @@ describe("compareInitialVsRendered", () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
 
     expect(await window.compareInitialVsRendered()).toBeNull();
+  });
+});
+
+describe("parser snapshot fallback", () => {
+  function probeBridge(data) {
+    document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
+    const bridge = document.createElement("meta");
+    bridge.id = "ssr-detector-probe-data";
+    bridge.setAttribute("data-ssr-detector-snapshot", JSON.stringify(data));
+    document.head.appendChild(bridge);
+    return bridge;
+  }
+  afterEach(() => {
+    document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
+  });
+
+  it("uses the probe's parse-time length when the re-fetch is refused", async () => {
+    probeBridge({ parsedTextLength: 12 });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.rawLength).toBe(12);
+    expect(result.renderedLength).toBe(LONG_TEXT.trim().length);
+    expect(result.isDecisiveCSR).toBe(true);
+    expect(result.isLikelySSR).toBe(false);
+    expect(result.rawDocument).toBeNull();
+    expect(result.responseHeaders).toBeNull();
+  });
+
+  it("uses it when the fetch throws, and can still read as SSR", async () => {
+    probeBridge({ parsedTextLength: LONG_TEXT.trim().length });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    global.fetch = vi.fn().mockRejectedValue(new Error("network error"));
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.isLikelySSR).toBe(true);
+    expect(result.isLikelyCSR).toBe(false);
+  });
+
+  it("returns null when the probe has no snapshot", async () => {
+    probeBridge({ navigationCount: 0 });
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    expect(await window.compareInitialVsRendered()).toBeNull();
+  });
+
+  it("marks a successful fetch as the source", async () => {
+    mockFetchedHTML(`<html><body><main>${LONG_TEXT}</main></body></html>`);
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+
+    expect((await window.compareInitialVsRendered()).source).toBe("fetch");
   });
 });
 

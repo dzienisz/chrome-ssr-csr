@@ -172,6 +172,17 @@ async function pageAnalyzer() {
 
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
+      const fromSnapshot = comparisonResults.source === "parser-snapshot";
+      if (fromSnapshot) {
+        signals.push({
+          id: "comparison.parserSnapshot",
+          label: "Measured while the page loaded",
+          impact: "info",
+          weight: 0,
+          detail:
+            "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+        });
+      }
       if (comparisonResults.isLikelyCSR) {
         csrScore += config.scoring.rawVsRenderedMismatch;
         indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
@@ -180,7 +191,9 @@ async function pageAnalyzer() {
           label: "The server sent a fraction of what you see",
           impact: "csr",
           weight: config.scoring.rawVsRenderedMismatch,
-          detail: `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
+            : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
         });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
@@ -196,7 +209,8 @@ async function pageAnalyzer() {
       detailedInfo.contentComparison = {
         rawLength: comparisonResults.rawLength,
         renderedLength: comparisonResults.renderedLength,
-        ratio: comparisonResults.contentRatio
+        ratio: comparisonResults.contentRatio,
+        source: comparisonResults.source || "fetch"
       };
     }
 

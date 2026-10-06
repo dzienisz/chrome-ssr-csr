@@ -104,7 +104,46 @@
     } catch (e) {}
   }
 
-  // 3. Listen for Data Request from Isolated World
+  // 3. Snapshot how much text the parser produced on its own. The analyzer
+  // normally re-fetches the page to see the server HTML, but bot protection
+  // (Cloudflare challenges and the like) often answers that fetch with a 403.
+  // readyState turns "interactive" when parsing ends and before deferred and
+  // module scripts run, so the text present then is what the server sent —
+  // plus whatever classic inline scripts wrote, which makes it an upper bound.
+  // Only the length is kept, never the text.
+  const SNAPSHOT_SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  function measureParsedText() {
+    try {
+      const body = document.body;
+      if (!body) return;
+      const walker = document.createTreeWalker(
+        body,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
+            return SNAPSHOT_SKIP[node.tagName] ||
+              node.id === "ssr-detector-probe-data"
+              ? NodeFilter.FILTER_REJECT
+              : NodeFilter.FILTER_SKIP;
+          },
+        },
+      );
+      let text = "";
+      while (walker.nextNode()) text += walker.currentNode.data;
+      STORE.parsedTextLength = text.replace(/\s+/g, " ").trim().length;
+    } catch (e) {}
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("readystatechange", function onState() {
+      if (document.readyState !== "interactive") return;
+      document.removeEventListener("readystatechange", onState);
+      measureParsedText();
+    });
+  }
+
+  // 4. Listen for Data Request from Isolated World
   window.addEventListener("ssr-detector-request-data", function () {
     let dataDisplay = document.getElementById("ssr-detector-probe-data");
     if (!dataDisplay) {
