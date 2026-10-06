@@ -149,6 +149,8 @@ extension/
 │   ├── validate-detection.mjs  # 22-site live ground-truth harness (npm run validate:live)
 │   ├── validate-local.mjs      # Offline fixture harness, runs in CI (npm run validate:local)
 │   ├── validate-extension.mjs  # Loads the extension for real, runs in CI (npm run validate:extension)
+│   ├── audit-jev.mjs           # Second opinion from TypeSafe's Jev on the live sites (npm run audit:jev)
+│   ├── live-sites.mjs          # Ground-truth site list shared by validate:live and audit:jev
 │   ├── fixtures/pages.mjs      # Hand-written ground-truth pages + expected headers
 │   └── ui-preview.mjs          # Screenshots every surface from a real result (npm run preview)
 ├── src/
@@ -209,6 +211,9 @@ extension/
      as a content script, every extension page and the popup→worker message
      contract; the only harness that loads the extension *as* an extension
    - `npm run validate:live` — the 22-site live suite; needs the open internet
+   - `npm run audit:jev` — optional: the same sites graded by TypeSafe's Jev
+     from text alone; flags confident disagreements (`REVIEW`). Needs
+     `TYPESAFE_API_KEY`
 6. For UI changes, `npm run preview` renders every surface against a real
    analysis result and writes screenshots to `scripts/preview-out/`
 
