@@ -200,12 +200,13 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 
 ### Validating Changes
 
-Three harnesses, and they are not interchangeable:
+Three harnesses, and they are not interchangeable (plus an optional Jev audit):
 
 ```bash
 npm run validate:local      # 8 offline fixtures in Chromium — deterministic, runs in CI
 npm run validate:extension  # installs the extension for real — runs in CI
 npm run validate:live       # 22 real sites — honest, needs the open internet
+npm run audit:jev           # same sites, second opinion from TypeSafe's Jev — needs TYPESAFE_API_KEY
 npm run preview             # screenshot every UI surface from a real analysis result
 ```
 
@@ -224,6 +225,16 @@ that no longer exists. It has to stay green too.
 
 `validate:live` grades against real sites that rewrite themselves without
 warning, so it reports a statistic rather than passing or failing.
+
+`audit:jev` (`scripts/audit-jev.mjs`) loads the same sites, runs the bundle,
+and asks Jev (TypeSafe's System One model) from text alone whether the server
+HTML already holds the main content. `REVIEW` rows are confident
+disagreements worth a look before tuning `src/core/config.js`. The verdict is
+the `content_in_initial_html` Noul thresholded in code; Jev's own
+SSR/CSR/Hybrid Choice is shown but not trusted (low confidence on SSR
+frameworks, order-sensitive). `--urls file` audits any list
+(`url [SSR|CSR|HYBRID]` per line). Costs fractions of a cent per run; never
+part of CI or the shipped extension.
 
 All three need Playwright's Chromium (`npx playwright install chromium`). Set
 `CHROMIUM_PATH` to point any of them at a browser Playwright did not install —
