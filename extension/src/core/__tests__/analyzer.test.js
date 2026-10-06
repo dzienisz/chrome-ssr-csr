@@ -21,6 +21,30 @@ function stubDetectors(overrides = {}) {
   );
 }
 
+describe('parser-snapshot comparison', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<p>test page</p>';
+  });
+
+  it('scores it like a fetched comparison and says where it came from', async () => {
+    stubDetectors({
+      content: { ssrScore: 50, csrScore: 0, indicators: ['rich initial content structure (SSR)'], details: {} },
+      comparison: {
+        rawLength: 10, renderedLength: 5000, contentRatio: 0,
+        isLikelyCSR: true, isLikelySSR: false, isDecisiveCSR: true,
+        source: 'parser-snapshot', responseHeaders: null, rawDocument: null, rawHTML: null
+      }
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toBe('Client-Side Rendered (CSR)');
+    expect(result.detailedInfo.contentComparison.source).toBe('parser-snapshot');
+    expect(result.signals.some((s) => s.id === 'comparison.parserSnapshot')).toBe(true);
+    expect(result.indicators.some((i) => i.includes('comparison unavailable'))).toBe(false);
+  });
+});
+
 describe('pageAnalyzer', () => {
   beforeEach(() => {
     document.body.innerHTML = '<p>test page</p>';
@@ -121,7 +145,8 @@ describe('pageAnalyzer', () => {
     expect(result.detailedInfo.contentComparison).toEqual({
       rawLength: 500,
       renderedLength: 600,
-      ratio: 0.83
+      ratio: 0.83,
+      source: 'fetch'
     });
     expect(JSON.stringify(result)).not.toContain('<html>');
     expect(JSON.parse(JSON.stringify(result))).toBeTruthy();

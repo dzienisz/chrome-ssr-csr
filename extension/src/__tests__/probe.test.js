@@ -142,3 +142,44 @@ describe('probe bounded retention in a fresh realm', () => {
     expect(snapshot().navigationCount).toBe(1);
   });
 });
+
+describe('probe parse-time text snapshot', () => {
+  function loadingRealm(body) {
+    const r = new JSDOM(`<!doctype html><html><head></head><body>${body}</body></html>`, { url: 'https://probe.test/', runScripts: 'outside-only' });
+    let state = 'loading';
+    Object.defineProperty(r.window.document, 'readyState', { configurable: true, get: () => state });
+    r.window.eval(probeSource);
+    return { r, setState(next) { state = next; r.window.document.dispatchEvent(new r.window.Event('readystatechange')); } };
+  }
+  function read(w) {
+    w.dispatchEvent(new w.Event('ssr-detector-request-data'));
+    return JSON.parse(w.document.getElementById('ssr-detector-probe-data').getAttribute('data-ssr-detector-snapshot'));
+  }
+
+  it('records the visible text length when parsing finishes, not later', () => {
+    const { r, setState } = loadingRealm('<div id="root">  Shell   text </div><script>var x = "script text";</script><style>p{}</style><noscript>Enable JS</noscript>');
+    setState('interactive');
+    r.window.document.getElementById('root').textContent = 'Rendered by a module script after parsing. '.repeat(10);
+    setState('complete');
+    expect(read(r.window).parsedTextLength).toBe('Shell text'.length);
+    r.window.close();
+  });
+
+  it('records nothing when injected after parsing already ended', () => {
+    const late = new JSDOM('<!doctype html><html><head></head><body><p>Late</p></body></html>', { url: 'https://probe.test/', runScripts: 'outside-only' });
+    Object.defineProperty(late.window.document, 'readyState', { configurable: true, get: () => 'complete' });
+    late.window.eval(probeSource);
+    late.window.document.dispatchEvent(new late.window.Event('readystatechange'));
+    expect(read(late.window).parsedTextLength).toBeUndefined();
+    late.window.close();
+  });
+
+  it('keeps only a number, never the text', () => {
+    const { r, setState } = loadingRealm('<p>Private account details</p>');
+    setState('interactive');
+    const raw = r.window.document.getElementById('ssr-detector-probe-data') || null;
+    expect(raw).toBeNull();
+    expect(JSON.stringify(read(r.window))).not.toContain('Private');
+    r.window.close();
+  });
+});

@@ -275,7 +275,7 @@ async function compareInitialVsRendered() {
     });
 
     if (!response.ok) {
-      return null;
+      return compareParsedSnapshot();
     }
 
     const rawHTML = await response.text();
@@ -329,6 +329,7 @@ async function compareInitialVsRendered() {
       isLikelyCSR,
       isLikelySSR,
       isDecisiveCSR,
+      source: "fetch",
       responseStatus: response.status,
       responseHeaders,
       // Parsed raw document, so other detectors can check pre-JS markers.
@@ -339,10 +340,65 @@ async function compareInitialVsRendered() {
       rawHTML,
     };
   } catch (e) {
-    // Fetch failed (CORS, network error, etc.) - can't determine
+    // Fetch failed (CORS, network error, etc.) - fall back to the probe
     console.debug("CSR/SSR Detector: Raw HTML fetch failed", e.message);
+    return compareParsedSnapshot();
+  }
+}
+
+/**
+ * Read the probe's parse-time text length (see src/probe.js).
+ * @returns {number|null} Characters of visible text when parsing finished
+ */
+function readParsedTextLength() {
+  try {
+    window.dispatchEvent(new CustomEvent("ssr-detector-request-data"));
+    const bridge = document.getElementById("ssr-detector-probe-data");
+    const raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
+    const length = raw ? JSON.parse(raw).parsedTextLength : null;
+    return Number.isFinite(length) ? length : null;
+  } catch (e) {
     return null;
   }
+}
+
+/**
+ * Fallback comparison when the re-fetch is refused (bot protection answers
+ * it with a challenge page far more often than it blocks a real navigation).
+ * Uses the text length the probe measured when the parser finished, before
+ * deferred and module scripts ran. That count can only overstate what the
+ * server sent, never understate it, so a small value is still conclusive CSR.
+ * No raw document exists on this path: detectors that need pre-JS markup see
+ * null, exactly as when the comparison is unavailable.
+ * @returns {Object|null} Comparison results, or null without a probe snapshot
+ */
+function compareParsedSnapshot() {
+  const config = window.DETECTOR_CONFIG;
+  const rawLength = readParsedTextLength();
+  if (rawLength === null) return null;
+
+  const renderedLength = extractVisibleText(document.body).length;
+  const contentRatio = rawLength / Math.max(renderedLength, 1);
+  const minLength = config.contentComparison.minRenderedLength;
+
+  return {
+    rawLength,
+    renderedLength,
+    contentRatio: Math.round(contentRatio * 100) / 100,
+    isLikelyCSR:
+      contentRatio < config.contentComparison.csrRatio &&
+      renderedLength > minLength,
+    isLikelySSR:
+      contentRatio > config.contentComparison.ssrRatio && rawLength > minLength,
+    isDecisiveCSR:
+      contentRatio < config.contentComparison.decisiveCsrRatio &&
+      renderedLength > minLength,
+    source: "parser-snapshot",
+    responseStatus: null,
+    responseHeaders: null,
+    rawDocument: null,
+    rawHTML: null,
+  };
 }
 
 function getDetectionBodyHTML() {
@@ -361,6 +417,7 @@ if (typeof window !== "undefined") {
   window.getDetectionBodyHTML = getDetectionBodyHTML;
   window.extractVisibleText = extractVisibleText;
   window.compareInitialVsRendered = compareInitialVsRendered;
+  window.compareParsedSnapshot = compareParsedSnapshot;
 }
 
 
@@ -2606,6 +2663,17 @@ async function pageAnalyzer() {
 
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
+      const fromSnapshot = comparisonResults.source === "parser-snapshot";
+      if (fromSnapshot) {
+        signals.push({
+          id: "comparison.parserSnapshot",
+          label: "Measured while the page loaded",
+          impact: "info",
+          weight: 0,
+          detail:
+            "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+        });
+      }
       if (comparisonResults.isLikelyCSR) {
         csrScore += config.scoring.rawVsRenderedMismatch;
         indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
@@ -2614,7 +2682,9 @@ async function pageAnalyzer() {
           label: "The server sent a fraction of what you see",
           impact: "csr",
           weight: config.scoring.rawVsRenderedMismatch,
-          detail: `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
+            : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
         });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
@@ -2630,7 +2700,8 @@ async function pageAnalyzer() {
       detailedInfo.contentComparison = {
         rawLength: comparisonResults.rawLength,
         renderedLength: comparisonResults.renderedLength,
-        ratio: comparisonResults.contentRatio
+        ratio: comparisonResults.contentRatio,
+        source: comparisonResults.source || "fetch"
       };
     }
 

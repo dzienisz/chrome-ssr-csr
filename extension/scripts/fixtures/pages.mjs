@@ -322,4 +322,46 @@ export const FIXTURES = [
   </body>
 </html>`,
   },
+
+  {
+    name: "csr-refetch-blocked",
+    note: "SPA shell behind bot protection that refuses the analyzer's re-fetch",
+    bucket: "CSR",
+    // Answer real navigations and refuse every other request for the page,
+    // the way a Cloudflare challenge treats a script-initiated fetch.
+    refuseRefetch: true,
+    headers: {
+      "cache-control": "private, no-store",
+      server: "cloudflare",
+    },
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison?.source === "parser-snapshot",
+        `comparison should come from the parser snapshot, got ${r.detailedInfo.contentComparison?.source}`,
+      ],
+      [r.detailedInfo.contentComparison.ratio < 0.1, "the parser should have seen almost none of the text"],
+      [r.detailedInfo.ssrScore <= 10, "decisive-CSR override should cap the SSR score"],
+      [r.renderOrigin.id === "browser", `render origin should be the browser, got ${r.renderOrigin.id}`],
+    ],
+    // A module script runs after parsing ends, like a production SPA bundle.
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Assistant</title>
+    <meta name="description" content="Talk to the assistant.">
+    <meta property="og:title" content="Assistant">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Assistant"}</script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      document.getElementById('root').innerHTML = \`
+        <header><h1>Assistant</h1><nav><a href="/new">New chat</a></nav></header>
+        <main><section>${paragraphs(6, "Message ")}</section></main>
+        <footer><p>Built in your browser after the page loaded.</p></footer>\`;
+    </script>
+  </body>
+</html>`,
+  },
 ];

@@ -86,6 +86,11 @@ const server = createServer((req, res) => {
     res.end("/* fixture asset */");
     return;
   }
+  if (fixture.refuseRefetch && req.headers["sec-fetch-mode"] !== "navigate") {
+    res.writeHead(403, { "content-type": "text/html; charset=utf-8" });
+    res.end("<!doctype html><title>Just a moment...</title>");
+    return;
+  }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8", ...fixture.headers });
   res.end(fixture.html);
 });
@@ -167,6 +172,7 @@ function chromeStub({ result, page, history, version }) {
 
 async function analyzeFixture(fixture) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.addInitScript({ path: join(EXTENSION_DIR, "src", "probe.js") });
   const page = await context.newPage();
   await page.goto(`${origin}/${fixture.name}`, { waitUntil: "load" });
   await page.waitForTimeout(150);

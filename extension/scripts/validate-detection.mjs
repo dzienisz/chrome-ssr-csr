@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { SITES } from './live-sites.mjs';
 
+const PROBE = fileURLToPath(new URL('../src/probe.js', import.meta.url));
 const BUNDLE = readFileSync(
   new URL('../src/analyzer-bundle.js', import.meta.url),
   'utf8'
@@ -49,6 +50,8 @@ for (const site of SITES) {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
     viewport: { width: 1440, height: 900 },
   });
+  // Mirror the extension: probe.js is a document_start MAIN-world content script.
+  await context.addInitScript({ path: PROBE });
   const page = await context.newPage();
   let row = { url: site.url, expected: site.expected, note: site.note };
   try {

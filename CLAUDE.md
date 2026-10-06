@@ -203,7 +203,7 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 Three harnesses, and they are not interchangeable (plus an optional Jev audit):
 
 ```bash
-npm run validate:local      # 8 offline fixtures in Chromium — deterministic, runs in CI
+npm run validate:local      # 9 offline fixtures in Chromium — deterministic, runs in CI
 npm run validate:extension  # installs the extension for real — runs in CI
 npm run validate:live       # 22 real sites — honest, needs the open internet
 npm run audit:jev           # same sites, second opinion from TypeSafe's Jev — needs TYPESAFE_API_KEY
@@ -255,8 +255,12 @@ Since v3.7.0 both sides are measured identically with `script/style/noscript/
 template` text stripped; both the CSR and SSR branches require ~200 chars of
 real text. When the server sent <10% of the visible text (decisive CSR), the
 rendered-DOM SSR signals are capped rather than allowed to outvote the
-comparison; when the raw fetch fails, confidence is capped and definitive
-verdicts downgrade to "Likely". Validate detection changes against the 22-site
+comparison. When the raw fetch is refused (bot protection answers it with a
+403) or throws, `probe.js` supplies the length of the text the parser produced
+at `readyState` "interactive", before deferred/module scripts ran, and the
+comparison runs on that (`contentComparison.source: "parser-snapshot"`; only
+the number is kept, never the text). When neither is available, confidence is
+capped and definitive verdicts downgrade to "Likely". Validate detection changes against the 22-site
 ground-truth harness: `node extension/scripts/validate-detection.mjs`
 (requires playwright).
 

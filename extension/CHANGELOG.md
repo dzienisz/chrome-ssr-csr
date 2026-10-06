@@ -5,6 +5,19 @@ All notable changes to the CSR vs SSR Detector extension will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Pages behind bot protection read as SSR.** Sites behind a Cloudflare
+  challenge (claude.ai among them) answer the analyzer's second fetch of the
+  page with a 403, which left the verdict to rendered-DOM signals that any
+  finished page satisfies. `probe.js` now records how much text the HTML
+  parser produced before deferred and module scripts ran — the length only,
+  never the text — and the raw-vs-rendered comparison falls back to it when
+  the re-fetch is refused or fails. The report says when this happened. Found
+  by `npm run audit:jev`; live ground truth goes from 21/22 to 22/22.
+
 ## [4.0.0] - 2026-09-11
 
 The release answers a question the extension could not answer before: not just

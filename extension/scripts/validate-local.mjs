@@ -18,7 +18,10 @@
 import { chromium } from "playwright";
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { FIXTURES } from "./fixtures/pages.mjs";
+
+const PROBE = fileURLToPath(new URL("../src/probe.js", import.meta.url));
 
 const BUNDLE = readFileSync(
   new URL("../src/analyzer-bundle.js", import.meta.url),
@@ -47,6 +50,12 @@ const server = createServer((req, res) => {
     return;
   }
 
+  if (fixture.refuseRefetch && req.headers["sec-fetch-mode"] !== "navigate") {
+    res.writeHead(403, { "content-type": "text/html; charset=utf-8" });
+    res.end("<!doctype html><title>Just a moment...</title>");
+    return;
+  }
+
   res.writeHead(200, {
     "content-type": "text/html; charset=utf-8",
     ...fixture.headers,
@@ -67,6 +76,8 @@ const rows = [];
 
 for (const fixture of FIXTURES) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  // Mirror the extension: probe.js is a document_start MAIN-world content script.
+  await context.addInitScript({ path: PROBE });
   const page = await context.newPage();
   const problems = [];
 
