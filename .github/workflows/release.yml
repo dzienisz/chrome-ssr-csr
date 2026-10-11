@@ -10,8 +10,9 @@ name: Extension Release
 #
 #   CWS_CLIENT_ID / CWS_CLIENT_SECRET / CWS_REFRESH_TOKEN / CWS_EXTENSION_ID
 #     Google Cloud OAuth client (Chrome Web Store API enabled) plus the
-#     extension id from the CWS dashboard URL. CWS_PUBLISHER_ID is only
-#     needed when publishing under a group publisher.
+#     extension id from the CWS dashboard URL, plus CWS_PUBLISHER_ID (the id
+#     after /devconsole/ in the dashboard URL; chrome-webstore-upload-cli@4
+#     talks to the v2 API, which refuses to run without it).
 #   AMO_JWT_ISSUER / AMO_JWT_SECRET
 #     addons.mozilla.org -> Manage API Keys.
 
@@ -100,6 +101,10 @@ jobs:
           if [ -z "$CLIENT_ID" ] || [ -z "$EXTENSION_ID" ]; then
             echo "::warning::Chrome Web Store secrets not configured - skipping publish"
             exit 0
+          fi
+          if [ -z "$PUBLISHER_ID" ]; then
+            echo "::error::CWS_PUBLISHER_ID is not set - the Chrome Web Store v2 API requires it"
+            exit 1
           fi
           npx --yes chrome-webstore-upload-cli@4 \
             --source "csr-ssr-detector-${GITHUB_REF_NAME}.zip"
