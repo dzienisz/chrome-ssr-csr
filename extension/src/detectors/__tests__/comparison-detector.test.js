@@ -174,6 +174,17 @@ describe("compareInitialVsRendered", () => {
 });
 
 describe("parser snapshot fallback", () => {
+  const originalUrl = window.location.href;
+  function fnv1a(value) {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < normalized.length; i++) {
+      hash ^= normalized.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
   function probeBridge(data) {
     document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
     const bridge = document.createElement("meta");
@@ -184,10 +195,14 @@ describe("parser snapshot fallback", () => {
   }
   afterEach(() => {
     document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
+    window.history.replaceState({}, "", originalUrl);
   });
 
   it("uses the probe's parse-time length when the re-fetch is refused", async () => {
-    probeBridge({ parsedTextLength: 12 });
+    probeBridge({
+      parsedTextLength: 12,
+      parsedUrlHash: fnv1a(window.location.href),
+    });
     document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
 
@@ -232,6 +247,7 @@ describe("parser snapshot fallback", () => {
     probeBridge({
       parsedTextLength: LONG_TEXT.trim().length,
       parsedTitleHash: "c66a4a27",
+      parsedUrlHash: fnv1a(window.location.href),
     });
     document.title = "Shop – real page";
     document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
@@ -245,6 +261,38 @@ describe("parser snapshot fallback", () => {
     expect(result.refetchMismatch).toBe(true);
     expect(result.rawLength).toBe(LONG_TEXT.trim().length);
     expect(result.rawDocument).toBeNull();
+  });
+
+  it("uses the fetched document when the title mismatch is from another URL", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+      parsedUrlHash: fnv1a(window.location.href),
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    window.history.pushState({}, "", "/docs");
+    mockFetchedHTML(
+      `<html><head><title>Docs</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+    expect(result.refetchMismatch).toBeUndefined();
+    expect(result.rawDocument.querySelector("main").textContent).toContain(
+      "Real user-visible article text.",
+    );
+  });
+
+  it("does not use a refused-fetch snapshot after the URL changes", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedUrlHash: fnv1a(window.location.href),
+    });
+    window.history.pushState({}, "", "/docs");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    expect(await window.compareInitialVsRendered()).toBeNull();
   });
 
   it("keeps the fetch path when the re-fetched title matches the probe hash", async () => {

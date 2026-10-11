@@ -299,9 +299,10 @@ async function compareInitialVsRendered() {
     const snapshot = readProbeSnapshot();
     const rawTitle = rawDoc.title.replace(/\s+/g, " ").trim();
     if (
+      snapshotMatchesUrl(snapshot) &&
       snapshot?.parsedTitleHash &&
       rawTitle &&
-      hashTitle(rawTitle) !== snapshot.parsedTitleHash
+      fnv1a(rawTitle) !== snapshot.parsedTitleHash
     ) {
       return compareParsedSnapshot({ refetchMismatch: true });
     }
@@ -356,12 +357,12 @@ async function compareInitialVsRendered() {
 }
 
 /**
- * Hash a normalized page title with FNV-1a, matching the isolated probe.
- * @param {string} title - Page title
- * @returns {string} Eight-character lowercase hash, or empty for no title
+ * Hash a normalized string with FNV-1a, matching the isolated probe.
+ * @param {string} value - Value to hash
+ * @returns {string} Eight-character lowercase hash, or empty for an empty value
  */
-function hashTitle(title) {
-  const normalized = title.replace(/\s+/g, " ").trim();
+function fnv1a(value) {
+  const normalized = value.replace(/\s+/g, " ").trim();
   if (!normalized) return "";
   let hash = 0x811c9dc5;
   for (let i = 0; i < normalized.length; i++) {
@@ -372,8 +373,8 @@ function hashTitle(title) {
 }
 
 /**
- * Read the probe's parse-time text length and title hash (see src/probe.js).
- * @returns {{parsedTextLength: number|null, parsedTitleHash: string|null}}
+ * Read the probe's parse-time text length and hashes (see src/probe.js).
+ * @returns {{parsedTextLength: number|null, parsedTitleHash: string|null, parsedUrlHash: string|null}}
  */
 function readProbeSnapshot() {
   try {
@@ -393,10 +394,25 @@ function readProbeSnapshot() {
         typeof snapshot.parsedTitleHash === "string" && snapshot.parsedTitleHash
           ? snapshot.parsedTitleHash
           : null,
+      parsedUrlHash:
+        typeof snapshot.parsedUrlHash === "string" && snapshot.parsedUrlHash
+          ? snapshot.parsedUrlHash
+          : null,
     };
   } catch (e) {
-    return { parsedTextLength: null, parsedTitleHash: null };
+    return {
+      parsedTextLength: null,
+      parsedTitleHash: null,
+      parsedUrlHash: null,
+    };
   }
+}
+
+function snapshotMatchesUrl(snapshot) {
+  return Boolean(
+    snapshot?.parsedUrlHash &&
+      snapshot.parsedUrlHash === fnv1a(window.location.href),
+  );
 }
 
 /**
@@ -411,7 +427,9 @@ function readProbeSnapshot() {
  */
 function compareParsedSnapshot(options = {}) {
   const config = window.DETECTOR_CONFIG;
-  const { parsedTextLength: rawLength } = readProbeSnapshot();
+  const snapshot = readProbeSnapshot();
+  if (snapshot.parsedUrlHash && !snapshotMatchesUrl(snapshot)) return null;
+  const { parsedTextLength: rawLength } = snapshot;
   if (rawLength === null) return null;
 
   const renderedLength = extractVisibleText(document.body).length;

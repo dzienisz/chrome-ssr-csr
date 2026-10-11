@@ -185,12 +185,13 @@ describe('probe parse-time text snapshot', () => {
     r.window.close();
   });
 
-  it('stores a normalized FNV-1a hash of the parse-time title', () => {
+  it('stores normalized FNV-1a hashes of the parse-time title and URL', () => {
     const { r, setState } = loadingRealm('<p>Shop page</p>');
     r.window.document.title = 'Shop  –\n real page';
     setState('interactive');
 
     expect(read(r.window).parsedTitleHash).toBe('c66a4a27');
+    expect(read(r.window).parsedUrlHash).toBe('9513665f');
     r.window.close();
   });
 

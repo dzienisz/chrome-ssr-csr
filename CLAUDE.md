@@ -258,12 +258,14 @@ rendered-DOM SSR signals are capped rather than allowed to outvote the
 comparison. When the raw fetch is refused (bot protection answers it with a
 403) or throws, `probe.js` supplies the length of the text the parser produced
 at `readyState` "interactive", before deferred/module scripts ran. It also
-keeps an FNV-1a hash of the parse-time title, never the title itself, and uses
-the parser snapshot when a successful re-fetch has a different non-empty
-title (as with Amazon's bot interstitial). The comparison then has
-`contentComparison.source: "parser-snapshot"`; it keeps only the text length
-and title hash, never the text or title. When neither is available, confidence is
-capped and definitive verdicts downgrade to "Likely". Validate detection changes against the 22-site
+keeps FNV-1a hashes of the parse-time title and URL, never either value, and
+uses the parser snapshot when a successful re-fetch has a different non-empty
+title (as with Amazon's bot interstitial) only while the parse-time URL still
+matches. A snapshot from an earlier in-page navigation is ignored. The
+comparison then has `contentComparison.source: "parser-snapshot"`; it keeps
+only the text length and hashes, never the text, title, or URL. When neither
+is available, confidence is capped and definitive verdicts downgrade to
+"Likely". Validate detection changes against the 22-site
 ground-truth harness: `node extension/scripts/validate-detection.mjs`
 (requires playwright).
 
