@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Pages where the server sends 20–50% of the visible text (YouTube, jsfiddle,
+  ESPN) were reported as SSR 95%; they now come out Hybrid/Mixed or CSR.
+
 ## [4.0.1] - 2026-10-11
 
 ### Fixed

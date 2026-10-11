@@ -264,6 +264,10 @@ capped and definitive verdicts downgrade to "Likely". Validate detection changes
 ground-truth harness: `node extension/scripts/validate-detection.mjs`
 (requires playwright).
 
+For 10–50% raw/rendered ratios, ratios below 20% use the existing CSR penalty,
+while the 20–50% partial band adds 40 CSR points and caps rendered-DOM SSR
+signals at 50, so it resolves as Hybrid or CSR rather than SSR.
+
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
 - Framework hydration markers (30 points; since v3.7.0 they require raw-HTML

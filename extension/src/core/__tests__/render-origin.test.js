@@ -374,3 +374,138 @@ describe("decisive-CSR cap arithmetic", () => {
     expect(cap.detail).toContain("5");
   });
 });
+
+describe("partial-content comparison", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "<p>test page</p>";
+  });
+
+  it("adds partial CSR evidence and caps strong rendered-DOM SSR signals", async () => {
+    stubDetectors({
+      content: {
+        ...empty,
+        ssrScore: 50,
+        signals: [{ id: "content.rich", label: "Rich", impact: "ssr", weight: 50 }],
+      },
+      meta: {
+        ...empty,
+        ssrScore: 40,
+        signals: [{ id: "meta.rich", label: "Metadata", impact: "ssr", weight: 40 }],
+      },
+      comparison: {
+        rawLength: 300,
+        renderedLength: 1000,
+        contentRatio: 0.3,
+        isLikelyCSR: false,
+        isPartialCSR: true,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+    const partial = result.signals.find((signal) => signal.id === "comparison.partial");
+    const cap = result.signals.find((signal) => signal.id === "comparison.partialCap");
+
+    expect(result.detailedInfo.ssrScore).toBe(50);
+    expect(result.detailedInfo.csrScore).toBe(40);
+    expect(result.detailedInfo.ssrPercentage).toBe(56);
+    expect(result.renderType).not.toBe("Server-Side Rendered (SSR)");
+    expect(partial).toMatchObject({ impact: "csr", weight: 40 });
+    expect(partial.detail).toContain(
+      "300 of 1,000 visible characters (30%) were in the initial response",
+    );
+    expect(cap).toMatchObject({ impact: "ssr", weight: -40 });
+    expect(cap.detail).toContain("cut from 90 to 50");
+  });
+
+  it("leaves a ratio of 0.6 on the existing path without partial signals", async () => {
+    stubDetectors({
+      content: { ...empty, ssrScore: 80 },
+      comparison: {
+        rawLength: 600,
+        renderedLength: 1000,
+        contentRatio: 0.6,
+        isLikelyCSR: false,
+        isPartialCSR: false,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toBe("Server-Side Rendered (SSR)");
+    expect(result.detailedInfo.ssrScore).toBe(80);
+    expect(result.signals.some((signal) => signal.id.startsWith("comparison.partial"))).toBe(false);
+  });
+
+  it("does not add a partial cap signal when no SSR points were removed", async () => {
+    stubDetectors({
+      content: { ...empty, ssrScore: 20 },
+      comparison: {
+        rawLength: 300,
+        renderedLength: 1000,
+        contentRatio: 0.3,
+        isLikelyCSR: false,
+        isPartialCSR: true,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.detailedInfo.ssrScore).toBe(20);
+    expect(result.signals.some((signal) => signal.id === "comparison.partial")).toBe(true);
+    expect(result.signals.some((signal) => signal.id === "comparison.partialCap")).toBe(false);
+  });
+
+  it("keeps a 0.15 ratio on the likely-CSR path without partial signals", async () => {
+    stubDetectors({
+      content: { ...empty, ssrScore: 80 },
+      comparison: {
+        rawLength: 150,
+        renderedLength: 1000,
+        contentRatio: 0.15,
+        isLikelyCSR: true,
+        isPartialCSR: false,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        rawDocument: document.implementation.createHTMLDocument(),
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.detailedInfo.csrScore).toBe(40);
+    expect(result.signals.some((signal) => signal.id === "comparison.mismatch")).toBe(true);
+    expect(result.signals.some((signal) => signal.id.startsWith("comparison.partial"))).toBe(false);
+  });
+
+  it("describes parser-snapshot partial content without claiming a fetch", async () => {
+    stubDetectors({
+      comparison: {
+        rawLength: 300,
+        renderedLength: 1000,
+        contentRatio: 0.3,
+        isLikelyCSR: false,
+        isPartialCSR: true,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        source: "parser-snapshot",
+        rawDocument: null,
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+    const partial = result.signals.find((signal) => signal.id === "comparison.partial");
+
+    expect(partial.detail).toBe(
+      "300 characters of text were on the page when the HTML finished parsing; 1,000 are on screen — JavaScript added the rest.",
+    );
+  });
+});

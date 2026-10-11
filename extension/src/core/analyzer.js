@@ -195,6 +195,20 @@ async function pageAnalyzer() {
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
             : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
         });
+      } else if (comparisonResults.isPartialCSR) {
+        csrScore += config.scoring.rawVsRenderedPartial;
+        indicators.push(
+          `raw HTML holds under half of rendered content (${comparisonResults.contentRatio}x ratio) - partial CSR`,
+        );
+        signals.push({
+          id: "comparison.partial",
+          label: "The server sent part of what you see",
+          impact: "csr",
+          weight: config.scoring.rawVsRenderedPartial,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen — JavaScript added the rest.`
+            : `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters (${Math.round(comparisonResults.contentRatio * 100)}%) were in the initial response; JavaScript added the rest.`,
+        });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
         indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
@@ -285,6 +299,21 @@ async function pageAnalyzer() {
         detail:
           `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
+    } else if (comparisonResults?.isPartialCSR) {
+      const cappedFrom = ssrScore;
+      ssrScore = Math.min(ssrScore, config.scoring.partialCsrSsrCap);
+      const removed = cappedFrom - ssrScore;
+      if (removed > 0) {
+        indicators.push("raw HTML holds under half of rendered - SSR signals capped (partial)");
+        signals.push({
+          id: "comparison.partialCap",
+          label: "Server-side signals capped",
+          impact: "ssr",
+          weight: -removed,
+          detail:
+            `The served HTML held under half of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
+        });
+      }
     }
 
     if (!comparisonResults) {

@@ -136,6 +136,42 @@ describe("compareInitialVsRendered", () => {
     expect(result.isDecisiveCSR).toBe(false);
   });
 
+  it("flags partial content at 0.3 but not at 0.5 or 0.19", async () => {
+    const compareLengths = async (rawLength, renderedLength) => {
+      const rawText = "r".repeat(rawLength);
+      const renderedText = "r".repeat(renderedLength);
+      mockFetchedHTML(`<html><body><main>${rawText}</main></body></html>`);
+      document.body.innerHTML = `<main>${renderedText}</main>`;
+      return window.compareInitialVsRendered();
+    };
+
+    const partial = await compareLengths(300, 1000);
+    expect(partial.contentRatio).toBe(0.3);
+    expect(partial.isPartialCSR).toBe(true);
+
+    const half = await compareLengths(500, 1000);
+    expect(half.contentRatio).toBe(0.5);
+    expect(half.isPartialCSR).toBe(false);
+
+    const likelyCsr = await compareLengths(380, 2000);
+    expect(likelyCsr.contentRatio).toBe(0.19);
+    expect(likelyCsr.isLikelyCSR).toBe(true);
+    expect(likelyCsr.isPartialCSR).toBe(false);
+  });
+
+  it("does not flag partial content when the raw text is too short", async () => {
+    mockFetchedHTML(
+      `<html><body><main>${"r".repeat(200)}</main></body></html>`,
+    );
+    document.body.innerHTML = `<main>${"r".repeat(1000)}</main>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.contentRatio).toBe(0.2);
+    expect(result.rawLength).toBe(window.DETECTOR_CONFIG.contentComparison.minRenderedLength);
+    expect(result.isPartialCSR).toBe(false);
+  });
+
   it("should not flag SSR when both sides have almost no real text", async () => {
     // Low-text app UI (e.g. canvas apps): a high ratio on a few dozen chars
     // used to qualify as an "SSR match" because the SSR branch had no minimum
@@ -200,6 +236,18 @@ describe("parser snapshot fallback", () => {
     expect(result.isLikelySSR).toBe(false);
     expect(result.rawDocument).toBeNull();
     expect(result.responseHeaders).toBeNull();
+  });
+
+  it("flags partial content from the parser snapshot", async () => {
+    probeBridge({ parsedTextLength: 300 });
+    document.body.innerHTML = `<main>${"r".repeat(1000)}</main>`;
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.contentRatio).toBe(0.3);
+    expect(result.isPartialCSR).toBe(true);
   });
 
   it("uses it when the fetch throws, and can still read as SSR", async () => {
