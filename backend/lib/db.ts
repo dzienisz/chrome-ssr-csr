@@ -204,6 +204,69 @@ export async function getTotalStats() {
   }
 }
 
+function compareVersionsDescending(a: string, b: string): number {
+  const aSegments = a.split(".").map(Number);
+  const bSegments = b.split(".").map(Number);
+  const length = Math.max(aSegments.length, bSegments.length);
+
+  for (let i = 0; i < length; i++) {
+    const difference = (bSegments[i] ?? 0) - (aSegments[i] ?? 0);
+    if (difference !== 0) return difference;
+  }
+
+  return 0;
+}
+
+export async function getVerdictsByVersion(limit: number = 8) {
+  try {
+    const result = await sql`
+      SELECT
+        extension_version AS version,
+        COUNT(*) AS count,
+        COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END) AS ssr_count,
+        COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END) AS csr_count,
+        COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END) AS hybrid_count,
+        COALESCE(AVG(confidence), 0) AS avg_confidence
+      FROM analyses
+      GROUP BY extension_version
+      HAVING COUNT(*) >= 20;
+    `;
+    const rows: Array<{
+      version: string;
+      count: number;
+      ssr_count: number;
+      csr_count: number;
+      hybrid_count: number;
+      avg_confidence: number;
+    }> = [];
+    for (const row of result.rows) {
+      if (
+        typeof row.version !== "string" ||
+        !/^\d+(?:\.\d+)+$/.test(row.version)
+      ) {
+        continue;
+      }
+
+      rows.push({
+        version: row.version,
+        count: aggregateNumber(row.count),
+        ssr_count: aggregateNumber(row.ssr_count),
+        csr_count: aggregateNumber(row.csr_count),
+        hybrid_count: aggregateNumber(row.hybrid_count),
+        avg_confidence:
+          Math.round(aggregateNumber(row.avg_confidence) * 10) / 10,
+      });
+    }
+
+    return rows.sort((a, b) =>
+      compareVersionsDescending(a.version, b.version),
+    ).slice(0, limit);
+  } catch (error) {
+    console.error("Database query error:", error);
+    throw error;
+  }
+}
+
 export async function getTopFrameworks(limit: number = 10) {
   try {
     const result = await sql`
@@ -294,9 +357,9 @@ export async function getAnalysesByDate(days: number = 30) {
       SELECT
         DATE(timestamp) as date,
         COUNT(*) as count,
-        COUNT(CASE WHEN render_type LIKE '%SSR%' THEN 1 END) as ssr_count,
-        COUNT(CASE WHEN render_type LIKE '%CSR%' THEN 1 END) as csr_count,
-        COUNT(CASE WHEN render_type LIKE '%Hybrid%' THEN 1 END) as hybrid_count
+        COUNT(CASE WHEN render_type ILIKE '%SSR%' THEN 1 END) as ssr_count,
+        COUNT(CASE WHEN render_type ILIKE '%CSR%' THEN 1 END) as csr_count,
+        COUNT(CASE WHEN render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%' THEN 1 END) as hybrid_count
       FROM analyses
       WHERE timestamp >= ${dateThreshold.toISOString()}
       GROUP BY DATE(timestamp)

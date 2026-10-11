@@ -6,6 +6,7 @@ import {
   getRecentAnalyses,
   getTopDomains,
   getTotalStats,
+  getVerdictsByVersion,
 } from "@/lib/db";
 import { resetPublicAggregatesCache } from "@/lib/public-stats";
 
@@ -17,6 +18,16 @@ vi.mock("@/lib/db", () => ({
     ssr_count: 3,
     csr_count: 2,
   })),
+  getVerdictsByVersion: vi.fn(async () => [
+    {
+      version: "4.1.0",
+      count: 21,
+      ssr_count: 12,
+      csr_count: 6,
+      hybrid_count: 3,
+      avg_confidence: 88.1,
+    },
+  ]),
   getTopFrameworks: vi.fn(async () => [{ framework: "React", count: 2 }]),
   getTopDomains: vi.fn(async () => [{ domain: "example.com", count: 2 }]),
   getAnalysesByDate: vi.fn(async () => []),
@@ -90,6 +101,38 @@ describe("stats endpoint access", () => {
       csr_count: 2,
     });
     expect(getTotalStats).toHaveBeenCalledOnce();
+  });
+
+  it("returns public version verdicts without caching the slice", async () => {
+    const response = await getPublicStats(request("versions"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-store, no-cache, must-revalidate",
+    );
+    expect(await response.json()).toEqual([
+      {
+        version: "4.1.0",
+        count: 21,
+        ssr_count: 12,
+        csr_count: 6,
+        hybrid_count: 3,
+        avg_confidence: 88.1,
+      },
+    ]);
+    expect(getVerdictsByVersion).toHaveBeenCalledWith(8);
+  });
+
+  it("returns version verdicts in the admin slice with the requested limit", async () => {
+    const response = await getAdminStats(
+      new NextRequest("http://localhost/api/admin/stats?type=versions&limit=16"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-store, no-cache, must-revalidate",
+    );
+    expect(getVerdictsByVersion).toHaveBeenCalledWith(16);
   });
 
   it("includes domain and recent data in the admin all response", async () => {

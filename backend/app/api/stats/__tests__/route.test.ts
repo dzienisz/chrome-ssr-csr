@@ -106,4 +106,17 @@ describe("stats reads", () => {
       ).toBe(200);
     },
   );
+
+  it("rejects a zero version limit before SQL", async () => {
+    const response = await GET(
+      new NextRequest("http://localhost/api/stats?type=versions&limit=0"),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      success: false,
+      error: "Invalid query parameters",
+    });
+    expect(mockSql).not.toHaveBeenCalled();
+  });
 });

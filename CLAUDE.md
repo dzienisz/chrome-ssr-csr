@@ -328,6 +328,7 @@ Classification thresholds:
 | `/api/analyze` | POST | Receive telemetry; rate limits return 429 with `Retry-After`, duplicates return success without inserting |
 | `/api/analyze/[id]` | DELETE | Remove an analysis |
 | `/api/stats?type=all` | GET | Public aggregates only (Phase 1-3) — preferred |
+| `/api/stats?type=versions` | GET | Verdict counts by extension version (releases with ≥20 analyses) |
 | `/api/stats?type=domains\|recent` | GET | 403; admin-only data |
 | `/api/admin/stats?type=all` | GET | Password-protected full statistics |
 | `/api/stats?type=frameworks\|timeline\|…` | GET | Individual public stat slices |

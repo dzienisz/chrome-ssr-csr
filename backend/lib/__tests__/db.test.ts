@@ -3,6 +3,8 @@ import { sql } from "@vercel/postgres";
 import {
   insertAnalysis,
   getTotalStats,
+  getAnalysesByDate,
+  getVerdictsByVersion,
   getRecentAnalyses,
   deleteAnalysis,
   AnalysisRecord,
@@ -340,6 +342,122 @@ describe("db functions", () => {
       mockSql.mockRejectedValueOnce(new Error("Query failed"));
 
       await expect(getTotalStats()).rejects.toThrow("Query failed");
+    });
+  });
+
+  describe("getAnalysesByDate", () => {
+    it("uses the total-stat verdict predicates, including Mixed as Hybrid", async () => {
+      mockSql.mockResolvedValueOnce({ rows: [] });
+
+      await getAnalysesByDate();
+
+      const query = mockSql.mock.calls[0][0].join("");
+      expect(query).toContain("render_type ILIKE '%SSR%'");
+      expect(query).toContain("render_type ILIKE '%CSR%'");
+      expect(query).toContain(
+        "render_type ILIKE '%Hybrid%' OR render_type ILIKE '%Mixed%'",
+      );
+      expect(query).not.toContain(" render_type LIKE '%");
+    });
+  });
+
+  describe("getVerdictsByVersion", () => {
+    it("filters invalid versions, converts aggregates, sorts numerically and limits results", async () => {
+      mockSql.mockResolvedValueOnce({
+        rows: [
+          {
+            version: "4.0.9",
+            count: "40",
+            ssr_count: "20",
+            csr_count: "13",
+            hybrid_count: "7",
+            avg_confidence: "81.26",
+          },
+          {
+            version: "unknown",
+            count: "99",
+            ssr_count: "99",
+            csr_count: "0",
+            hybrid_count: "0",
+            avg_confidence: "90",
+          },
+          {
+            version: "4.1.0",
+            count: "21",
+            ssr_count: "12",
+            csr_count: "6",
+            hybrid_count: "3",
+            avg_confidence: "88.05",
+          },
+          {
+            version: null,
+            count: "99",
+            ssr_count: "99",
+            csr_count: "0",
+            hybrid_count: "0",
+            avg_confidence: "90",
+          },
+          {
+            version: "4.0.10",
+            count: "22",
+            ssr_count: "10",
+            csr_count: "8",
+            hybrid_count: "4",
+            avg_confidence: "75.55",
+          },
+          {
+            version: "garbage",
+            count: "99",
+            ssr_count: "99",
+            csr_count: "0",
+            hybrid_count: "0",
+            avg_confidence: "90",
+          },
+          {
+            version: "3.10.0",
+            count: "24",
+            ssr_count: "12",
+            csr_count: "8",
+            hybrid_count: "4",
+            avg_confidence: "69.04",
+          },
+          {
+            version: "2.4.0",
+            count: "20",
+            ssr_count: "10",
+            csr_count: "8",
+            hybrid_count: "2",
+            avg_confidence: "60",
+          },
+        ],
+      });
+
+      const result = await getVerdictsByVersion(4);
+
+      expect(result.map(({ version }) => version)).toEqual([
+        "4.1.0",
+        "4.0.10",
+        "4.0.9",
+        "3.10.0",
+      ]);
+      expect(result[0]).toEqual({
+        version: "4.1.0",
+        count: 21,
+        ssr_count: 12,
+        csr_count: 6,
+        hybrid_count: 3,
+        avg_confidence: 88.1,
+      });
+      for (const row of result) {
+        for (const value of Object.values(row).slice(1)) {
+          expect(typeof value).toBe("number");
+        }
+      }
+
+      const query = mockSql.mock.calls[0][0].join("");
+      expect(query).toContain("GROUP BY extension_version");
+      expect(query).toContain("HAVING COUNT(*) >= 20");
+      expect(query).toContain("render_type ILIKE '%Mixed%'");
     });
   });
 

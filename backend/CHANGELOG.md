@@ -4,6 +4,14 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ## [Unreleased]
 
+### Added
+
+- Add a public version breakdown of SSR, CSR, and Hybrid verdicts by extension release.
+
+### Fixed
+
+- Count timeline Hybrid verdicts using the same case-insensitive predicates as overall totals.
+
 ### Security and privacy
 
 - Rate-limit telemetry by IP and suppress duplicate IP+domain posts during each 10-minute window.
