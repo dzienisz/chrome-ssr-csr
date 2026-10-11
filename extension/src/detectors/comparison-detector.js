@@ -59,6 +59,15 @@ async function compareInitialVsRendered() {
     // Parse raw HTML
     const parser = new DOMParser();
     const rawDoc = parser.parseFromString(rawHTML, "text/html");
+    const snapshot = readProbeSnapshot();
+    const rawTitle = rawDoc.title.replace(/\s+/g, " ").trim();
+    if (
+      snapshot?.parsedTitleHash &&
+      rawTitle &&
+      hashTitle(rawTitle) !== snapshot.parsedTitleHash
+    ) {
+      return compareParsedSnapshot({ refetchMismatch: true });
+    }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
     // Get current rendered DOM text, measured the same way
@@ -110,18 +119,46 @@ async function compareInitialVsRendered() {
 }
 
 /**
- * Read the probe's parse-time text length (see src/probe.js).
- * @returns {number|null} Characters of visible text when parsing finished
+ * Hash a normalized page title with FNV-1a, matching the isolated probe.
+ * @param {string} title - Page title
+ * @returns {string} Eight-character lowercase hash, or empty for no title
  */
-function readParsedTextLength() {
+function hashTitle(title) {
+  const normalized = title.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * Read the probe's parse-time text length and title hash (see src/probe.js).
+ * @returns {{parsedTextLength: number|null, parsedTitleHash: string|null}}
+ */
+function readProbeSnapshot() {
   try {
-    window.dispatchEvent(new CustomEvent("ssr-detector-request-data"));
-    const bridge = document.getElementById("ssr-detector-probe-data");
-    const raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
-    const length = raw ? JSON.parse(raw).parsedTextLength : null;
-    return Number.isFinite(length) ? length : null;
+    let bridge = document.getElementById("ssr-detector-probe-data");
+    let raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
+    if (!raw) {
+      window.dispatchEvent(new CustomEvent("ssr-detector-request-data"));
+      bridge = document.getElementById("ssr-detector-probe-data");
+      raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
+    }
+    const snapshot = raw ? JSON.parse(raw) : {};
+    return {
+      parsedTextLength: Number.isFinite(snapshot.parsedTextLength)
+        ? snapshot.parsedTextLength
+        : null,
+      parsedTitleHash:
+        typeof snapshot.parsedTitleHash === "string" && snapshot.parsedTitleHash
+          ? snapshot.parsedTitleHash
+          : null,
+    };
   } catch (e) {
-    return null;
+    return { parsedTextLength: null, parsedTitleHash: null };
   }
 }
 
@@ -135,9 +172,9 @@ function readParsedTextLength() {
  * null, exactly as when the comparison is unavailable.
  * @returns {Object|null} Comparison results, or null without a probe snapshot
  */
-function compareParsedSnapshot() {
+function compareParsedSnapshot(options = {}) {
   const config = window.DETECTOR_CONFIG;
-  const rawLength = readParsedTextLength();
+  const { parsedTextLength: rawLength } = readProbeSnapshot();
   if (rawLength === null) return null;
 
   const renderedLength = extractVisibleText(document.body).length;
@@ -161,6 +198,7 @@ function compareParsedSnapshot() {
     responseHeaders: null,
     rawDocument: null,
     rawHTML: null,
+    refetchMismatch: options.refetchMismatch === true,
   };
 }
 

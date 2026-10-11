@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Amazon's bot interstitial no longer overrides the rendered page.** When
+  the analyzer's successful re-fetch returns a different document, the
+  comparison now checks its title against a hash of the title captured when
+  parsing finished and uses that parse-time text snapshot instead.
+
 ## [4.0.1] - 2026-10-11
 
 ### Fixed

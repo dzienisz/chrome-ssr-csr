@@ -174,12 +174,31 @@ describe('probe parse-time text snapshot', () => {
     late.window.close();
   });
 
-  it('keeps only a number, never the text', () => {
+  it('keeps only the text length and title hash, never either text', () => {
     const { r, setState } = loadingRealm('<p>Private account details</p>');
+    r.window.document.title = 'Private account details';
     setState('interactive');
     const raw = r.window.document.getElementById('ssr-detector-probe-data') || null;
     expect(raw).toBeNull();
     expect(JSON.stringify(read(r.window))).not.toContain('Private');
+    expect(read(r.window).parsedTitleHash).toBeDefined();
+    r.window.close();
+  });
+
+  it('stores a normalized FNV-1a hash of the parse-time title', () => {
+    const { r, setState } = loadingRealm('<p>Shop page</p>');
+    r.window.document.title = 'Shop  –\n real page';
+    setState('interactive');
+
+    expect(read(r.window).parsedTitleHash).toBe('c66a4a27');
+    r.window.close();
+  });
+
+  it('omits the title hash when the parse-time title is empty', () => {
+    const { r, setState } = loadingRealm('<p>Untitled page</p>');
+    setState('interactive');
+
+    expect(read(r.window).parsedTitleHash).toBeUndefined();
     r.window.close();
   });
 });

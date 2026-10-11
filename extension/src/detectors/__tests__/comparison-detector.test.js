@@ -227,6 +227,68 @@ describe("parser snapshot fallback", () => {
 
     expect((await window.compareInitialVsRendered()).source).toBe("fetch");
   });
+
+  it("uses the parse-time snapshot when a successful fetch has a different title", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+    });
+    document.title = "Shop – real page";
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      "<html><head><title>Robot check</title></head><body>Robot check.</body></html>",
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.refetchMismatch).toBe(true);
+    expect(result.rawLength).toBe(LONG_TEXT.trim().length);
+    expect(result.rawDocument).toBeNull();
+  });
+
+  it("keeps the fetch path when the re-fetched title matches the probe hash", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><head><title>Shop – real page</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+    expect(result.refetchMismatch).toBeUndefined();
+  });
+
+  it("keeps the fetch path when the probe has no title hash", async () => {
+    probeBridge({ parsedTextLength: LONG_TEXT.trim().length });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><head><title>Shop – real page</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+  });
+
+  it("keeps the fetch path when the re-fetched title is empty", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+  });
 });
 
 describe("response header capture", () => {

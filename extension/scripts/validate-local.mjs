@@ -50,6 +50,15 @@ const server = createServer((req, res) => {
     return;
   }
 
+  if (fixture.interstitialRefetch && req.headers["sec-fetch-mode"] !== "navigate") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(
+      "<!doctype html><html><head><title>Robot check</title></head>" +
+        "<body><main>Robot check. Please try again later.</main></body></html>",
+    );
+    return;
+  }
+
   if (fixture.refuseRefetch && req.headers["sec-fetch-mode"] !== "navigate") {
     res.writeHead(403, { "content-type": "text/html; charset=utf-8" });
     res.end("<!doctype html><title>Just a moment...</title>");
