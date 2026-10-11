@@ -34,6 +34,8 @@ The API discards free-form indicators, raw user-agent values, page titles, struc
 
 IP addresses are not stored in the analysis records. Network requests necessarily expose connection information, including an IP address, to the hosting provider; this policy does not make claims about provider-level request logs.
 
+To limit abuse, the backend keeps a keyed one-way hash of the sending IP address, never the address itself, together with the domain and a request count, in a separate table for at most about a day. It is never joined with analysis records.
+
 ## Optional second opinion from Jev (off by default)
 
 Ask Jev is off by default. If you enable it in settings and click **Ask Jev** in the popup, the extension re-fetches the current page and sends its full URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text to TypeSafe at `api.typesafe.ai`. The request uses the API key you provide and is sent only after your click; nothing is sent automatically. The extension requests access to the TypeSafe API host when you enable Ask Jev.

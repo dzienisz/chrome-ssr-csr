@@ -325,7 +325,7 @@ Classification thresholds:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/analyze` | POST | Receive telemetry from extension |
+| `/api/analyze` | POST | Receive telemetry; rate limits return 429 with `Retry-After`, duplicates return success without inserting |
 | `/api/analyze/[id]` | DELETE | Remove an analysis |
 | `/api/stats?type=all` | GET | Public aggregates only (Phase 1-3) — preferred |
 | `/api/stats?type=domains\|recent` | GET | 403; admin-only data |

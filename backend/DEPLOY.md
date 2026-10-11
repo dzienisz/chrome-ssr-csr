@@ -54,6 +54,19 @@ In Vercel, go to **Project** > **Settings** > **Environment Variables** and set
 `ADMIN_USER`; it defaults to `admin`. Redeploy after saving the variables.
 Without a non-empty `ADMIN_PASSWORD`, `/admin` returns HTTP 503.
 
+### Telemetry Ingest Protection
+
+In Vercel **Project** > **Settings** > **Environment Variables**, set
+`INGEST_HASH_SECRET` for both **Production** and **Preview**. Use a random
+secret of at least 32 characters (for example, `openssl rand -hex 32`) and
+redeploy after setting it. Without this secret, rate limiting and duplicate
+suppression are disabled and ingestion fails open.
+
+With the secret configured, each IP is limited to 30 telemetry posts per
+10-minute window, and only one record per IP and domain is stored in that
+window. The `ingest_guard` table is created automatically; old rows are
+opportunistically purged after about one day.
+
 ### Step 6: Setup Database
 
 Back in your terminal:
