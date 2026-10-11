@@ -6,6 +6,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ### Security and privacy
 
+- Security: Next.js 14.2.15 → 14.2.35 and patched transitive deps (npm audit fix)
 - Reject telemetry from non-public hosts (422) + purge script.
 - Disable analysis deletion with an unconditional 403 and remove public dashboard deletion controls.
 - Validate and project telemetry at ingress with a streamed 64 KiB body cap, URL-origin/hostname normalization, numeric bounds and closed-vocabulary labels.
