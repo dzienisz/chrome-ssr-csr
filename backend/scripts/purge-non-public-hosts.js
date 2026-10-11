@@ -17,13 +17,13 @@ async function main() {
     SELECT domain, COUNT(*)::int AS count
     FROM analyses
     WHERE domain IS NOT NULL AND (
-      lower(domain) = 'localhost'
-      OR lower(domain) ~ '\\.(localhost|local|internal|lan|test|invalid|example)\\.?$'
-      OR lower(domain) ~ '\\.home\\.arpa\\.?$'
-      OR domain ~ '^[0-9]+(\\.[0-9]+){3}$'
+      lower(rtrim(domain, '.')) = 'localhost'
+      OR lower(rtrim(domain, '.')) ~ '\\.(localhost|local|internal|lan|test|invalid|example)$'
+      OR lower(rtrim(domain, '.')) ~ '\\.home\\.arpa$'
+      OR rtrim(domain, '.') ~ '^[0-9]+(\\.[0-9]+){3}$'
       OR domain LIKE '[%'
       OR domain LIKE '%:%'
-      OR position('.' in domain) = 0
+      OR position('.' in rtrim(domain, '.')) = 0
     )
     GROUP BY domain
     ORDER BY count DESC, domain;
@@ -40,13 +40,13 @@ async function main() {
   const result = await sql`
     DELETE FROM analyses
     WHERE domain IS NOT NULL AND (
-      lower(domain) = 'localhost'
-      OR lower(domain) ~ '\\.(localhost|local|internal|lan|test|invalid|example)\\.?$'
-      OR lower(domain) ~ '\\.home\\.arpa\\.?$'
-      OR domain ~ '^[0-9]+(\\.[0-9]+){3}$'
+      lower(rtrim(domain, '.')) = 'localhost'
+      OR lower(rtrim(domain, '.')) ~ '\\.(localhost|local|internal|lan|test|invalid|example)$'
+      OR lower(rtrim(domain, '.')) ~ '\\.home\\.arpa$'
+      OR rtrim(domain, '.') ~ '^[0-9]+(\\.[0-9]+){3}$'
       OR domain LIKE '[%'
       OR domain LIKE '%:%'
-      OR position('.' in domain) = 0
+      OR position('.' in rtrim(domain, '.')) = 0
     );
   `;
   console.log(`Deleted ${result.rowCount} rows.`);
