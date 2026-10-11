@@ -91,6 +91,29 @@ describe('Largest Contentful Paint collection', () => {
     }
   );
 
+  it('ignores a prerender hidden entry before activation', async () => {
+    activationStart = 800;
+    visibilityEntries = [
+      { name: 'hidden', startTime: 0 },
+      { name: 'visible', startTime: 800 }
+    ];
+    lcpEntries = [{ startTime: 1500 }];
+
+    await expect(collectLcp()).resolves.toBe(700);
+  });
+
+  it('filters by the first hidden entry after prerender activation', async () => {
+    activationStart = 800;
+    visibilityEntries = [
+      { name: 'hidden', startTime: 0 },
+      { name: 'visible', startTime: 800 },
+      { name: 'hidden', startTime: 3000 }
+    ];
+    lcpEntries = [{ startTime: 1500 }, { startTime: 4000 }];
+
+    await expect(collectLcp()).resolves.toBe(700);
+  });
+
   it('reads firstHiddenTime from the probe snapshot when visibility-state is unsupported', async () => {
     setPerformanceObserver(['largest-contentful-paint']);
     lcpEntries = [{ startTime: 1500 }, { startTime: 2500 }];

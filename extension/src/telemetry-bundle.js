@@ -14,7 +14,7 @@ if (typeof window.__SSR_CSR_TELEMETRY_LOADED__ === 'undefined') {
 /**
  * Get when the page was first hidden, if known.
  */
-function getFirstHiddenTime() {
+function getFirstHiddenTime(activationStart) {
   try {
     if (
       typeof PerformanceObserver !== 'undefined' &&
@@ -23,7 +23,10 @@ function getFirstHiddenTime() {
     ) {
       const hiddenEntry = performance
         .getEntriesByType('visibility-state')
-        .find((entry) => entry.name === 'hidden');
+        .find(
+          (entry) =>
+            entry.name === 'hidden' && entry.startTime >= activationStart,
+        );
       return hiddenEntry ? hiddenEntry.startTime : Infinity;
     }
   } catch (error) {}
@@ -51,9 +54,9 @@ function getFirstHiddenTime() {
 function getLargestContentfulPaint() {
   return new Promise((resolve) => {
     try {
-      const firstHiddenTime = getFirstHiddenTime();
       const activationStart =
         performance.getEntriesByType('navigation')[0]?.activationStart || 0;
+      const firstHiddenTime = getFirstHiddenTime(activationStart);
       const observer = new PerformanceObserver((list) => {
         const entries = list
           .getEntries()
