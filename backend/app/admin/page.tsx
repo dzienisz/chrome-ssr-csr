@@ -1,16 +1,6 @@
 import { LiveDashboard, DashboardData } from "@/components/dashboard/live-dashboard";
-import {
-  getTotalStats,
-  getTopFrameworks,
-  getTopDomains,
-  getAnalysesByDate,
-  getRecentAnalyses,
-  getLatestAnalysisTime,
-  getContentComparisonStats,
-  getCoreWebVitalsByRenderType,
-} from "@/lib/db";
-import { getTechStackStats, getSEOStats } from "@/lib/db-phase2";
-import { getNavigationByRenderType } from "@/lib/db-phase3";
+import { getTopDomains, getRecentAnalyses } from "@/lib/db";
+import { getPublicAggregates } from "@/lib/public-stats";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,44 +13,16 @@ export const metadata = {
 
 async function getDashboardData() {
   try {
-    const [
-      total,
-      frameworks,
-      domains,
-      timeline,
-      recent,
-      latestTime,
-      contentComparison,
-      techStack,
-      seoStats,
-      coreWebVitals,
-      navigationByRenderType,
-    ] = await Promise.all([
-      getTotalStats(),
-      getTopFrameworks(10),
+    const [aggregates, domains, recent] = await Promise.all([
+      getPublicAggregates(),
       getTopDomains(10),
-      getAnalysesByDate(30),
       getRecentAnalyses(20),
-      getLatestAnalysisTime(),
-      getContentComparisonStats(),
-      getTechStackStats(),
-      getSEOStats(),
-      getCoreWebVitalsByRenderType(),
-      getNavigationByRenderType(),
     ]);
 
     return {
-      total,
-      frameworks,
+      ...aggregates,
       domains,
-      timeline,
       recent,
-      latestTime,
-      contentComparison,
-      techStack,
-      seoStats,
-      coreWebVitals,
-      navigationByRenderType,
     };
   } catch (error) {
     console.error("Error fetching admin dashboard data:", error);

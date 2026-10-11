@@ -7,6 +7,7 @@ import {
   getTopDomains,
   getTotalStats,
 } from "@/lib/db";
+import { resetPublicAggregatesCache } from "@/lib/public-stats";
 
 vi.mock("next/cache", () => ({ unstable_noStore: vi.fn() }));
 
@@ -39,6 +40,7 @@ const request = (type: string) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetPublicAggregatesCache();
 });
 
 describe("stats endpoint access", () => {
@@ -48,6 +50,9 @@ describe("stats endpoint access", () => {
       const response = await getPublicStats(request(type));
 
       expect(response.status).toBe(403);
+      expect(response.headers.get("Cache-Control")).toBe(
+        "no-store, no-cache, must-revalidate",
+      );
       expect(await response.json()).toEqual({
         success: false,
         error: "Admin only",
@@ -62,6 +67,9 @@ describe("stats endpoint access", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "public, s-maxage=60, stale-while-revalidate=300",
+    );
     expect(body).toHaveProperty("total");
     expect(body).not.toHaveProperty("domains");
     expect(body).not.toHaveProperty("recent");
@@ -73,6 +81,9 @@ describe("stats endpoint access", () => {
     const response = await getPublicStats(request("total"));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-store, no-cache, must-revalidate",
+    );
     expect(await response.json()).toEqual({
       total_analyses: 5,
       ssr_count: 3,
@@ -86,6 +97,9 @@ describe("stats endpoint access", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-store, no-cache, must-revalidate",
+    );
     expect(body.domains).toEqual([{ domain: "example.com", count: 2 }]);
     expect(body.recent).toEqual([{ id: 1, domain: "example.com" }]);
     expect(getTopDomains).toHaveBeenCalledOnce();
