@@ -19,6 +19,7 @@ import {
   NavigationInsights,
   NavigationByRenderType,
 } from "./navigation-insights";
+import { VersionBreakdown, type VersionRow } from "./version-breakdown";
 
 interface TotalStats {
   total_analyses: string | number;
@@ -90,6 +91,7 @@ export interface DashboardData {
   seoStats?: SEOStats;
   coreWebVitals?: CWVByRenderType[];
   navigationByRenderType?: NavigationByRenderType[];
+  versions?: VersionRow[];
 }
 
 interface LiveDashboardProps {
@@ -287,6 +289,10 @@ export function LiveDashboard({ initialData, mode }: LiveDashboardProps) {
         {/* Timeline Chart */}
         <div className="mb-6">
           <TimelineChart data={data.timeline || []} />
+        </div>
+
+        <div className="mb-6">
+          <VersionBreakdown data={data.versions || []} />
         </div>
 
         {/* Phase 1: Core Web Vitals by render type */}

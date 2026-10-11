@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
 import {
   getTotalStats,
+  getVerdictsByVersion,
   getTopFrameworks,
   getTopDomains,
   getAnalysesByDate,
@@ -67,6 +68,13 @@ export async function handleStats(
       case "frameworks": {
         const limit = parseInt(searchParams.get("limit") || "10");
         return NextResponse.json(await getTopFrameworks(limit), {
+          headers: cacheHeaders,
+        });
+      }
+
+      case "versions": {
+        const limit = parseInt(searchParams.get("limit") || "8");
+        return NextResponse.json(await getVerdictsByVersion(limit), {
           headers: cacheHeaders,
         });
       }

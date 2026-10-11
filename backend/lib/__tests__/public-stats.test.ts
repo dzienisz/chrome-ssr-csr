@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getTotalStats,
+  getVerdictsByVersion,
   getTopFrameworks,
   getAnalysesByDate,
   getLatestAnalysisTime,
@@ -17,6 +18,7 @@ import {
 
 vi.mock("@/lib/db", () => ({
   getTotalStats: vi.fn(),
+  getVerdictsByVersion: vi.fn(),
   getTopFrameworks: vi.fn(),
   getAnalysesByDate: vi.fn(),
   getLatestAnalysisTime: vi.fn(),
@@ -35,6 +37,7 @@ vi.mock("@/lib/db-phase3", () => ({
 
 const queryMocks = [
   vi.mocked(getTotalStats),
+  vi.mocked(getVerdictsByVersion),
   vi.mocked(getTopFrameworks),
   vi.mocked(getAnalysesByDate),
   vi.mocked(getLatestAnalysisTime),
@@ -48,6 +51,7 @@ const queryMocks = [
 beforeEach(() => {
   resetPublicAggregatesCache();
   vi.mocked(getTotalStats).mockResolvedValue({ total_analyses: 5 } as never);
+  vi.mocked(getVerdictsByVersion).mockResolvedValue([]);
   vi.mocked(getTopFrameworks).mockResolvedValue([
     { framework: "React", count: 2 },
   ]);
@@ -71,6 +75,7 @@ describe("getPublicAggregates", () => {
 
     expect(second).toBe(first);
     expect(await first).toEqual(await second);
+    expect(await first).toHaveProperty("versions", []);
     expectOneQuerySet();
   });
 

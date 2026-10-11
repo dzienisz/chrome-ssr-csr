@@ -1,5 +1,6 @@
 import {
   getTotalStats,
+  getVerdictsByVersion,
   getTopFrameworks,
   getAnalysesByDate,
   getLatestAnalysisTime,
@@ -23,6 +24,7 @@ export type PublicAggregates = {
   navigationByRenderType: Awaited<
     ReturnType<typeof getNavigationByRenderType>
   >;
+  versions: Awaited<ReturnType<typeof getVerdictsByVersion>>;
 };
 
 let cached:
@@ -44,6 +46,7 @@ export function getPublicAggregates(
     getSEOStats(),
     getCoreWebVitalsByRenderType(),
     getNavigationByRenderType(),
+    getVerdictsByVersion(8),
   ]).then(
     ([
       total,
@@ -55,6 +58,7 @@ export function getPublicAggregates(
       seoStats,
       coreWebVitals,
       navigationByRenderType,
+      versions,
     ]) => ({
       total,
       frameworks,
@@ -65,6 +69,7 @@ export function getPublicAggregates(
       seoStats,
       coreWebVitals,
       navigationByRenderType,
+      versions,
     }),
   );
   const entry = { promise, expiresAt: now + PUBLIC_STATS_TTL_MS };
