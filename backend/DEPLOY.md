@@ -47,6 +47,13 @@ In Vercel dashboard:
    - Value: Generate a secure random string (e.g., run `openssl rand -hex 32`)
    - Save
 
+### Admin Backoffice
+
+In Vercel, go to **Project** > **Settings** > **Environment Variables** and set
+`ADMIN_PASSWORD` for both **Production** and **Preview**. Optionally set
+`ADMIN_USER`; it defaults to `admin`. Redeploy after saving the variables.
+Without a non-empty `ADMIN_PASSWORD`, `/admin` returns HTTP 503.
+
 ### Step 6: Setup Database
 
 Back in your terminal:

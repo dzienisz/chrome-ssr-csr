@@ -327,9 +327,10 @@ Classification thresholds:
 |----------|--------|-------------|
 | `/api/analyze` | POST | Receive telemetry from extension |
 | `/api/analyze/[id]` | DELETE | Remove an analysis |
-| `/api/stats?type=all` | GET | All aggregated statistics (Phase 1-3) — preferred |
-| `/api/stats?type=recent` | GET | Paginated recent analyses (supports `offset` param) |
-| `/api/stats?type=frameworks\|domains\|timeline\|…` | GET | Individual stat slices |
+| `/api/stats?type=all` | GET | Public aggregates only (Phase 1-3) — preferred |
+| `/api/stats?type=domains\|recent` | GET | 403; admin-only data |
+| `/api/admin/stats?type=all` | GET | Password-protected full statistics |
+| `/api/stats?type=frameworks\|timeline\|…` | GET | Individual public stat slices |
 
 ### API Error Response Format
 

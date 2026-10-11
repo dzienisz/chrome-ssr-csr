@@ -73,9 +73,9 @@ interface SEOStats {
 export interface DashboardData {
   total: TotalStats;
   frameworks: FrameworkData[];
-  domains: DomainData[];
+  domains?: DomainData[];
   timeline: TimelineData[];
-  recent: RecentAnalysis[];
+  recent?: RecentAnalysis[];
   latestTime: string | null;
   contentComparison?: {
     avg_content_ratio: number | null;
@@ -94,25 +94,32 @@ export interface DashboardData {
 
 interface LiveDashboardProps {
   initialData: DashboardData;
+  mode: "public" | "admin";
 }
 
 const REFRESH_INTERVAL = 30;
 
-export function LiveDashboard({ initialData }: LiveDashboardProps) {
+export function LiveDashboard({ initialData, mode }: LiveDashboardProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(initialData.recent.length >= 20);
+  const [hasMore, setHasMore] = useState(
+    mode === "admin" && (initialData.recent?.length ?? 0) >= 20,
+  );
 
   const fetchData = useCallback(async () => {
     try {
       setIsRefreshing(true);
       setError(null);
 
-      const res = await fetch("/api/stats?type=all", {
+      const statsUrl =
+        mode === "admin"
+          ? "/api/admin/stats?type=all"
+          : "/api/stats?type=all";
+      const res = await fetch(statsUrl, {
         headers: { "Cache-Control": "no-cache" },
       });
 
@@ -126,7 +133,9 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
             navigationByRenderType:
               newData.navigationByRenderType || prev.navigationByRenderType,
           }));
-          setHasMore(newData.recent.length >= 20);
+          setHasMore(
+            mode === "admin" && (newData.recent?.length ?? 0) >= 20,
+          );
           setCountdown(REFRESH_INTERVAL);
         } else {
           console.error("Invalid data structure:", newData);
@@ -142,15 +151,15 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [mode]);
 
   const loadMore = async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (mode !== "admin" || isLoadingMore || !hasMore) return;
 
     try {
       setIsLoadingMore(true);
       const res = await fetch(
-        `/api/stats?type=recent&limit=20&offset=${data.recent.length}`,
+        `/api/admin/stats?type=recent&limit=20&offset=${data.recent?.length ?? 0}`,
       );
       if (res.ok) {
         const newRecent = await res.json();
@@ -159,7 +168,7 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
         }
         setData((prev) => ({
           ...prev,
-          recent: [...prev.recent, ...newRecent],
+          recent: [...(prev.recent ?? []), ...newRecent],
         }));
       }
     } catch (err) {
@@ -201,6 +210,11 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <span className="text-3xl">📊</span>
                 SSR/CSR Analytics
+                {mode === "admin" && (
+                  <span className="rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700">
+                    Admin
+                  </span>
+                )}
                 {isRefreshing && (
                   <span className="ml-2 text-sm font-normal text-gray-400">
                     updating...
@@ -297,26 +311,30 @@ export function LiveDashboard({ initialData }: LiveDashboardProps) {
           <HybridInsights data={data.total} />
         </div>
 
-        {/* Bottom Row: Top Domains + Recent Analyses */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <TopDomains data={data.domains || []} />
+        {mode === "admin" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <TopDomains data={data.domains || []} />
+            </div>
+            <div className="lg:col-span-2">
+              <RecentAnalyses
+                data={data.recent || []}
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-2">
-            <RecentAnalyses
-              data={data.recent || []}
-              onLoadMore={loadMore}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-400">
           <p>
-            SSR/CSR Detector Analytics • Public data is minimized • Auto-refreshes
-            every 30s
+            SSR/CSR Detector Analytics •{" "}
+            {mode === "public"
+              ? "Public view shows aggregates only."
+              : "Private admin view."}{" "}
+            • Auto-refreshes every 30s
           </p>
           <p className="mt-2">
             Dashboard v1.6.0 •

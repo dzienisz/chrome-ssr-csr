@@ -4,6 +4,7 @@ vi.stubGlobal("React", React);
 import { NextRequest } from "next/server";
 import { sql } from "@vercel/postgres";
 import { GET } from "../route";
+import { GET as getAdminStats } from "@/app/api/admin/stats/route";
 import Dashboard from "@/app/dashboard/page";
 
 vi.mock("next/cache", () => ({ unstable_noStore: vi.fn() }));
@@ -37,12 +38,12 @@ beforeEach(() => {
   });
 });
 
-describe("stats public reads", () => {
+describe("stats reads", () => {
   it.each(["recent", "all"])(
-    "projects historical rows through %s",
+    "projects historical rows through admin type=%s",
     async (type) => {
-      const response = await GET(
-        new NextRequest("http://localhost/api/stats?type=" + type),
+      const response = await getAdminStats(
+        new NextRequest("http://localhost/api/admin/stats?type=" + type),
       );
       expect(response.status).toBe(200);
       const body = await response.json();
@@ -70,7 +71,9 @@ describe("stats public reads", () => {
   it("passes only projected records to the SSR dashboard", async () => {
     const element = await Dashboard();
     expect(JSON.stringify(element.props)).not.toContain("PRIVATE_SENTINEL");
-    expect(element.props.children.props.initialData.recent).toHaveLength(1);
+    expect(element.props.children.props.initialData).not.toHaveProperty(
+      "recent",
+    );
   });
   for (const [key, values] of Object.entries({
     limit: ["0", "-1", "101", "1.5", "2junk", ""],
@@ -79,9 +82,7 @@ describe("stats public reads", () => {
   })) {
     it.each(values)(`rejects ${key}=%s before SQL`, async (value) => {
       const response = await GET(
-        new NextRequest(
-          `http://localhost/api/stats?type=recent&${key}=${value}`,
-        ),
+        new NextRequest(`http://localhost/api/stats?type=all&${key}=${value}`),
       );
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({
@@ -97,7 +98,7 @@ describe("stats public reads", () => {
       expect(
         (
           await GET(
-            new NextRequest("http://localhost/api/stats?type=recent&" + query),
+            new NextRequest("http://localhost/api/stats?type=all&" + query),
           )
         ).status,
       ).toBe(200);
