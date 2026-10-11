@@ -324,6 +324,47 @@ export const FIXTURES = [
   },
 
   {
+    name: "ssr-refetch-interstitial",
+    note: "Server-rendered shop whose analyzer re-fetch receives a bot interstitial",
+    bucket: "SSR",
+    interstitialRefetch: true,
+    headers: {
+      "cache-control": "private, no-store",
+      server: "amazon",
+    },
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison?.source === "parser-snapshot",
+        `comparison should use the parser snapshot, got ${r.detailedInfo.contentComparison?.source}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.ratio > 0.9,
+        `the parser snapshot should match the rendered page, got ratio ${r.detailedInfo.contentComparison?.ratio}`,
+      ],
+      [
+        r.signals.some(
+          (signal) =>
+            signal.id === "comparison.parserSnapshot" &&
+            signal.detail.includes("different page"),
+        ),
+        "the report should explain that the re-fetch title did not match",
+      ],
+    ],
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Shop – real page</title>
+  </head>
+  <body>
+    <header><h1>Shop</h1></header>
+    <main><article>${paragraphs(10, "Product listing ")}</article></main>
+    <footer><p>Shop securely with delivery and returns included.</p></footer>
+  </body>
+</html>`,
+  },
+
+  {
     name: "csr-refetch-blocked",
     note: "SPA shell behind bot protection that refuses the analyzer's re-fetch",
     bucket: "CSR",

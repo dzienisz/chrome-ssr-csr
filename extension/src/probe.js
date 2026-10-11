@@ -110,8 +110,20 @@
   // readyState turns "interactive" when parsing ends and before deferred and
   // module scripts run, so the text present then is what the server sent —
   // plus whatever classic inline scripts wrote, which makes it an upper bound.
-  // Only the length is kept, never the text.
+  // Only the text length and title/URL hashes are kept, never the text, title,
+  // or URL.
   const SNAPSHOT_SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  function fnv1a(value) {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < normalized.length; i++) {
+      hash ^= normalized.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
+
   function measureParsedText() {
     try {
       const body = document.body;
@@ -132,6 +144,10 @@
       let text = "";
       while (walker.nextNode()) text += walker.currentNode.data;
       STORE.parsedTextLength = text.replace(/\s+/g, " ").trim().length;
+      const parsedTitleHash = fnv1a(document.title);
+      if (parsedTitleHash) STORE.parsedTitleHash = parsedTitleHash;
+      const parsedUrlHash = fnv1a(location.href);
+      if (parsedUrlHash) STORE.parsedUrlHash = parsedUrlHash;
     } catch (e) {}
   }
 

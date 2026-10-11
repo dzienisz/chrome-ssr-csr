@@ -299,6 +299,16 @@ async function compareInitialVsRendered() {
     // Parse raw HTML
     const parser = new DOMParser();
     const rawDoc = parser.parseFromString(rawHTML, "text/html");
+    const snapshot = readProbeSnapshot();
+    const rawTitle = rawDoc.title.replace(/\s+/g, " ").trim();
+    if (
+      snapshotMatchesUrl(snapshot) &&
+      snapshot?.parsedTitleHash &&
+      rawTitle &&
+      fnv1a(rawTitle) !== snapshot.parsedTitleHash
+    ) {
+      return compareParsedSnapshot({ refetchMismatch: true });
+    }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
     // Get current rendered DOM text, measured the same way
@@ -355,19 +365,62 @@ async function compareInitialVsRendered() {
 }
 
 /**
- * Read the probe's parse-time text length (see src/probe.js).
- * @returns {number|null} Characters of visible text when parsing finished
+ * Hash a normalized string with FNV-1a, matching the isolated probe.
+ * @param {string} value - Value to hash
+ * @returns {string} Eight-character lowercase hash, or empty for an empty value
  */
-function readParsedTextLength() {
-  try {
-    window.dispatchEvent(new CustomEvent("ssr-detector-request-data"));
-    const bridge = document.getElementById("ssr-detector-probe-data");
-    const raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
-    const length = raw ? JSON.parse(raw).parsedTextLength : null;
-    return Number.isFinite(length) ? length : null;
-  } catch (e) {
-    return null;
+function fnv1a(value) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
   }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * Read the probe's parse-time text length and hashes (see src/probe.js).
+ * @returns {{parsedTextLength: number|null, parsedTitleHash: string|null, parsedUrlHash: string|null}}
+ */
+function readProbeSnapshot() {
+  try {
+    let bridge = document.getElementById("ssr-detector-probe-data");
+    let raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
+    if (!raw) {
+      window.dispatchEvent(new CustomEvent("ssr-detector-request-data"));
+      bridge = document.getElementById("ssr-detector-probe-data");
+      raw = bridge && bridge.getAttribute("data-ssr-detector-snapshot");
+    }
+    const snapshot = raw ? JSON.parse(raw) : {};
+    return {
+      parsedTextLength: Number.isFinite(snapshot.parsedTextLength)
+        ? snapshot.parsedTextLength
+        : null,
+      parsedTitleHash:
+        typeof snapshot.parsedTitleHash === "string" && snapshot.parsedTitleHash
+          ? snapshot.parsedTitleHash
+          : null,
+      parsedUrlHash:
+        typeof snapshot.parsedUrlHash === "string" && snapshot.parsedUrlHash
+          ? snapshot.parsedUrlHash
+          : null,
+    };
+  } catch (e) {
+    return {
+      parsedTextLength: null,
+      parsedTitleHash: null,
+      parsedUrlHash: null,
+    };
+  }
+}
+
+function snapshotMatchesUrl(snapshot) {
+  return Boolean(
+    snapshot?.parsedUrlHash &&
+      snapshot.parsedUrlHash === fnv1a(window.location.href),
+  );
 }
 
 /**
@@ -380,9 +433,10 @@ function readParsedTextLength() {
  * null, exactly as when the comparison is unavailable.
  * @returns {Object|null} Comparison results, or null without a probe snapshot
  */
-function compareParsedSnapshot() {
+function compareParsedSnapshot(options = {}) {
   const config = window.DETECTOR_CONFIG;
-  const rawLength = readParsedTextLength();
+  const snapshot = readProbeSnapshot();
+  const { parsedTextLength: rawLength } = snapshot;
   if (rawLength === null) return null;
 
   const renderedLength = extractVisibleText(document.body).length;
@@ -410,6 +464,7 @@ function compareParsedSnapshot() {
     responseHeaders: null,
     rawDocument: null,
     rawHTML: null,
+    refetchMismatch: options.refetchMismatch === true,
   };
 }
 
@@ -2684,8 +2739,9 @@ async function pageAnalyzer() {
           label: "Measured while the page loaded",
           impact: "info",
           weight: 0,
-          detail:
-            "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+          detail: comparisonResults.refetchMismatch
+            ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+            : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
         });
       }
       if (comparisonResults.isLikelyCSR) {
