@@ -296,7 +296,94 @@ function renderOverview(result, options = {}) {
     );
   }
 
+  if (options.jev) frag.appendChild(renderJevCard(options.jev));
+
   return frag;
+}
+
+function renderJevCard(jev) {
+  const canCompare = jev.source === "fetch";
+  const button = el("button", {
+    className: "btn btn-primary",
+    text:
+      jev.status === "loading"
+        ? label("jevAsking", "Asking Jev…")
+        : label("jevAskButton", "Ask Jev"),
+    attrs: {
+      type: "button",
+      disabled: !canCompare || jev.status === "loading" ? "disabled" : null,
+    },
+  });
+  if (typeof jev.onAsk === "function") button.addEventListener("click", jev.onAsk);
+
+  const children = [
+    el("div", {
+      className: "card-title",
+      text: label("jevCardTitle", "Uncertain result — ask a second opinion"),
+    }),
+    button,
+  ];
+
+  if (!canCompare) {
+    children.push(
+      el("p", {
+        className: "jev-message",
+        text: label(
+          "jevUnavailable",
+          "The site refused a second copy of its HTML, so there is nothing to compare.",
+        ),
+      }),
+    );
+  }
+
+  if (jev.status === "result" && jev.result) {
+    const server = window.SSRJev.jevVerdict(jev.result.contentInInitialHtml) === "server";
+    const probability = server
+      ? jev.result.contentInInitialHtml
+      : 1 - jev.result.contentInInitialHtml;
+    const percent = Math.round(probability * 100);
+    children.push(
+      el("p", {
+        className: "jev-message",
+        attrs: { "aria-live": "polite" },
+        text: server
+          ? label(
+              "jevResultServer",
+              "Jev: the main content is in the server HTML ({percent}%)",
+            ).replace("{percent}", String(percent))
+          : label(
+              "jevResultBrowser",
+              "Jev: the main content is built by JavaScript in the browser ({percent}%)",
+            ).replace("{percent}", String(percent)),
+      }),
+      el("p", {
+        className: "jev-note",
+        text: label(
+          "jevResultNote",
+          "Second opinion from TypeSafe's Jev — it does not change the verdict above.",
+        ),
+      }),
+    );
+  } else if (jev.status === "error") {
+    const message =
+      jev.errorKind === "auth"
+        ? label("jevErrorAuth", "Jev rejected the API key — check it in Settings")
+        : jev.errorKind === "rate"
+          ? label("jevErrorRate", "Jev's rate limit was hit, try again in a minute")
+          : `${label("jevErrorReach", "Couldn't reach Jev")} (${jev.errorMessage || "request failed"})`;
+    children.push(
+      el("p", {
+        className: "jev-message jev-error",
+        attrs: { "aria-live": "polite" },
+        text: message,
+      }),
+    );
+  }
+
+  return el("section", {
+    className: "card jev-card",
+    children,
+  });
 }
 
 /**
@@ -572,6 +659,7 @@ if (typeof window !== "undefined") {
     verdictBadge,
     renderVerdict,
     renderOverview,
+    renderJevCard,
     renderSignal,
     renderSignals,
     renderDelivery,

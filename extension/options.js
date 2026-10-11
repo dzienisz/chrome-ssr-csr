@@ -12,7 +12,21 @@ const DEFAULT_SETTINGS = {
   notifications: true,
   shareData: true,
   autoAnalyze: true,
+  jevEnabled: false,
 };
+
+const JEV_ORIGIN = "https://api.typesafe.ai/*";
+let loadedJevEnabled = false;
+
+function jevPermissionDetails() {
+  const permission = { origins: [JEV_ORIGIN] };
+  const isGecko = Boolean(chrome.runtime.getManifest().browser_specific_settings?.gecko);
+  const firefoxVersion = navigator.userAgent.match(/Firefox\/(\d+)/);
+  if (isGecko && firefoxVersion && Number(firefoxVersion[1]) >= 140) {
+    permission.data_collection = ["websiteContent"];
+  }
+  return permission;
+}
 
 const FIELDS = {
   darkMode: { el: "darkMode", type: "value" },
@@ -20,6 +34,7 @@ const FIELDS = {
   notifications: { el: "notifications", type: "checked" },
   shareData: { el: "shareData", type: "checked" },
   autoAnalyze: { el: "autoAnalyze", type: "checked" },
+  jevEnabled: { el: "jevEnabled", type: "checked" },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -43,6 +58,11 @@ function loadSettings() {
       if (field.type === "checked") node.checked = Boolean(settings[key]);
       else node.value = String(settings[key]);
     }
+    loadedJevEnabled = Boolean(settings.jevEnabled);
+    chrome.storage.local.get("jevApiKey", (values) => {
+      document.getElementById("jevApiKey").value =
+        (values && values.jevApiKey) || "";
+    });
     applyDarkMode(settings.darkMode);
   });
 }
@@ -68,7 +88,61 @@ function applyDarkMode(mode) {
 
 function saveSettings() {
   const settings = readSettings();
+  const key = document.getElementById("jevApiKey").value.trim();
+
+  if (settings.jevEnabled && !key) {
+    settings.jevEnabled = false;
+    document.getElementById("jevEnabled").checked = false;
+    setJevStatus(
+      window.t("jevKeyRequired", "Add your TypeSafe API key before enabling Ask Jev."),
+    );
+    saveSettingsToStorage(settings, { saveKey: false });
+    return;
+  }
+
+  if (settings.jevEnabled && !loadedJevEnabled) {
+    chrome.permissions.request(jevPermissionDetails(), (granted) => {
+      settings.jevEnabled = Boolean(granted);
+      loadedJevEnabled = settings.jevEnabled;
+      if (!granted) {
+        document.getElementById("jevEnabled").checked = false;
+        setJevStatus(
+          window.t(
+            "jevPermissionDenied",
+            "Permission was not granted. Ask Jev remains off.",
+          ),
+        );
+      } else {
+        setJevStatus("");
+      }
+      saveSettingsToStorage(settings, { saveKey: settings.jevEnabled, key });
+    });
+    return;
+  }
+
+  if (!settings.jevEnabled) {
+    loadedJevEnabled = false;
+    document.getElementById("jevApiKey").value = "";
+    setJevStatus("");
+    saveSettingsToStorage(settings, { saveKey: false });
+    return;
+  }
+
+  setJevStatus("");
+  saveSettingsToStorage(settings, { saveKey: true, key });
+}
+
+function saveSettingsToStorage(settings, { saveKey, key } = {}) {
   chrome.storage.sync.set(settings, () => {
+    if (!settings.jevEnabled) {
+      chrome.permissions.remove(jevPermissionDetails(), () => {
+        void chrome.runtime.lastError;
+      });
+      chrome.storage.local.remove("jevApiKey", () => {});
+    } else if (saveKey) {
+      chrome.storage.local.set({ jevApiKey: key }, () => {});
+    }
+
     applyDarkMode(settings.darkMode);
     toast(window.t("settingsSaved", "Settings saved"));
 
@@ -85,10 +159,21 @@ function saveSettings() {
 }
 
 function resetSettings() {
+  loadedJevEnabled = false;
+  document.getElementById("jevApiKey").value = "";
+  setJevStatus("");
+  chrome.permissions.remove(jevPermissionDetails(), () => {
+    void chrome.runtime.lastError;
+  });
+  chrome.storage.local.remove("jevApiKey", () => {});
   chrome.storage.sync.set(DEFAULT_SETTINGS, () => {
     loadSettings();
     toast(window.t("settingsReset", "Settings reset to defaults"));
   });
+}
+
+function setJevStatus(message) {
+  document.getElementById("jevStatus").textContent = message;
 }
 
 /**

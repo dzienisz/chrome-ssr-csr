@@ -41,7 +41,7 @@ const GECKO_SETTINGS = {
     strict_min_version: '128.0',
     data_collection_permissions: {
       required: ['websiteActivity'],
-      optional: ['technicalAndInteraction']
+      optional: ['technicalAndInteraction', 'websiteContent']
     }
   }
 };

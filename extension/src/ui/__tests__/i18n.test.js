@@ -9,6 +9,27 @@ const LOCALES_DIR = join(EXTENSION_DIR, "_locales");
 
 /** Every page that localizes itself declaratively. */
 const PAGES = ["popup.html", "options.html", "welcome.html", "devtools/panel.html"];
+const ENGLISH_ONLY_KEYS = [
+  "jevApiKeyLabel",
+  "jevApiKeyLink",
+  "jevAskButton",
+  "jevAsking",
+  "jevCardTitle",
+  "jevDisclosure",
+  "jevEnabledHelp",
+  "jevEnabledLabel",
+  "jevErrorAuth",
+  "jevErrorRate",
+  "jevErrorReach",
+  "jevKeyRequired",
+  "jevPermissionDenied",
+  "jevResultBrowser",
+  "jevResultNote",
+  "jevResultServer",
+  "jevSettingsTitle",
+  "jevUnavailable",
+  "privacyNeverBodyJev",
+];
 
 const LOCALES = readdirSync(LOCALES_DIR);
 
@@ -41,9 +62,12 @@ describe("message catalogs", () => {
     expect(missing).toEqual([]);
   });
 
-  it.each(LOCALES)("%s defines exactly the same keys as English", (locale) => {
+  it.each(LOCALES)("%s defines shared keys and falls back for Ask Jev copy", (locale) => {
     const keys = Object.keys(catalog(locale)).sort();
-    expect(keys).toEqual(Object.keys(english).sort());
+    const expected = Object.keys(english)
+      .filter((key) => locale === "en" || !ENGLISH_ONLY_KEYS.includes(key))
+      .sort();
+    expect(keys).toEqual(expected);
   });
 
   it.each(LOCALES)("%s has no empty messages", (locale) => {

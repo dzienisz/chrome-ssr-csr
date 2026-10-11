@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sides because text inside shadow roots was never counted; open and
   declarative shadow roots are now included in the comparison.
 
+### Added
+
+- **Optional Ask Jev second opinion.** Users can supply their own TypeSafe API
+  key and explicitly request a second opinion for uncertain results. The key
+  stays in local storage; bounded page excerpts are sent only after the user
+  clicks the popup button.
+
 ## [4.0.1] - 2026-10-11
 
 ### Fixed

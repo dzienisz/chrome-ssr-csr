@@ -16,6 +16,7 @@ const DEFAULTS = {
   notifications: true,
   shareData: true,
   autoAnalyze: true,
+  jevEnabled: false,
 };
 
 const BACKEND_URL = "https://backend-mauve-beta-88.vercel.app";
@@ -36,6 +37,7 @@ const state = {
   page: { url: "", title: "" },
   tab: "overview",
   settings: { ...DEFAULTS },
+  jev: { status: "idle" },
   // Incremented per analysis. Auto-analyze on open and the re-run button can
   // both be in flight at once, and a slower earlier run finishing last would
   // otherwise replace the newer report, badge, history entry and telemetry
@@ -82,6 +84,10 @@ function wireEvents() {
     if (message && message.action === "settingsUpdated") {
       state.settings = { ...DEFAULTS, ...message.settings };
       applyTheme(state.settings.darkMode);
+      getJevKey().then((key) => {
+        state.settings.jevHasKey = Boolean(key);
+        if (state.result) render(state.result);
+      });
     }
   });
 }
@@ -100,6 +106,19 @@ function onTabKeydown(event) {
 function getSettings() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(DEFAULTS, (settings) => resolve({ ...DEFAULTS, ...settings }));
+  }).then(
+    (settings) =>
+      new Promise((resolve) => {
+        chrome.storage.local.get("jevApiKey", (values) =>
+          resolve({ ...settings, jevHasKey: Boolean(values && values.jevApiKey) }),
+        );
+      }),
+  );
+}
+
+function getJevKey() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("jevApiKey", (values) => resolve(values && values.jevApiKey));
   });
 }
 
@@ -118,6 +137,7 @@ async function analyze() {
   /** Has a newer analysis started since this one? */
   const stale = () => runId !== state.runId;
 
+  state.jev = { status: "idle" };
   setBusy(true);
   showStatus();
 
@@ -417,7 +437,22 @@ function render(result) {
   document.getElementById("verdict").replaceChildren(window.SSRReport.renderVerdict(result));
   document.getElementById("signal-count").textContent = String((result.signals || []).length);
 
-  renderPanel("overview", () => window.SSRReport.renderOverview(result));
+  const jevOffer = window.SSRJev.shouldOfferJev(
+    result,
+    state.settings,
+    state.settings.jevHasKey,
+  );
+  renderPanel("overview", () =>
+    window.SSRReport.renderOverview(result, {
+      jev: jevOffer
+        ? {
+            ...state.jev,
+            source: result.detailedInfo?.contentComparison?.source,
+            onAsk: askJevForPage,
+          }
+        : null,
+    }),
+  );
   renderPanel("signals", () => window.SSRReport.renderSignals(result));
   renderPanel("delivery", () => window.SSRReport.renderDelivery(result));
   renderPanel("diff", () => window.SSRReport.renderDiff(result));
@@ -439,6 +474,83 @@ function selectTab(name) {
     panel.hidden = panel.id !== `panel-${name}`;
   });
   if (name === "history") renderHistoryPanel();
+}
+
+async function askJevForPage() {
+  if (!state.result || state.jev.status === "loading") return;
+
+  state.jev = { status: "loading" };
+  render(state.result);
+
+  try {
+    const tab = await getActiveTab();
+    if (!tab || !tab.id) throw new Error("No active tab");
+    if (state.page.url && tab.url && state.page.url !== tab.url) {
+      throw new Error("The page changed. Run the analysis again.");
+    }
+
+    const [injection] = await executeScript({
+      target: { tabId: tab.id },
+      args: [window.SSRJev.EXCERPT_CHARS],
+      func: async (maxChars) => {
+        if (typeof window.extractVisibleText !== "function") {
+          throw new Error("Text extractor unavailable");
+        }
+
+        const response = await fetch(location.href, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const html = await response.text();
+        const rawDoc = new DOMParser().parseFromString(html, "text/html");
+        rawDoc
+          .querySelectorAll("style, svg, template, link, meta")
+          .forEach((node) => node.remove());
+        rawDoc.querySelectorAll("script").forEach((script) => {
+          script.textContent = "";
+        });
+        const initialBodyMarkup = rawDoc.body?.innerHTML ?? "";
+        rawDoc.querySelectorAll("script, noscript").forEach((node) => node.remove());
+
+        const excerpt = (value) => {
+          const text = String(value ?? "").replace(/\s+/g, " ").trim();
+          return text.length > maxChars
+            ? `${text.slice(0, maxChars)} …[truncated]`
+            : text;
+        };
+
+        return {
+          url: location.href,
+          initialText: excerpt(window.extractVisibleText(rawDoc.body)),
+          initialBodyMarkup: excerpt(initialBodyMarkup),
+          renderedText: excerpt(window.extractVisibleText(document.body)),
+        };
+      },
+    });
+    if (!injection || !injection.result) throw new Error("Page content was unavailable");
+
+    const apiKey = await getJevKey();
+    const requestState = window.SSRJev.buildState({
+      url: injection.result.url,
+      initialText: injection.result.initialText,
+      initialBodyMarkup: injection.result.initialBodyMarkup,
+      renderedText: injection.result.renderedText,
+    });
+    const result = await window.SSRJev.askJev(requestState, { apiKey });
+    state.jev = { status: "result", result };
+  } catch (error) {
+    state.jev = {
+      status: "error",
+      errorKind: error && error.kind ? error.kind : "network",
+      errorMessage: String((error && error.message) || error)
+        .replace(/\s+/g, " ")
+        .slice(0, 100),
+    };
+  }
+
+  render(state.result);
 }
 
 /* ------------------------------------------------------------------ history */

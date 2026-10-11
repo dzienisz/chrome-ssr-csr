@@ -7,9 +7,20 @@
  * every threshold stays in this file.
  */
 
-export const API_URL = 'https://api.typesafe.ai/v1/systemone';
-export const MODEL = 'jev-latest';
-export const EXCERPT_CHARS = 3000;
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const {
+  API_URL,
+  MODEL,
+  EXCERPT_CHARS,
+  excerpt,
+  buildState,
+  buildQuestions: buildNoulQuestions,
+} = require('../src/ui/jev.js');
+
+export { API_URL, MODEL, EXCERPT_CHARS, excerpt, buildState };
+
 export const REVIEW_CONFIDENCE = 0.6;
 
 /** Mirrors backend/lib/db.ts and validate-detection.mjs. */
@@ -18,23 +29,6 @@ export function bucket(renderType) {
   if (/ssr/i.test(renderType)) return 'SSR';
   if (/csr/i.test(renderType)) return 'CSR';
   return 'ERROR';
-}
-
-export function excerpt(text, max = EXCERPT_CHARS) {
-  const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
-  return clean.length > max ? `${clean.slice(0, max)} …[truncated]` : clean;
-}
-
-export function buildState({ url, initialText, initialBodyMarkup, renderedText }) {
-  return {
-    url,
-    initial_html_text: excerpt(initialText),
-    initial_body_markup: excerpt(initialBodyMarkup),
-    rendered_text: excerpt(renderedText),
-    note:
-      '`initial_html_text` and `initial_body_markup` come from the HTML the server sent, before any JavaScript ran. ' +
-      '`rendered_text` is what a visitor sees after JavaScript ran. Long values are truncated.',
-  };
 }
 
 const RENDERING_OPTIONS = {
@@ -61,20 +55,7 @@ export function buildQuestions() {
         'How was the main content of this page rendered? Compare `initial_html_text` and `initial_body_markup` with `rendered_text`.',
       criteria: RENDERING_OPTIONS,
     },
-    content_in_initial_html: {
-      type: 'noul',
-      instructions:
-        'Does `initial_html_text` already contain the main content that a visitor reads in `rendered_text`?',
-      criteria: {
-        true: 'The main text of the page (articles, listings, headings and body copy) is present in the server HTML.',
-        false: 'The main text is missing from the server HTML and only appears after JavaScript runs.',
-      },
-    },
-    empty_shell: {
-      type: 'noul',
-      instructions:
-        'Is `initial_body_markup` an empty application shell whose visible content is produced later by JavaScript?',
-    },
+    ...buildNoulQuestions(),
   };
 }
 
