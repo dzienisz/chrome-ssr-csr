@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Regions tab attributed server-rendered content to JavaScript on pages whose
+  region path also matched a nested element, e.g. Wikipedia showed 4% server.
 - **Amazon's bot interstitial no longer overrides the rendered page.** When
   the analyzer's successful re-fetch returns a different document, the
   comparison now checks its title against a hash of the title captured when
