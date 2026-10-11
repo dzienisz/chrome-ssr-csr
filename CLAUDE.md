@@ -386,7 +386,7 @@ tag never fails over missing credentials. Required repository secrets:
 |--------|---------------------|
 | `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN` | Google Cloud OAuth client with the Chrome Web Store API enabled |
 | `CWS_EXTENSION_ID` | the id in the CWS dashboard URL |
-| `CWS_PUBLISHER_ID` | only for a group publisher; omit otherwise |
+| `CWS_PUBLISHER_ID` | the id after `/devconsole/` in the CWS dashboard URL — required by the v2 API that `chrome-webstore-upload-cli@4` uses |
 | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` | addons.mozilla.org → Manage API Keys |
 
 `web-ext lint` already ran on the pull request, so a package that would fail
