@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { middleware } from "../../middleware";
+import { proxy } from "../../proxy";
 
 const request = (authorization?: string) =>
   new NextRequest("http://localhost/admin", {
@@ -19,10 +19,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("admin middleware", () => {
+describe("admin proxy", () => {
   it("returns 503 when admin is disabled", async () => {
     vi.stubEnv("ADMIN_PASSWORD", "");
-    const response = await middleware(request());
+    const response = await proxy(request());
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
@@ -34,7 +34,7 @@ describe("admin middleware", () => {
 
   it("returns 401 with a Basic challenge when credentials are missing", async () => {
     vi.stubEnv("ADMIN_PASSWORD", "secret");
-    const response = await middleware(request());
+    const response = await proxy(request());
 
     expect(response.status).toBe(401);
     expect(response.headers.get("WWW-Authenticate")).toBe(
@@ -46,7 +46,7 @@ describe("admin middleware", () => {
   it("passes through authorized requests", async () => {
     vi.stubEnv("ADMIN_PASSWORD", "secret");
     vi.stubEnv("ADMIN_USER", "admin");
-    const response = await middleware(
+    const response = await proxy(
       request(basicAuthorization("admin", "secret")),
     );
 

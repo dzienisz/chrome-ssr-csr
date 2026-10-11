@@ -317,7 +317,7 @@ Classification thresholds:
 ## Backend Architecture
 
 ### Tech Stack
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
 - Vercel Postgres (Neon)
 - Tremor UI for charts
 

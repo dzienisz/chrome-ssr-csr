@@ -1,5 +1,9 @@
 # Quick Deploy Guide
 
+## Runtime Requirements
+
+Next.js 16 requires Node.js 20.9 or newer.
+
 ## Deploy to Vercel (5 minutes)
 
 ### Step 1: Install Vercel CLI

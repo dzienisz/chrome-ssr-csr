@@ -15,6 +15,12 @@ interface TimelineData {
   hybrid_count: number;
 }
 
+interface RenderTypeStats {
+  ssr_count?: number | string | null;
+  csr_count?: number | string | null;
+  hybrid_count?: number | string | null;
+}
+
 export function FrameworkChart({ data }: { data: Framework[] }) {
   if (!data || data.length === 0) {
     return (
@@ -48,10 +54,10 @@ export function FrameworkChart({ data }: { data: Framework[] }) {
   );
 }
 
-export function RenderTypeDistribution({ data }: { data: any }) {
-  const ssrCount = parseInt(data?.ssr_count) || 0;
-  const csrCount = parseInt(data?.csr_count) || 0;
-  const hybridCount = parseInt(data?.hybrid_count) || 0;
+export function RenderTypeDistribution({ data }: { data: RenderTypeStats }) {
+  const ssrCount = parseInt(String(data?.ssr_count), 10) || 0;
+  const csrCount = parseInt(String(data?.csr_count), 10) || 0;
+  const hybridCount = parseInt(String(data?.hybrid_count), 10) || 0;
   const total = ssrCount + csrCount + hybridCount;
 
   if (total === 0) {

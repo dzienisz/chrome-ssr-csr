@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-function getTimeAgo(date: Date): string {
-  const now = new Date();
+function getTimeAgo(date: Date, now: Date): string {
   const totalSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (totalSeconds < 0) return 'just now';
@@ -30,23 +29,21 @@ interface LastUpdatedProps {
 }
 
 export function LastUpdated({ timestamp }: LastUpdatedProps) {
-  const [timeAgo, setTimeAgo] = useState('—');
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (!timestamp) {
-      setTimeAgo('No data yet');
-      return;
-    }
-
-    const date = new Date(timestamp);
-    setTimeAgo(getTimeAgo(date));
-
     const interval = setInterval(() => {
-      setTimeAgo(getTimeAgo(date));
+      setNow(new Date());
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timestamp]);
+  }, []);
+
+  const timeAgo = timestamp
+    ? now
+      ? getTimeAgo(new Date(timestamp), now)
+      : '—'
+    : 'No data yet';
 
   return (
     <div className="text-right">

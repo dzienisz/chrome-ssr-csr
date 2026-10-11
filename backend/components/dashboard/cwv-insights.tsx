@@ -100,7 +100,7 @@ export function CWVInsights({ data }: CWVInsightsProps) {
           </span>
         </h3>
         <p className="text-sm text-gray-500">
-          Real-world p75 (75th percentile, as in Google's CrUX) measured by extension users, segmented by rendering strategy
+          Real-world p75 (75th percentile, as in Google&apos;s CrUX) measured by extension users, segmented by rendering strategy
         </p>
       </div>
       <div className="p-6 pt-0">

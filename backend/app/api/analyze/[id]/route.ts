@@ -5,8 +5,9 @@ const corsHeaders = getCorsHeaders(["OPTIONS"]);
 
 export async function DELETE(
   _request: NextRequest,
-  _context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
+  await context.params;
   return NextResponse.json(
     { success: false, error: "Analysis deletion is disabled" },
     { status: 403, headers: corsHeaders },

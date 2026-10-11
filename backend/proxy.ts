@@ -7,7 +7,7 @@ function withAdminHeaders(response: NextResponse) {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const authorization = await isAdminAuthorized(
     request.headers.get("authorization"),
   );

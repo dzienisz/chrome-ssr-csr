@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
   try {
     const analysisRecord = parseTelemetry(
       await readTelemetryBody(request),
-      request.geo?.country || request.headers.get("x-vercel-ip-country"),
+      (request as NextRequest & { geo?: { country?: string } }).geo?.country ||
+        request.headers.get("x-vercel-ip-country"),
     );
 
     const ingestDecision = await checkIngest(request, analysisRecord.domain);

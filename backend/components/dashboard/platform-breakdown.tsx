@@ -3,12 +3,11 @@
 import { Card, Title, Text } from '@tremor/react';
 
 interface PlatformStats {
-  platform_type: string;
-  count: number;
-  avg_confidence: number;
+  framework: string;
+  count: number | string;
 }
 
-export function PlatformBreakdown({ data }: { data: any[] }) {
+export function PlatformBreakdown({ data }: { data: PlatformStats[] }) {
   if (!data || data.length === 0) {
     return (
       <Card className="bg-white">
@@ -61,7 +60,8 @@ export function PlatformBreakdown({ data }: { data: any[] }) {
   const platformCounts: { [key: string]: number } = {};
   data.forEach((item) => {
     const category = categorizeFramework(item.framework);
-    platformCounts[category] = (platformCounts[category] || 0) + parseInt(item.count);
+    platformCounts[category] =
+      (platformCounts[category] || 0) + parseInt(String(item.count), 10);
   });
 
   const platforms = Object.entries(platformCounts)

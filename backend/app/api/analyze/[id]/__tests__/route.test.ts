@@ -24,7 +24,7 @@ describe("disabled deletion", () => {
               method: "DELETE",
               headers: headers as Record<string, string>,
             }),
-            { params: { id } },
+            { params: Promise.resolve({ id }) },
           );
           expect(response.status).toBe(403);
           expect(await response.json()).toEqual({
