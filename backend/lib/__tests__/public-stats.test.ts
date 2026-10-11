@@ -69,6 +69,22 @@ function expectOneQuerySet() {
 }
 
 describe("getPublicAggregates", () => {
+  it("preserves p75 Core Web Vitals fields", async () => {
+    const coreWebVitals = [
+      {
+        render_category: "SSR",
+        sample_count: "20",
+        p75_lcp: "2920",
+        p75_cls: "0.055",
+        p75_inp: "180",
+        p75_ttfb: "696",
+      },
+    ];
+    vi.mocked(getCoreWebVitalsByRenderType).mockResolvedValue(coreWebVitals);
+
+    expect(await getPublicAggregates()).toMatchObject({ coreWebVitals });
+  });
+
   it("shares one result for calls within the TTL", async () => {
     const first = getPublicAggregates(10_000);
     const second = getPublicAggregates(10_000 + PUBLIC_STATS_TTL_MS - 1);
