@@ -107,7 +107,9 @@ jobs:
       # --approval-timeout 0 uploads and validates without waiting to be
       # signed: a listed version waits on human review for days, which no CI
       # job should sit through. Upload failures still fail the step.
+      # !cancelled(): a failed Chrome upload must not keep Firefox users waiting.
       - name: Submit to addons.mozilla.org
+        if: ${{ !cancelled() }}
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
