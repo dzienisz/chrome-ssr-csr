@@ -165,6 +165,18 @@ describe('probe parse-time text snapshot', () => {
     r.window.close();
   });
 
+  it('includes open shadow-root text in the parse-time length', () => {
+    const { r, setState } = loadingRealm('<article id="host">Light text</article>');
+    const shadowRoot = r.window.document
+      .getElementById('host')
+      .attachShadow({ mode: 'open' });
+    shadowRoot.innerHTML = '<p>Shadow  text</p><script>ignored text</script>';
+    setState('interactive');
+
+    expect(read(r.window).parsedTextLength).toBe('Shadow textLight text'.length);
+    r.window.close();
+  });
+
   it('records nothing when injected after parsing already ended', () => {
     const late = new JSDOM('<!doctype html><html><head></head><body><p>Late</p></body></html>', { url: 'https://probe.test/', runScripts: 'outside-only' });
     Object.defineProperty(late.window.document, 'readyState', { configurable: true, get: () => 'complete' });
@@ -174,12 +186,32 @@ describe('probe parse-time text snapshot', () => {
     late.window.close();
   });
 
-  it('keeps only a number, never the text', () => {
+  it('keeps only the text length and title hash, never either text', () => {
     const { r, setState } = loadingRealm('<p>Private account details</p>');
+    r.window.document.title = 'Private account details';
     setState('interactive');
     const raw = r.window.document.getElementById('ssr-detector-probe-data') || null;
     expect(raw).toBeNull();
     expect(JSON.stringify(read(r.window))).not.toContain('Private');
+    expect(read(r.window).parsedTitleHash).toBeDefined();
+    r.window.close();
+  });
+
+  it('stores normalized FNV-1a hashes of the parse-time title and URL', () => {
+    const { r, setState } = loadingRealm('<p>Shop page</p>');
+    r.window.document.title = 'Shop  –\n real page';
+    setState('interactive');
+
+    expect(read(r.window).parsedTitleHash).toBe('c66a4a27');
+    expect(read(r.window).parsedUrlHash).toBe('9513665f');
+    r.window.close();
+  });
+
+  it('omits the title hash when the parse-time title is empty', () => {
+    const { r, setState } = loadingRealm('<p>Untitled page</p>');
+    setState('interactive');
+
+    expect(read(r.window).parsedTitleHash).toBeUndefined();
     r.window.close();
   });
 });

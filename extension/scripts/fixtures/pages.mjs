@@ -31,6 +31,9 @@ function paragraphs(count, prefix = "") {
   ).join("\n      ");
 }
 
+const WEB_COMPONENT_TEXT = paragraphs(6, "Component card ");
+const DECLARATIVE_SHADOW_TEXT = paragraphs(6, "Article paragraph ");
+
 export const FIXTURES = [
   {
     name: "ssr-classic",
@@ -324,6 +327,47 @@ export const FIXTURES = [
   },
 
   {
+    name: "ssr-refetch-interstitial",
+    note: "Server-rendered shop whose analyzer re-fetch receives a bot interstitial",
+    bucket: "SSR",
+    interstitialRefetch: true,
+    headers: {
+      "cache-control": "private, no-store",
+      server: "amazon",
+    },
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison?.source === "parser-snapshot",
+        `comparison should use the parser snapshot, got ${r.detailedInfo.contentComparison?.source}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.ratio > 0.9,
+        `the parser snapshot should match the rendered page, got ratio ${r.detailedInfo.contentComparison?.ratio}`,
+      ],
+      [
+        r.signals.some(
+          (signal) =>
+            signal.id === "comparison.parserSnapshot" &&
+            signal.detail.includes("different page"),
+        ),
+        "the report should explain that the re-fetch title did not match",
+      ],
+    ],
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Shop – real page</title>
+  </head>
+  <body>
+    <header><h1>Shop</h1></header>
+    <main><article>${paragraphs(10, "Product listing ")}</article></main>
+    <footer><p>Shop securely with delivery and returns included.</p></footer>
+  </body>
+</html>`,
+  },
+
+  {
     name: "csr-refetch-blocked",
     note: "SPA shell behind bot protection that refuses the analyzer's re-fetch",
     bucket: "CSR",
@@ -361,6 +405,71 @@ export const FIXTURES = [
         <main><section>${paragraphs(6, "Message ")}</section></main>
         <footer><p>Built in your browser after the page loaded.</p></footer>\`;
     </script>
+  </body>
+</html>`,
+  },
+
+  {
+    name: "csr-web-components",
+    note: "Client-rendered web component content inside open shadow roots",
+    bucket: "CSR",
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison?.renderedLength > 2000,
+        `open shadow text should count as rendered content, got ${r.detailedInfo.contentComparison?.renderedLength}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.rawLength < 200,
+        `the initial response should not contain the shadow text, got ${r.detailedInfo.contentComparison?.rawLength}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.ratio < 0.2,
+        "the shadow-only text should produce a CSR comparison",
+      ],
+    ],
+    html: `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Component cards</title></head>
+  <body>
+    <main><web-card></web-card><web-card></web-card></main>
+    <script>
+      const content = ${JSON.stringify(WEB_COMPONENT_TEXT)};
+      document.querySelectorAll("web-card").forEach((card) => {
+        card.attachShadow({ mode: "open" }).innerHTML = content;
+      });
+    </script>
+  </body>
+</html>`,
+  },
+
+  {
+    name: "ssr-declarative-shadow",
+    note: "Server-rendered article text in declarative shadow DOM",
+    bucket: "SSR",
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison?.rawLength > 2000,
+        `declarative shadow text should count in the response, got ${r.detailedInfo.contentComparison?.rawLength}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.renderedLength > 2000,
+        `declarative shadow text should count on screen, got ${r.detailedInfo.contentComparison?.renderedLength}`,
+      ],
+      [
+        r.detailedInfo.contentComparison?.ratio > 0.9,
+        `the raw and rendered text should match, got ratio ${r.detailedInfo.contentComparison?.ratio}`,
+      ],
+    ],
+    html: `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Declarative shadow article</title></head>
+  <body>
+    <main>
+      <article>
+        <template shadowrootmode="open">${DECLARATIVE_SHADOW_TEXT}</template>
+        <h1>Article title in light DOM</h1>
+      </article>
+    </main>
   </body>
 </html>`,
   },

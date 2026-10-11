@@ -110,28 +110,56 @@
   // readyState turns "interactive" when parsing ends and before deferred and
   // module scripts run, so the text present then is what the server sent —
   // plus whatever classic inline scripts wrote, which makes it an upper bound.
-  // Only the length is kept, never the text.
+  // Shadow-root text is included. Only the text length and title/URL hashes
+  // are kept, never the text, title, or URL.
   const SNAPSHOT_SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  function fnv1a(value) {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < normalized.length; i++) {
+      hash ^= normalized.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
+
   function measureParsedText() {
     try {
       const body = document.body;
       if (!body) return;
-      const walker = document.createTreeWalker(
-        body,
-        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-        {
-          acceptNode(node) {
-            if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
-            return SNAPSHOT_SKIP[node.tagName] ||
-              node.id === "ssr-detector-probe-data"
-              ? NodeFilter.FILTER_REJECT
-              : NodeFilter.FILTER_SKIP;
-          },
-        },
-      );
-      let text = "";
-      while (walker.nextNode()) text += walker.currentNode.data;
-      STORE.parsedTextLength = text.replace(/\s+/g, " ").trim().length;
+      const parts = [];
+      const stack = [body];
+      function pushChildren(node) {
+        for (let i = node.childNodes.length - 1; i >= 0; i--) {
+          stack.push(node.childNodes[i]);
+        }
+      }
+
+      while (stack.length) {
+        const node = stack.pop();
+        if (node.nodeType === 3) {
+          parts.push(node.data);
+          continue;
+        }
+
+        if (node.nodeType === 1) {
+          if (SNAPSHOT_SKIP[node.tagName] || node.id === "ssr-detector-probe-data") {
+            continue;
+          }
+          pushChildren(node);
+          if (node.shadowRoot) pushChildren(node.shadowRoot);
+          continue;
+        }
+
+        if (node.nodeType === 11) pushChildren(node);
+      }
+
+      STORE.parsedTextLength = parts.join("").replace(/\s+/g, " ").trim().length;
+      const parsedTitleHash = fnv1a(document.title);
+      if (parsedTitleHash) STORE.parsedTitleHash = parsedTitleHash;
+      const parsedUrlHash = fnv1a(location.href);
+      if (parsedUrlHash) STORE.parsedUrlHash = parsedUrlHash;
     } catch (e) {}
   }
 

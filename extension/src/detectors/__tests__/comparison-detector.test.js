@@ -12,6 +12,17 @@ function mockFetchedHTML(html) {
 
 const LONG_TEXT = "Real user-visible article text. ".repeat(20); // ~640 chars
 
+function oldExtractVisibleText(body) {
+  if (!body) return "";
+  const clone = body.cloneNode(true);
+  clone
+    .querySelectorAll(
+      "script, style, noscript, template, #ssr-detector-probe-data",
+    )
+    .forEach((el) => el.remove());
+  return (clone.textContent || "").replace(/\s+/g, " ").trim();
+}
+
 describe("getDetectionBodyHTML", () => {
   it("returns unmodified page HTML without a bridge", () => {
     document.body.innerHTML =
@@ -103,6 +114,88 @@ describe("extractVisibleText", () => {
     window.extractVisibleText(document.body);
 
     expect(document.body.querySelector("script")).not.toBeNull();
+  });
+
+  it("matches the previous extractor for varied shadow-free HTML", () => {
+    const samples = [
+      `<p>Text <span>inside <strong>nested inline</strong> elements</span>.</p>
+       <!-- ignored comment --><p>  Spaced   text &amp; entities &#33; </p>`,
+      `<script>ignored script text</script><style>ignored CSS</style>
+       <noscript>ignored fallback</noscript>
+       <template><p>ignored template content</p></template>
+       <p>Visible &copy; text</p>`,
+      `<!-- start --><div>Before<!-- middle --> after</div>
+       <p>A&nbsp;B &lt; C</p>`,
+    ];
+
+    for (const sample of samples) {
+      const doc = new DOMParser().parseFromString(
+        `<body>${sample}</body>`,
+        "text/html",
+      );
+      expect(window.extractVisibleText(doc.body)).toBe(
+        oldExtractVisibleText(doc.body),
+      );
+    }
+  });
+
+  it("counts text in open shadow roots and excludes shadow scripts and styles", () => {
+    const host = document.createElement("article");
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    shadowRoot.innerHTML =
+      "<p>Open shadow text</p><script>ignored shadow script</script>" +
+      "<style>ignored shadow style</style>";
+    document.body.replaceChildren(host);
+
+    expect(window.extractVisibleText(document.body)).toBe("Open shadow text");
+  });
+
+  it("walks deeply nested open shadow roots iteratively", () => {
+    const host = document.createElement("x-host");
+    let current = host;
+
+    for (let i = 0; i < 119; i++) {
+      const shadowRoot = current.attachShadow({ mode: "open" });
+      if (i === 118) {
+        shadowRoot.appendChild(document.createTextNode("Deep shadow text"));
+      } else {
+        current = document.createElement("x-host");
+        shadowRoot.appendChild(current);
+      }
+    }
+
+    document.body.replaceChildren(host);
+    expect(window.extractVisibleText(document.body)).toBe("Deep shadow text");
+  });
+
+  it("counts text inside declarative shadow templates but skips ordinary templates", () => {
+    const doc = new DOMParser().parseFromString(
+      `<body><article>
+        <template shadowrootmode="open"><p>Declarative shadow text</p></template>
+        <template><p>Ordinary template text</p></template>
+        Light DOM text
+      </article></body>`,
+      "text/html",
+    );
+
+    expect(window.extractVisibleText(doc.body)).toBe(
+      "Declarative shadow text Light DOM text",
+    );
+  });
+
+  it("counts slotted light text once without walking assigned nodes through the slot", () => {
+    const host = document.createElement("article");
+    const lightText = document.createElement("span");
+    lightText.slot = "content";
+    lightText.textContent = "Slotted light text";
+    host.appendChild(lightText);
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    shadowRoot.innerHTML = "<p>Shadow root text</p><slot name='content'></slot>";
+    document.body.replaceChildren(host);
+
+    const text = window.extractVisibleText(document.body);
+    expect(text).toBe("Shadow root textSlotted light text");
+    expect(text.match(/Slotted light text/g)).toHaveLength(1);
   });
 });
 
@@ -226,6 +319,17 @@ describe("compareInitialVsRendered", () => {
 });
 
 describe("parser snapshot fallback", () => {
+  const originalUrl = window.location.href;
+  function fnv1a(value) {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < normalized.length; i++) {
+      hash ^= normalized.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
   function probeBridge(data) {
     document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
     const bridge = document.createElement("meta");
@@ -236,10 +340,14 @@ describe("parser snapshot fallback", () => {
   }
   afterEach(() => {
     document.querySelectorAll("#ssr-detector-probe-data").forEach((n) => n.remove());
+    window.history.replaceState({}, "", originalUrl);
   });
 
   it("uses the probe's parse-time length when the re-fetch is refused", async () => {
-    probeBridge({ parsedTextLength: 12 });
+    probeBridge({
+      parsedTextLength: 12,
+      parsedUrlHash: fnv1a(window.location.href),
+    });
     document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
 
@@ -290,6 +398,104 @@ describe("parser snapshot fallback", () => {
     document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
 
     expect((await window.compareInitialVsRendered()).source).toBe("fetch");
+  });
+
+  it("uses the parse-time snapshot when a successful fetch has a different title", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+      parsedUrlHash: fnv1a(window.location.href),
+    });
+    document.title = "Shop – real page";
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      "<html><head><title>Robot check</title></head><body>Robot check.</body></html>",
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.refetchMismatch).toBe(true);
+    expect(result.rawLength).toBe(LONG_TEXT.trim().length);
+    expect(result.rawDocument).toBeNull();
+  });
+
+  it("uses the fetched document when the title mismatch is from another URL", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+      parsedUrlHash: fnv1a(window.location.href),
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    window.history.pushState({}, "", "/docs");
+    mockFetchedHTML(
+      `<html><head><title>Docs</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+    expect(result.refetchMismatch).toBeUndefined();
+    expect(result.rawDocument.querySelector("main").textContent).toContain(
+      "Real user-visible article text.",
+    );
+  });
+
+  it("uses a refused-fetch snapshot after the URL changes", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedUrlHash: fnv1a(window.location.href),
+    });
+    window.history.pushState({}, "", "/docs");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.rawLength).toBe(LONG_TEXT.trim().length);
+  });
+
+  it("keeps the fetch path when the re-fetched title matches the probe hash", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><head><title>Shop – real page</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+    expect(result.refetchMismatch).toBeUndefined();
+  });
+
+  it("keeps the fetch path when the probe has no title hash", async () => {
+    probeBridge({ parsedTextLength: LONG_TEXT.trim().length });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><head><title>Shop – real page</title></head><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+  });
+
+  it("keeps the fetch path when the re-fetched title is empty", async () => {
+    probeBridge({
+      parsedTextLength: LONG_TEXT.trim().length,
+      parsedTitleHash: "c66a4a27",
+    });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><body><main>${LONG_TEXT}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
   });
 });
 
