@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Regions tab attributed server-rendered content to JavaScript on pages whose
+  region path also matched a nested element, e.g. Wikipedia showed 4% server.
 - Pages built from web components (archive.org) read 0 characters on both
   sides because text inside shadow roots was never counted; open and
   declarative shadow roots are now included in the comparison.

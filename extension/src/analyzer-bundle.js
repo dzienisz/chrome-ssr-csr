@@ -1115,9 +1115,10 @@ function structuralChildren(el) {
 
 /**
  * Look up the counterpart of a rendered element in the pre-JavaScript
- * document. A key can be a selector the raw document rejects (ids are chosen
- * by the page, not by us), so a failure here means "not present", never an
- * exception.
+ * document. Non-id keys are paths from <body>, so they must be anchored there
+ * to avoid matching a nested copy elsewhere in the raw document. A key can be
+ * a selector the raw document rejects (ids are chosen by the page, not by us),
+ * so a failure here means "not present", never an exception.
  *
  * @param {HTMLElement|null} rawBody
  * @param {string} key
@@ -1125,8 +1126,9 @@ function structuralChildren(el) {
  */
 function findInRaw(rawBody, key) {
   if (!rawBody) return null;
+  if (key === "body") return rawBody;
   try {
-    return rawBody.querySelector(key);
+    return rawBody.querySelector(key.startsWith("#") ? key : `:scope > ${key}`);
   } catch (e) {
     return null;
   }

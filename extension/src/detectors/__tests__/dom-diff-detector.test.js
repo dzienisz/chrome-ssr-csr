@@ -91,6 +91,35 @@ describe("detectDomDiff", () => {
     expect(details.domDiff.regions[0].addedChars).toBeGreaterThan(0);
   });
 
+  it("matches a non-id region key from the body instead of a nested duplicate", () => {
+    const text = "Server-rendered content belongs to this body-level region. ".repeat(10);
+    const html = `<div><div></div><div></div><div><div>tiny</div></div></div><div>..</div><div><div>${text}</div></div>`;
+    const raw = rawDocumentFrom(`<body>${html}</body>`);
+    document.body.innerHTML = html;
+
+    const { details } = window.detectDomDiff(raw);
+    const region = details.domDiff.regions.find(
+      (item) => item.key === "div:nth-of-type(3) > div",
+    );
+
+    expect(region.origin).toBe("server");
+    expect(region.rawChars).toBe(region.renderedChars);
+    expect(details.domDiff.serverSharePct).toBe(100);
+  });
+
+  it("continues to resolve id-anchored region keys", () => {
+    const text = "This region is matched by its stable id in both documents. ".repeat(10);
+    const html = `<div><div id="anchored"><p>${text}</p></div></div>`;
+    const raw = rawDocumentFrom(`<body>${html}</body>`);
+    document.body.innerHTML = html;
+
+    const { details } = window.detectDomDiff(raw);
+    const region = details.domDiff.regions.find((item) => item.key === "#anchored");
+
+    expect(region.origin).toBe("server");
+    expect(region.rawChars).toBe(region.renderedChars);
+  });
+
   it("reports server and client regions living side by side", () => {
     const raw = rawDocumentFrom(
       `<body><main><p>${PROSE}</p></main><aside id="widget"></aside></body>`,
