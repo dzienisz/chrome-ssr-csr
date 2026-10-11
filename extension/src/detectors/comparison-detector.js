@@ -109,6 +109,10 @@ async function compareInitialVsRendered() {
     const isLikelyCSR =
       contentRatio < config.contentComparison.csrRatio &&
       renderedLength > minLength;
+    const isPartialCSR =
+      contentRatio >= config.contentComparison.csrRatio &&
+      contentRatio < config.contentComparison.partialRatio &&
+      renderedLength > minLength;
     const isLikelySSR =
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
 
@@ -122,6 +126,7 @@ async function compareInitialVsRendered() {
       renderedLength,
       contentRatio: Math.round(contentRatio * 100) / 100,
       isLikelyCSR,
+      isPartialCSR,
       isLikelySSR,
       isDecisiveCSR,
       source: "fetch",
@@ -182,6 +187,10 @@ function compareParsedSnapshot() {
     contentRatio: Math.round(contentRatio * 100) / 100,
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
+      renderedLength > minLength,
+    isPartialCSR:
+      contentRatio >= config.contentComparison.csrRatio &&
+      contentRatio < config.contentComparison.partialRatio &&
       renderedLength > minLength,
     isLikelySSR:
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength,
