@@ -80,8 +80,7 @@ async function compareInitialVsRendered() {
     const isPartialCSR =
       contentRatio >= config.contentComparison.csrRatio &&
       contentRatio < config.contentComparison.partialRatio &&
-      renderedLength > minLength &&
-      rawLength > minLength;
+      renderedLength > minLength;
     const isLikelySSR =
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
 
@@ -160,8 +159,7 @@ function compareParsedSnapshot() {
     isPartialCSR:
       contentRatio >= config.contentComparison.csrRatio &&
       contentRatio < config.contentComparison.partialRatio &&
-      renderedLength > minLength &&
-      rawLength > minLength,
+      renderedLength > minLength,
     isLikelySSR:
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength,
     isDecisiveCSR:

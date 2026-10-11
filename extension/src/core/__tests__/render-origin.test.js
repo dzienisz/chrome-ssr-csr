@@ -418,6 +418,10 @@ describe("partial-content comparison", () => {
     );
     expect(cap).toMatchObject({ impact: "ssr", weight: -40 });
     expect(cap.detail).toContain("cut from 90 to 50");
+    expect(cap.detail).toContain("held under 40% of the visible text");
+    expect(result.indicators).toContain(
+      "raw HTML holds under 40% of rendered - SSR signals capped (partial)",
+    );
   });
 
   it("leaves a ratio of 0.6 on the existing path without partial signals", async () => {

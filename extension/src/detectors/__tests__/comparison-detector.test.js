@@ -136,7 +136,7 @@ describe("compareInitialVsRendered", () => {
     expect(result.isDecisiveCSR).toBe(false);
   });
 
-  it("flags partial content at 0.3 but not at 0.5 or 0.19", async () => {
+  it("flags partial content at 0.3 and 0.39 but not at 0.4 or 0.19", async () => {
     const compareLengths = async (rawLength, renderedLength) => {
       const rawText = "r".repeat(rawLength);
       const renderedText = "r".repeat(renderedLength);
@@ -149,9 +149,13 @@ describe("compareInitialVsRendered", () => {
     expect(partial.contentRatio).toBe(0.3);
     expect(partial.isPartialCSR).toBe(true);
 
-    const half = await compareLengths(500, 1000);
-    expect(half.contentRatio).toBe(0.5);
-    expect(half.isPartialCSR).toBe(false);
+    const upperPartial = await compareLengths(390, 1000);
+    expect(upperPartial.contentRatio).toBe(0.39);
+    expect(upperPartial.isPartialCSR).toBe(true);
+
+    const upperBound = await compareLengths(400, 1000);
+    expect(upperBound.contentRatio).toBe(0.4);
+    expect(upperBound.isPartialCSR).toBe(false);
 
     const likelyCsr = await compareLengths(380, 2000);
     expect(likelyCsr.contentRatio).toBe(0.19);
@@ -159,16 +163,28 @@ describe("compareInitialVsRendered", () => {
     expect(likelyCsr.isPartialCSR).toBe(false);
   });
 
-  it("does not flag partial content when the raw text is too short", async () => {
+  it("flags partial content with short raw text when rendered text is long enough", async () => {
     mockFetchedHTML(
-      `<html><body><main>${"r".repeat(200)}</main></body></html>`,
+      `<html><body><main>${"r".repeat(151)}</main></body></html>`,
     );
-    document.body.innerHTML = `<main>${"r".repeat(1000)}</main>`;
+    document.body.innerHTML = `<main>${"r".repeat(650)}</main>`;
 
     const result = await window.compareInitialVsRendered();
 
-    expect(result.contentRatio).toBe(0.2);
-    expect(result.rawLength).toBe(window.DETECTOR_CONFIG.contentComparison.minRenderedLength);
+    expect(result.contentRatio).toBe(0.23);
+    expect(result.rawLength).toBe(151);
+    expect(result.isPartialCSR).toBe(true);
+  });
+
+  it("does not flag partial content when rendered text is too short", async () => {
+    mockFetchedHTML(
+      `<html><body><main>${"r".repeat(80)}</main></body></html>`,
+    );
+    document.body.innerHTML = `<main>${"r".repeat(200)}</main>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.renderedLength).toBe(window.DETECTOR_CONFIG.contentComparison.minRenderedLength);
     expect(result.isPartialCSR).toBe(false);
   });
 
