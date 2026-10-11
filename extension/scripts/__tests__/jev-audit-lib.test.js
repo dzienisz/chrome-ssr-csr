@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   API_URL,
+  MODEL,
   askJev,
   buildQuestions,
   buildState,
@@ -44,6 +45,20 @@ describe('buildState / excerpt', () => {
       expect(state).toHaveProperty(field);
       expect(questions).toContain(`\`${field}\``);
     }
+  });
+
+  it('keeps the audit request byte-identical to the origin/main snapshot', () => {
+    const state = buildState({
+      url: 'https://snapshot.example/page?q=1',
+      initialText: '  A   server response\ncontains content. ',
+      initialBodyMarkup: '<main><p>A server response contains content.</p></main>',
+      renderedText: 'A server response contains content.',
+    });
+
+    const request = JSON.stringify({ model: MODEL, state, questions: buildQuestions() });
+    expect(request).toBe(
+      '{"model":"jev-latest","state":{"url":"https://snapshot.example/page?q=1","initial_html_text":"A server response contains content.","initial_body_markup":"<main><p>A server response contains content.</p></main>","rendered_text":"A server response contains content.","note":"`initial_html_text` and `initial_body_markup` come from the HTML the server sent, before any JavaScript ran. `rendered_text` is what a visitor sees after JavaScript ran. Long values are truncated."},"questions":{"rendering":{"type":"choice","instructions":"How was the main content of this page rendered? Compare `initial_html_text` and `initial_body_markup` with `rendered_text`.","criteria":{"SSR":"The server HTML already contains the main content a visitor sees in `rendered_text`; JavaScript, if any, only adds interactivity or small widgets.","CSR":"The server HTML is an application shell (mount point, scripts, loading placeholder, or only boilerplate such as a noscript notice or cookie banner); the main content in `rendered_text` is produced by JavaScript in the browser.","HYBRID":"The server HTML contains part of the main content, but whole sections of `rendered_text` (not just small widgets) are missing from it and are filled in by JavaScript."}},"content_in_initial_html":{"type":"noul","instructions":"Does `initial_html_text` already contain the main content that a visitor reads in `rendered_text`?","criteria":{"true":"The main text of the page (articles, listings, headings and body copy) is present in the server HTML.","false":"The main text is missing from the server HTML and only appears after JavaScript runs."}},"empty_shell":{"type":"noul","instructions":"Is `initial_body_markup` an empty application shell whose visible content is produced later by JavaScript?"}}}'
+    );
   });
 });
 

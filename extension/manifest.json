@@ -11,6 +11,9 @@
     "notifications",
     "contextMenus"
   ],
+  "optional_host_permissions": [
+    "https://api.typesafe.ai/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

@@ -9,6 +9,7 @@ Your browser's extension storage holds:
 - Analyzed page URLs and titles
 - Rendering results, confidence scores, indicators and timestamps
 - Preferences such as theme, history limit and notifications
+- Your TypeSafe API key for Ask Jev, if you provide one; it is stored in local extension storage only
 
 History stays on your device; enabling sharing does not upload the history database. Preferences use browser sync storage and may sync through your browser account. Exports you create are under your control.
 
@@ -32,6 +33,12 @@ When sharing is enabled, the extension sends technical analysis data to the anal
 The API discards free-form indicators, raw user-agent values, page titles, structured-data strings, raw hydration messages/stacks, route details and unrecognized extra fields. Older clients may submit fields that are now discarded. The updated hydration collector emits only an error count and score, not raw messages. Local diagnostic/probe data is separate from the retained telemetry record.
 
 IP addresses are not stored in the analysis records. Network requests necessarily expose connection information, including an IP address, to the hosting provider; this policy does not make claims about provider-level request logs.
+
+## Optional second opinion from Jev (off by default)
+
+Ask Jev is off by default. If you enable it in settings and click **Ask Jev** in the popup, the extension re-fetches the current page and sends its full URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text to TypeSafe at `api.typesafe.ai`. The request uses the API key you provide and is sent only after your click; nothing is sent automatically. The extension requests optional access to the TypeSafe API host so it can make that request.
+
+Your API key is stored only in `chrome.storage.local`, never in sync storage. The extension does not retain the page excerpts or Jev's answer in history, exports or telemetry. Apart from the key, the feature stores no additional data in the extension.
 
 ## Public Dashboard and API
 

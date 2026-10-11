@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pages where the server sends 20–40% of the visible text (YouTube, jsfiddle,
   ESPN) were reported as SSR 95%; they now come out Hybrid/Mixed or CSR.
 
+### Added
+
+- **Optional Ask Jev second opinion.** Users can supply their own TypeSafe API
+  key and explicitly request a second opinion for uncertain results. The key
+  stays in local storage; bounded page excerpts are sent only after the user
+  clicks the popup button.
+
 ## [4.0.1] - 2026-10-11
 
 ### Fixed

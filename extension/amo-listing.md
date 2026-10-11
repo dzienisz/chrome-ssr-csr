@@ -121,7 +121,12 @@ scripts. Validated with: npx web-ext lint --source-dir dist/firefox (0 errors).
 Telemetry is opt-out (shareData, on by default; a single settings toggle
 disables it) and disclosed via data_collection_permissions in the manifest.
 Only the site's origin + detected rendering type/framework are sent — never
-full URLs, page paths, page content, or personal data. Privacy policy:
+full URLs, page paths, page content, or personal data. The optional `websiteContent`
+disclosure covers Ask Jev, which is off by default and sends the page URL and
+up to 3,000 characters each of server HTML text, body markup and visible text
+to TypeSafe only when the user enables the feature and clicks **Ask Jev**.
+The user supplies the API key, which is kept in local extension storage.
+Privacy policy:
 https://github.com/dzienisz/chrome-ssr-csr/blob/main/extension/privacy-policy.md
 ```
 

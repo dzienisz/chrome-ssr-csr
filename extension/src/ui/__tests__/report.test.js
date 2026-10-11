@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
+import "../jev.js";
 import "../report.js";
 
 const { verdictKind, verdictBadge, renderVerdict, renderOverview, renderSignals, renderDelivery, renderDiff } =
@@ -40,7 +41,12 @@ function result(overrides = {}) {
       totalIndicators: 5,
       frameworks: ["nextjs"],
       generators: ["hugo"],
-      contentComparison: { rawLength: 2000, renderedLength: 2010, ratio: 0.99 },
+      contentComparison: {
+        rawLength: 2000,
+        renderedLength: 2010,
+        ratio: 0.99,
+        source: "fetch",
+      },
       timing: { domContentLoaded: 12, firstContentfulPaint: 340 },
       delivery: {
         available: true,
@@ -234,6 +240,81 @@ describe("renderOverview", () => {
     });
 
     expect(() => container.appendChild(renderOverview(bare))).not.toThrow();
+  });
+
+  it("renders an Ask Jev card as text and wires its button", () => {
+    const onAsk = vi.fn();
+    const container = document.createElement("div");
+    container.appendChild(
+      renderOverview(result(), {
+        jev: { source: "fetch", status: "idle", onAsk },
+      }),
+    );
+
+    expect(container.textContent).toContain("Uncertain result — ask a second opinion");
+    const button = container.querySelector(".jev-card button");
+    expect(button.disabled).toBe(false);
+    button.click();
+    expect(onAsk).toHaveBeenCalledOnce();
+  });
+
+  it("disables Ask Jev when the comparison did not come from a fetch", () => {
+    const container = document.createElement("div");
+    container.appendChild(
+      renderOverview(result(), {
+        jev: { source: "parser-snapshot", status: "idle" },
+      }),
+    );
+
+    expect(container.querySelector(".jev-card button").disabled).toBe(true);
+    expect(container.textContent).toContain(
+      "The site refused a second copy of its HTML, so there is nothing to compare.",
+    );
+  });
+
+  it("renders server and browser probabilities and typed errors", () => {
+    const container = document.createElement("div");
+    container.appendChild(
+      renderOverview(result(), {
+        jev: {
+          source: "fetch",
+          status: "result",
+          result: { contentInInitialHtml: 0.92, emptyShell: 0.03 },
+        },
+      }),
+    );
+    expect(container.textContent).toContain(
+      "Jev: the main content is in the server HTML (92%)",
+    );
+    expect(container.textContent).toContain(
+      "Second opinion from TypeSafe's Jev — it does not change the verdict above.",
+    );
+
+    document.body.appendChild(container);
+    container.replaceChildren(
+      renderOverview(result(), {
+        jev: {
+          source: "fetch",
+          status: "result",
+          result: { contentInInitialHtml: 0.12, emptyShell: 0.9 },
+        },
+      }),
+    );
+    expect(container.textContent).toContain(
+      "Jev: the main content is built by JavaScript in the browser (88%)",
+    );
+    container.replaceChildren(
+      renderOverview(result(), {
+        jev: {
+          source: "fetch",
+          status: "error",
+          errorKind: "auth",
+        },
+      }),
+    );
+    expect(container.textContent).toContain(
+      "Jev rejected the API key — check it in Settings",
+    );
   });
 });
 

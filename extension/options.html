@@ -100,9 +100,10 @@
               frameworks, performance metrics, and a country derived server-side from the request
               IP, which is not stored.
             </p>
-            <p data-i18n="privacyNeverBody">
-              Never shared: page content, personal information, browsing history, response headers,
-              or the region breakdown shown in the Regions tab — that analysis stays on your device.
+            <p data-i18n="privacyNeverBodyJev">
+              Telemetry never includes page content, personal information, browsing history, response
+              headers, or the region breakdown shown in the Regions tab. Optional Ask Jev sends page
+              excerpts only after you enable it and click Ask Jev.
             </p>
             <p>
               <a
@@ -115,6 +116,48 @@
             </p>
           </div>
         </div>
+      </section>
+
+      <section class="card jev-settings">
+        <h2 class="card-title" data-i18n="jevSettingsTitle">Second opinion (Jev)</h2>
+        <div class="setting">
+          <div>
+            <label class="setting-label" for="jevEnabled" data-i18n="jevEnabledLabel">
+              Enable Ask Jev
+            </label>
+            <div class="setting-help" data-i18n="jevEnabledHelp">
+              Ask TypeSafe's Jev for a second opinion on uncertain results.
+            </div>
+          </div>
+          <input class="switch" type="checkbox" id="jevEnabled" />
+        </div>
+        <div class="setting jev-key-setting">
+          <label class="setting-label" for="jevApiKey" data-i18n="jevApiKeyLabel">
+            Your TypeSafe API key
+          </label>
+          <input
+            type="password"
+            id="jevApiKey"
+            autocomplete="new-password"
+            spellcheck="false"
+            aria-describedby="jevDisclosure"
+          />
+        </div>
+        <p class="setting-help jev-disclosure" id="jevDisclosure" data-i18n="jevDisclosure">
+          Off by default. When you click "Ask Jev" in the popup, this page's URL and up to 3,000
+          characters each of the server HTML's text, its body markup and the visible text are sent
+          to TypeSafe (api.typesafe.ai) using your key. Nothing is sent automatically.
+        </p>
+        <p class="setting-help">
+          <a
+            href="https://console.typesafe.ai/keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n="jevApiKeyLink"
+            >Get or manage your TypeSafe API key</a
+          >
+        </p>
+        <p class="setting-help jev-status" id="jevStatus" role="status" aria-live="polite"></p>
       </section>
 
       <section class="card">

@@ -236,6 +236,11 @@ frameworks, order-sensitive). `--urls file` audits any list
 (`url [SSR|CSR|HYBRID]` per line). Costs fractions of a cent per run; never
 part of CI or the shipped extension.
 
+The popup's optional **Ask Jev** second opinion is off by default. Users
+provide a TypeSafe key stored only in local extension storage; page URL and
+bounded text/body excerpts are sent only on an explicit click. Jev output is
+not added to history, exports or telemetry.
+
 All three need Playwright's Chromium (`npx playwright install chromium`). Set
 `CHROMIUM_PATH` to point any of them at a browser Playwright did not install —
 note that `chromium-headless-shell` cannot load extensions, so

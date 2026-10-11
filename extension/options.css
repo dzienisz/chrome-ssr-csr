@@ -120,6 +120,30 @@ select {
   display: block;
 }
 
+.jev-key-setting {
+  align-items: flex-start;
+}
+
+.jev-key-setting input {
+  flex: 0 1 260px;
+  min-width: 0;
+  font: inherit;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.jev-disclosure {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.jev-status:empty {
+  display: none;
+}
+
 kbd {
   font-family: var(--mono);
   font-size: 12px;

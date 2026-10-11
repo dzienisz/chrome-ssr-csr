@@ -151,6 +151,38 @@
     "message": "Settings reset to defaults",
     "description": "Toast shown after resetting settings"
   },
+  "jevSettingsTitle": {
+    "message": "Second opinion (Jev)",
+    "description": "Settings section heading for the optional Jev second opinion"
+  },
+  "jevEnabledLabel": {
+    "message": "Enable Ask Jev",
+    "description": "Toggle label for the optional Jev second opinion"
+  },
+  "jevEnabledHelp": {
+    "message": "Ask TypeSafe's Jev for a second opinion on uncertain results.",
+    "description": "Help text under the Ask Jev toggle"
+  },
+  "jevApiKeyLabel": {
+    "message": "Your TypeSafe API key",
+    "description": "Label for the local-only Jev API key field"
+  },
+  "jevDisclosure": {
+    "message": "Off by default. When you click \"Ask Jev\" in the popup, this page's URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text are sent to TypeSafe (api.typesafe.ai) using your key. Nothing is sent automatically.",
+    "description": "Disclosure of the page content sent by the optional Ask Jev feature"
+  },
+  "jevApiKeyLink": {
+    "message": "Get or manage your TypeSafe API key",
+    "description": "Link to the TypeSafe API key management page"
+  },
+  "jevKeyRequired": {
+    "message": "Add your TypeSafe API key before enabling Ask Jev.",
+    "description": "Status shown when Ask Jev is enabled without a key"
+  },
+  "jevPermissionDenied": {
+    "message": "Permission was not granted. Ask Jev remains off.",
+    "description": "Status shown when the optional TypeSafe host permission is denied"
+  },
   "settingsTitle": {
     "message": "Settings",
     "description": "Heading of the settings page"
@@ -269,11 +301,55 @@
   },
   "privacyNeverBody": {
     "message": "Never shared: page content, personal information, browsing history, response headers, or the region breakdown shown in the Regions tab — that analysis stays on your device.",
-    "description": "What the extension never shares"
+    "description": "What the extension does not share"
+  },
+  "privacyNeverBodyJev": {
+    "message": "Telemetry never includes page content, personal information, browsing history, response headers, or the region breakdown shown in the Regions tab. Optional Ask Jev sends page excerpts only after you enable it and click Ask Jev.",
+    "description": "What telemetry excludes and when optional Jev can receive page excerpts"
   },
   "privacyPolicyLink": {
     "message": "Read the full privacy policy",
     "description": "Link text to the full privacy policy"
+  },
+  "jevCardTitle": {
+    "message": "Uncertain result — ask a second opinion",
+    "description": "Title of the optional Ask Jev card in the popup"
+  },
+  "jevAskButton": {
+    "message": "Ask Jev",
+    "description": "Button that sends the current page excerpts to Jev"
+  },
+  "jevAsking": {
+    "message": "Asking Jev…",
+    "description": "Button text while waiting for Jev"
+  },
+  "jevUnavailable": {
+    "message": "The site refused a second copy of its HTML, so there is nothing to compare.",
+    "description": "Explanation when a second opinion cannot be requested"
+  },
+  "jevResultServer": {
+    "message": "Jev: the main content is in the server HTML ({percent}%)",
+    "description": "Jev second opinion result indicating server HTML"
+  },
+  "jevResultBrowser": {
+    "message": "Jev: the main content is built by JavaScript in the browser ({percent}%)",
+    "description": "Jev second opinion result indicating browser rendering"
+  },
+  "jevResultNote": {
+    "message": "Second opinion from TypeSafe's Jev — it does not change the verdict above.",
+    "description": "Disclaimer that the Jev opinion does not change the detector verdict"
+  },
+  "jevErrorAuth": {
+    "message": "Jev rejected the API key — check it in Settings",
+    "description": "Ask Jev error shown for an invalid API key"
+  },
+  "jevErrorRate": {
+    "message": "Jev's rate limit was hit, try again in a minute",
+    "description": "Ask Jev error shown when the service rate limit is reached"
+  },
+  "jevErrorReach": {
+    "message": "Couldn't reach Jev",
+    "description": "Prefix for a network or API error while asking Jev"
   },
   "shortcutOpen": {
     "message": "Open the rendering report",
