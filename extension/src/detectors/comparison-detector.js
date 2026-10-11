@@ -191,7 +191,6 @@ function snapshotMatchesUrl(snapshot) {
 function compareParsedSnapshot(options = {}) {
   const config = window.DETECTOR_CONFIG;
   const snapshot = readProbeSnapshot();
-  if (snapshot.parsedUrlHash && !snapshotMatchesUrl(snapshot)) return null;
   const { parsedTextLength: rawLength } = snapshot;
   if (rawLength === null) return null;
 

@@ -261,10 +261,12 @@ at `readyState` "interactive", before deferred/module scripts ran. It also
 keeps FNV-1a hashes of the parse-time title and URL, never either value, and
 uses the parser snapshot when a successful re-fetch has a different non-empty
 title (as with Amazon's bot interstitial) only while the parse-time URL still
-matches. A snapshot from an earlier in-page navigation is ignored. The
-comparison then has `contentComparison.source: "parser-snapshot"`; it keeps
-only the text length and hashes, never the text, title, or URL. When neither
-is available, confidence is capped and definitive verdicts downgrade to
+matches; after an in-page navigation, the fetched document is used instead.
+Refused or failed fetches continue to use the parser snapshot even after an
+in-page navigation. The comparison then has
+`contentComparison.source: "parser-snapshot"`; it keeps only the text length
+and hashes, never the text, title, or URL. When neither is available,
+confidence is capped and definitive verdicts downgrade to
 "Likely". Validate detection changes against the 22-site
 ground-truth harness: `node extension/scripts/validate-detection.mjs`
 (requires playwright).

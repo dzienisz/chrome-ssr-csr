@@ -284,7 +284,7 @@ describe("parser snapshot fallback", () => {
     );
   });
 
-  it("does not use a refused-fetch snapshot after the URL changes", async () => {
+  it("uses a refused-fetch snapshot after the URL changes", async () => {
     probeBridge({
       parsedTextLength: LONG_TEXT.trim().length,
       parsedUrlHash: fnv1a(window.location.href),
@@ -292,7 +292,10 @@ describe("parser snapshot fallback", () => {
     window.history.pushState({}, "", "/docs");
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
 
-    expect(await window.compareInitialVsRendered()).toBeNull();
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.rawLength).toBe(LONG_TEXT.trim().length);
   });
 
   it("keeps the fetch path when the re-fetched title matches the probe hash", async () => {
