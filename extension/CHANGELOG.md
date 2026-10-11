@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Pages built from web components (archive.org) read 0 characters on both
+  sides because text inside shadow roots was never counted; open and
+  declarative shadow roots are now included in the comparison.
+
 ## [4.0.1] - 2026-10-11
 
 ### Fixed
