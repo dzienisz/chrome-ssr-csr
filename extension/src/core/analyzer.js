@@ -179,8 +179,9 @@ async function pageAnalyzer() {
           label: "Measured while the page loaded",
           impact: "info",
           weight: 0,
-          detail:
-            "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+          detail: comparisonResults.refetchMismatch
+            ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+            : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
         });
       }
       if (comparisonResults.isLikelyCSR) {

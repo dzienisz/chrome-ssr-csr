@@ -26,6 +26,24 @@ describe('parser-snapshot comparison', () => {
     document.body.innerHTML = '<p>test page</p>';
   });
 
+  it('explains when a successful re-fetch was a different page', async () => {
+    stubDetectors({
+      comparison: {
+        rawLength: 500, renderedLength: 500, contentRatio: 1,
+        isLikelyCSR: false, isLikelySSR: true, isDecisiveCSR: false,
+        source: 'parser-snapshot', refetchMismatch: true,
+        responseHeaders: null, rawDocument: null, rawHTML: null
+      }
+    });
+
+    const result = await window.pageAnalyzer();
+    const snapshotSignal = result.signals.find((s) => s.id === 'comparison.parserSnapshot');
+
+    expect(snapshotSignal.detail).toBe(
+      'The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.'
+    );
+  });
+
   it('scores it like a fetched comparison and says where it came from', async () => {
     stubDetectors({
       content: { ssrScore: 50, csrScore: 0, indicators: ['rich initial content structure (SSR)'], details: {} },
