@@ -15,8 +15,20 @@
     navigationCount: 0,
     hydrationErrors: [],
     navigations: [],
+    firstHiddenTime:
+      document.visibilityState === "hidden" && !document.prerendering ? 0 : null,
     startTime: Date.now(),
   };
+
+  document.addEventListener("visibilitychange", function () {
+    if (
+      document.visibilityState === "hidden" &&
+      !document.prerendering &&
+      STORE.firstHiddenTime === null
+    ) {
+      STORE.firstHiddenTime = Math.round(performance.now());
+    }
+  });
 
   // 1. Intercept Console Errors (Hydration Mismatches)
   const originalConsoleError = console.error;

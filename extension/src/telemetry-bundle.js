@@ -12,17 +12,59 @@ if (typeof window.__SSR_CSR_TELEMETRY_LOADED__ === 'undefined') {
  */
 
 /**
+ * Get when the page was first hidden, if known.
+ */
+function getFirstHiddenTime() {
+  try {
+    if (
+      typeof PerformanceObserver !== 'undefined' &&
+      Array.isArray(PerformanceObserver.supportedEntryTypes) &&
+      PerformanceObserver.supportedEntryTypes.includes('visibility-state')
+    ) {
+      const hiddenEntry = performance
+        .getEntriesByType('visibility-state')
+        .find((entry) => entry.name === 'hidden');
+      return hiddenEntry ? hiddenEntry.startTime : Infinity;
+    }
+  } catch (error) {}
+
+  try {
+    window.dispatchEvent(new CustomEvent('ssr-detector-request-data'));
+    const dataElement = document.getElementById('ssr-detector-probe-data');
+    if (!dataElement) return Infinity;
+
+    const snapshot = dataElement.getAttribute('data-ssr-detector-snapshot');
+    const probeData = JSON.parse(snapshot ?? dataElement.textContent);
+    return typeof probeData.firstHiddenTime === 'number' &&
+      Number.isFinite(probeData.firstHiddenTime)
+      ? probeData.firstHiddenTime
+      : Infinity;
+  } catch (error) {
+    return Infinity;
+  }
+}
+
+/**
  * Get Largest Contentful Paint (LCP)
  * Target: < 2.5s (Good), < 4.0s (Needs Improvement), >= 4.0s (Poor)
  */
 function getLargestContentfulPaint() {
   return new Promise((resolve) => {
     try {
+      const firstHiddenTime = getFirstHiddenTime();
+      const activationStart =
+        performance.getEntriesByType('navigation')[0]?.activationStart || 0;
       const observer = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
+        const entries = list
+          .getEntries()
+          .filter((entry) => entry.startTime < firstHiddenTime);
         const lastEntry = entries[entries.length - 1];
         observer.disconnect();
-        resolve(lastEntry.renderTime || lastEntry.loadTime);
+        resolve(
+          lastEntry
+            ? Math.max(lastEntry.startTime - activationStart, 0)
+            : null,
+        );
       });
       observer.observe({ type: 'largest-contentful-paint', buffered: true });
 
@@ -289,7 +331,7 @@ async function collectCoreWebVitals() {
   const resourceMetrics = getResourceMetrics();
   
   const metrics = {
-    lcp: lcp ? Math.round(lcp) : null,
+    lcp: lcp != null ? Math.round(lcp) : null,
     cls: cls != null ? Math.round(cls * 1000) / 1000 : null,
     inp: inp != null ? Math.round(inp) : null,
     ttfb: ttfb ? Math.round(ttfb) : null,

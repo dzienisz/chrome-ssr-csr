@@ -23,6 +23,11 @@ beforeEach(() => {
   page = realm.window;
   clock = 1000;
   page.Date.now = () => clock;
+  Object.defineProperty(page.document, 'visibilityState', {
+    configurable: true,
+    writable: true,
+    value: 'visible'
+  });
   page.navigation = new page.EventTarget();
   originalError = vi.fn();
   page.console.error = originalError;
@@ -32,6 +37,46 @@ beforeEach(() => {
 afterEach(() => realm.window.close());
 
 describe('probe bounded retention in a fresh realm', () => {
+  it('starts with no hidden time while visible and records only the first hidden transition', () => {
+    expect(snapshot().firstHiddenTime).toBeNull();
+
+    Object.defineProperty(page.performance, 'now', {
+      configurable: true,
+      value: () => 1234.6
+    });
+    page.document.visibilityState = 'hidden';
+    page.document.dispatchEvent(new page.Event('visibilitychange'));
+    expect(snapshot().firstHiddenTime).toBe(1235);
+
+    Object.defineProperty(page.performance, 'now', {
+      configurable: true,
+      value: () => 4321
+    });
+    page.document.dispatchEvent(new page.Event('visibilitychange'));
+    expect(snapshot().firstHiddenTime).toBe(1235);
+  });
+  it('starts at zero when the document is already hidden', () => {
+    const hiddenRealm = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'https://probe.test/',
+      runScripts: 'outside-only'
+    });
+    Object.defineProperty(hiddenRealm.window.document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden'
+    });
+    Object.defineProperty(hiddenRealm.window.document, 'prerendering', {
+      configurable: true,
+      value: false
+    });
+    hiddenRealm.window.eval(probeSource);
+    hiddenRealm.window.dispatchEvent(
+      new hiddenRealm.window.Event('ssr-detector-request-data')
+    );
+
+    const node = hiddenRealm.window.document.getElementById('ssr-detector-probe-data');
+    expect(JSON.parse(node.getAttribute('data-ssr-detector-snapshot')).firstHiddenTime).toBe(0);
+    hiddenRealm.window.close();
+  });
   it('publishes JSON only in a namespaced attribute on a head meta bridge', () => {
     const bodyHTML = page.document.body.innerHTML;
     const data = snapshot();
