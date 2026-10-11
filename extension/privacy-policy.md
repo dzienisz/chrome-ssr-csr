@@ -36,7 +36,9 @@ IP addresses are not stored in the analysis records. Network requests necessaril
 
 ## Optional second opinion from Jev (off by default)
 
-Ask Jev is off by default. If you enable it in settings and click **Ask Jev** in the popup, the extension re-fetches the current page and sends its full URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text to TypeSafe at `api.typesafe.ai`. The request uses the API key you provide and is sent only after your click; nothing is sent automatically. The extension requests optional access to the TypeSafe API host so it can make that request.
+Ask Jev is off by default. If you enable it in settings and click **Ask Jev** in the popup, the extension re-fetches the current page and sends its full URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text to TypeSafe at `api.typesafe.ai`. The request uses the API key you provide and is sent only after your click; nothing is sent automatically. The extension requests access to the TypeSafe API host when you enable Ask Jev.
+
+In Chrome, the site access the extension already uses for its content script also covers api.typesafe.ai, so turning Ask Jev off cannot revoke that access; it deletes your key, and without the setting and a key nothing is sent.
 
 Your API key is stored only in `chrome.storage.local`, never in sync storage. The extension does not retain the page excerpts or Jev's answer in history, exports or telemetry. Apart from the key, the feature stores no additional data in the extension.
 

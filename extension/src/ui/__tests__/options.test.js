@@ -10,6 +10,7 @@ const optionsScript = readFileSync(join(EXTENSION_DIR, "options.js"), "utf8");
 
 function createOptions({
   permissionGranted = true,
+  permissionRemoveError,
   settings = {},
   localValues = {},
   manifest = { version: "4.0.1" },
@@ -33,16 +34,28 @@ function createOptions({
   const permissionRemovals = [];
   const syncValues = { ...settings };
   const localStore = { ...localValues };
+  let removingPermission = false;
+  let permissionRemoveLastErrorRead = false;
+  let runtimeLastError;
+  const runtime = {
+    getManifest: () => manifest,
+    sendMessage: (_message, callback) => {
+      events.push("runtime.sendMessage");
+      callback?.();
+    },
+  };
+  Object.defineProperty(runtime, "lastError", {
+    get() {
+      if (removingPermission) permissionRemoveLastErrorRead = true;
+      return runtimeLastError;
+    },
+    set(error) {
+      runtimeLastError = error;
+    },
+  });
 
   window.chrome = {
-    runtime: {
-      getManifest: () => manifest,
-      sendMessage: (_message, callback) => {
-        events.push("runtime.sendMessage");
-        callback?.();
-      },
-      lastError: undefined,
-    },
+    runtime,
     storage: {
       sync: {
         get: (defaults, callback) => {
@@ -83,7 +96,14 @@ function createOptions({
       remove: (permissions, callback) => {
         events.push("permissions.remove");
         permissionRemovals.push(permissions);
-        callback(true);
+        runtime.lastError = permissionRemoveError;
+        removingPermission = true;
+        try {
+          callback(true);
+        } finally {
+          removingPermission = false;
+          runtime.lastError = undefined;
+        }
       },
     },
     commands: {
@@ -105,6 +125,9 @@ function createOptions({
     localStore,
     permissionRequests,
     permissionRemovals,
+    get permissionRemoveLastErrorRead() {
+      return permissionRemoveLastErrorRead;
+    },
     syncValues,
   };
 }
@@ -204,6 +227,30 @@ describe("Ask Jev options", () => {
     expect(page.syncCalls.at(-1)).not.toHaveProperty("jevApiKey");
     page.dom.window.close();
   });
+
+  it.each(["disable", "reset"])(
+    "handles Chrome refusing to remove the covered origin on %s",
+    (action) => {
+      const page = createOptions({
+        settings: { jevEnabled: true },
+        localValues: { jevApiKey: "fake-key" },
+        permissionRemoveError: {
+          message: "You cannot remove required permissions.",
+        },
+      });
+      const { window } = page.dom;
+      const actionFn = action === "disable" ? window.saveSettings : window.resetSettings;
+      if (action === "disable") window.document.getElementById("jevEnabled").checked = false;
+
+      expect(() => actionFn()).not.toThrow();
+
+      expect(page.permissionRemoveLastErrorRead).toBe(true);
+      expect(page.syncCalls.at(-1).jevEnabled).toBe(false);
+      expect(page.localRemovals).toContain("jevApiKey");
+      expect(page.localStore.jevApiKey).toBeUndefined();
+      page.dom.window.close();
+    },
+  );
 
   it.each(["disable", "reset"])(
     "removes Firefox website-content consent when %s on Firefox 140",

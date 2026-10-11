@@ -240,6 +240,10 @@ The popup's optional **Ask Jev** second opinion is off by default. Users
 provide a TypeSafe key stored only in local extension storage; page URL and
 bounded text/body excerpts are sent only on an explicit click. Jev output is
 not added to history, exports or telemetry.
+In Chrome, the required `<all_urls>` content-script access already covers
+`api.typesafe.ai`; disabling Ask Jev cannot revoke that host access, but it
+deletes the key, and no request is sent unless Ask Jev is enabled and a key is
+stored.
 
 All three need Playwright's Chromium (`npx playwright install chromium`). Set
 `CHROMIUM_PATH` to point any of them at a browser Playwright did not install —

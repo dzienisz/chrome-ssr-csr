@@ -135,7 +135,9 @@ function saveSettings() {
 function saveSettingsToStorage(settings, { saveKey, key } = {}) {
   chrome.storage.sync.set(settings, () => {
     if (!settings.jevEnabled) {
-      chrome.permissions.remove(jevPermissionDetails(), () => {});
+      chrome.permissions.remove(jevPermissionDetails(), () => {
+        void chrome.runtime.lastError;
+      });
       chrome.storage.local.remove("jevApiKey", () => {});
     } else if (saveKey) {
       chrome.storage.local.set({ jevApiKey: key }, () => {});
@@ -160,7 +162,9 @@ function resetSettings() {
   loadedJevEnabled = false;
   document.getElementById("jevApiKey").value = "";
   setJevStatus("");
-  chrome.permissions.remove(jevPermissionDetails(), () => {});
+  chrome.permissions.remove(jevPermissionDetails(), () => {
+    void chrome.runtime.lastError;
+  });
   chrome.storage.local.remove("jevApiKey", () => {});
   chrome.storage.sync.set(DEFAULT_SETTINGS, () => {
     loadSettings();
