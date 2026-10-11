@@ -34,7 +34,16 @@ vi.mock("@/lib/db", () => ({
   getRecentAnalyses: vi.fn(async () => [{ id: 1, domain: "example.com" }]),
   getLatestAnalysisTime: vi.fn(async () => "2026-01-01T00:00:00.000Z"),
   getContentComparisonStats: vi.fn(async () => ({})),
-  getCoreWebVitalsByRenderType: vi.fn(async () => []),
+  getCoreWebVitalsByRenderType: vi.fn(async () => [
+    {
+      render_category: "SSR",
+      sample_count: "20",
+      p75_lcp: "2920",
+      p75_cls: "0.055",
+      p75_inp: "180",
+      p75_ttfb: "696",
+    },
+  ]),
 }));
 
 vi.mock("@/lib/db-phase2", () => ({
@@ -82,6 +91,16 @@ describe("stats endpoint access", () => {
       "public, s-maxage=60, stale-while-revalidate=300",
     );
     expect(body).toHaveProperty("total");
+    expect(body.coreWebVitals).toEqual([
+      {
+        render_category: "SSR",
+        sample_count: "20",
+        p75_lcp: "2920",
+        p75_cls: "0.055",
+        p75_inp: "180",
+        p75_ttfb: "696",
+      },
+    ]);
     expect(body).not.toHaveProperty("domains");
     expect(body).not.toHaveProperty("recent");
     expect(getTopDomains).not.toHaveBeenCalled();

@@ -8,6 +8,10 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 - Upgrade the backend to Next.js 16.4.0 and React 19.
 
+### Changed
+
+- Report p75 instead of mean Core Web Vitals: 2.7% of LCP samples exceed 60 s (likely background tabs) and made the mean meaningless.
+
 ### Added
 
 - Add a public version breakdown of SSR, CSR, and Hybrid verdicts by extension release.

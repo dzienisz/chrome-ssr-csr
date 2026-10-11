@@ -190,7 +190,7 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 
 | Module | Purpose |
 |--------|---------|
-| `performance-collector.js` | Core Web Vitals (LCP, CLS, INP, TTFB) + LoAF stats |
+| `performance-collector.js` | Core Web Vitals (LCP ignores post-hidden paints and rebases prerender activation) + LoAF stats |
 | `page-type-detector.js` | Page type classification |
 | `device-detector.js` | Device and browser info |
 | `tech-stack-detector.js` | CSS frameworks, state management, build tools |

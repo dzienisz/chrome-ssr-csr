@@ -431,19 +431,19 @@ export async function getCoreWebVitalsByRenderType() {
         END as render_category,
         COUNT(*) as sample_count,
         -- LCP (Largest Contentful Paint)
-        ROUND(AVG((core_web_vitals->>'lcp')::numeric)) as avg_lcp,
+        ROUND((percentile_cont(0.75) WITHIN GROUP (ORDER BY (core_web_vitals->>'lcp')::numeric))::numeric) as p75_lcp,
         COUNT(CASE WHEN (core_web_vitals->>'lcp')::numeric < 2500 THEN 1 END) as lcp_good,
         -- CLS (Cumulative Layout Shift)
-        ROUND(AVG((core_web_vitals->>'cls')::numeric), 3) as avg_cls,
+        ROUND((percentile_cont(0.75) WITHIN GROUP (ORDER BY (core_web_vitals->>'cls')::numeric))::numeric, 3) as p75_cls,
         COUNT(CASE WHEN (core_web_vitals->>'cls')::numeric < 0.1 THEN 1 END) as cls_good,
         -- INP (Interaction to Next Paint) — the current interactivity vital
-        ROUND(AVG((core_web_vitals->>'inp')::numeric)) as avg_inp,
+        ROUND((percentile_cont(0.75) WITHIN GROUP (ORDER BY (core_web_vitals->>'inp')::numeric))::numeric) as p75_inp,
         COUNT(CASE WHEN (core_web_vitals->>'inp')::numeric < 200 THEN 1 END) as inp_good,
         -- FID (First Input Delay) — legacy rows only, kept so history stays readable
         ROUND(AVG((core_web_vitals->>'fid')::numeric)) as avg_fid,
         COUNT(CASE WHEN (core_web_vitals->>'fid')::numeric < 100 THEN 1 END) as fid_good,
         -- TTFB (Time to First Byte)
-        ROUND(AVG((core_web_vitals->>'ttfb')::numeric)) as avg_ttfb,
+        ROUND((percentile_cont(0.75) WITHIN GROUP (ORDER BY (core_web_vitals->>'ttfb')::numeric))::numeric) as p75_ttfb,
         COUNT(CASE WHEN (core_web_vitals->>'ttfb')::numeric < 800 THEN 1 END) as ttfb_good,
         -- Overall pass rate
         ROUND(

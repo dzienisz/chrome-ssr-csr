@@ -3,15 +3,15 @@ import { classifyMetric } from '@/lib/cwv-thresholds';
 export interface CWVByRenderType {
   render_category: string;   // 'SSR' | 'CSR' | 'Hybrid' | 'Other'
   sample_count: string | number;
-  avg_lcp: string | number | null;
+  p75_lcp: string | number | null;
   lcp_good: string | number;
-  avg_cls: string | number | null;
+  p75_cls: string | number | null;
   cls_good: string | number;
-  avg_inp: string | number | null;
+  p75_inp: string | number | null;
   inp_good: string | number;
   avg_fid: string | number | null;   // legacy rows only — FID is deprecated, not displayed
   fid_good: string | number;
-  avg_ttfb: string | number | null;
+  p75_ttfb: string | number | null;
   ttfb_good: string | number;
   pass_rate: string | number | null;
 }
@@ -37,14 +37,14 @@ const RATING_CLASSES: Record<string, string> = {
 function renderMetricRow(
   label: string,
   metric: 'lcp' | 'cls' | 'ttfb',
-  avgValue: string | number | null,
+  p75Value: string | number | null,
   formatFn: (n: number) => string
 ) {
   const parsed =
     metric === 'cls'
-      ? parseFloat(String(avgValue ?? ''))
-      : parseInt(String(avgValue ?? ''));
-  const hasValue = avgValue !== null && avgValue !== undefined && !Number.isNaN(parsed);
+      ? parseFloat(String(p75Value ?? ''))
+      : parseInt(String(p75Value ?? ''));
+  const hasValue = p75Value !== null && p75Value !== undefined && !Number.isNaN(parsed);
   const ratingClass = hasValue ? RATING_CLASSES[classifyMetric(metric, parsed)] : 'text-gray-400';
 
   return (
@@ -100,7 +100,7 @@ export function CWVInsights({ data }: CWVInsightsProps) {
           </span>
         </h3>
         <p className="text-sm text-gray-500">
-          Real-world performance measured by extension users, segmented by rendering strategy
+          Real-world p75 (75th percentile, as in Google&apos;s CrUX) measured by extension users, segmented by rendering strategy
         </p>
       </div>
       <div className="p-6 pt-0">
@@ -125,9 +125,9 @@ export function CWVInsights({ data }: CWVInsightsProps) {
                   )}
                 </div>
 
-                {renderMetricRow('LCP', 'lcp', row.avg_lcp, (n) => `${Math.round(n)} ms`)}
-                {renderMetricRow('CLS', 'cls', row.avg_cls, (n) => n.toFixed(3))}
-                {renderMetricRow('TTFB', 'ttfb', row.avg_ttfb, (n) => `${Math.round(n)} ms`)}
+                {renderMetricRow('LCP', 'lcp', row.p75_lcp, (n) => `${Math.round(n)} ms`)}
+                {renderMetricRow('CLS', 'cls', row.p75_cls, (n) => n.toFixed(3))}
+                {renderMetricRow('TTFB', 'ttfb', row.p75_ttfb, (n) => `${Math.round(n)} ms`)}
 
                 <div className="mt-3">
                   <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">

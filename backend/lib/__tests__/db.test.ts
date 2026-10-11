@@ -267,6 +267,27 @@ describe("db functions", () => {
     vi.clearAllMocks();
   });
 
+  it("uses the 75th percentile for Core Web Vitals metrics", async () => {
+    mockSql.mockResolvedValueOnce({ rows: [] });
+
+    await getCoreWebVitalsByRenderType();
+
+    const query = mockSql.mock.calls[0][0].join("");
+    for (const metric of ["lcp", "cls", "inp", "ttfb"]) {
+      expect(query).toContain(
+        `percentile_cont(0.75) WITHIN GROUP (ORDER BY (core_web_vitals->>'${metric}')::numeric)`,
+      );
+      expect(query).not.toContain(
+        `AVG((core_web_vitals->>'${metric}')::numeric)`,
+      );
+      expect(query).toContain(`as p75_${metric}`);
+    }
+    expect(query).toContain(
+      "ROUND(AVG((core_web_vitals->>'fid')::numeric)) as avg_fid",
+    );
+    expect(query).toContain("fid_good");
+  });
+
   describe("insertAnalysis", () => {
     it("should insert analysis and return id", async () => {
       mockSql.mockResolvedValueOnce({
