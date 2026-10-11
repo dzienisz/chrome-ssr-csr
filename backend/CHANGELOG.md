@@ -6,7 +6,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ### Changed
 
-- Report p75 instead of mean Core Web Vitals; background-tab outliers made the mean meaningless.
+- Report p75 instead of mean Core Web Vitals: 2.7% of LCP samples exceed 60 s (likely background tabs) and made the mean meaningless.
 
 ### Added
 
