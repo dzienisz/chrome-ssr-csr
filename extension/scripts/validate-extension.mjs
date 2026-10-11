@@ -130,6 +130,16 @@ if (!worker) {
 const extensionId = worker.url().split("/")[2];
 notes.push(`  ok   installed as ${extensionId}`);
 
+const telemetryDisabled = await worker.evaluate(
+  () =>
+    new Promise((resolve) =>
+      chrome.storage.sync.set({ shareData: false }, () =>
+        resolve(!chrome.runtime.lastError),
+      ),
+    ),
+);
+check(telemetryDisabled, "telemetry is disabled before popup pages load");
+
 // onInstalled fires asynchronously; give it a moment to create the context
 // menu and throw if it is going to.
 worker.on("console", (message) => {
@@ -369,7 +379,9 @@ check(reportErrors.length === 0, "popup renders without throwing", reportErrors.
 // silently stops recording and no unit test notices.
 const historyResult = await reportPage.evaluate(async () => {
   await new Promise((resolve) => chrome.storage.local.set({ analysisHistory: [] }, resolve));
-  await new Promise((resolve) => chrome.storage.sync.set({ historyLimit: 5 }, resolve));
+  await new Promise((resolve) =>
+    chrome.storage.sync.set({ historyLimit: 5, shareData: false }, resolve),
+  );
 
   const send = (entry) =>
     new Promise((resolve) => chrome.runtime.sendMessage({ action: "saveAnalysis", entry }, resolve));

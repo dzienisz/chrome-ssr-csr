@@ -6,6 +6,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ### Security and privacy
 
+- Reject telemetry from non-public hosts (422) + purge script.
 - Disable analysis deletion with an unconditional 403 and remove public dashboard deletion controls.
 - Validate and project telemetry at ingress with a streamed 64 KiB body cap, URL-origin/hostname normalization, numeric bounds and closed-vocabulary labels.
 - Exclude raw hydration messages, route details, free-form indicators, user-agent values and SEO text from new stored records.

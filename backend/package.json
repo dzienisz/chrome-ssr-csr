@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:setup": "node scripts/setup-db.js",
     "db:migrate": "node scripts/migrate-db.js",
+    "db:purge-non-public": "node scripts/purge-non-public-hosts.js",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit --incremental false",

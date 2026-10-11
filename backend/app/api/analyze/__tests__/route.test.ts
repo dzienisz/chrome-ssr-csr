@@ -270,17 +270,33 @@ describe("POST /api/analyze", () => {
 
   describe("privacy boundary", () => {
     it('stores country-only enrichment for a client without device information', async () => {
-      const response = await POST(createRequest({ url: 'https://example.test', domain: 'example.test', renderType: 'SSR', confidence: 90 }, { 'x-vercel-ip-country': 'pl' }));
+      const response = await POST(createRequest({ url: 'https://example.com', domain: 'example.com', renderType: 'SSR', confidence: 90 }, { 'x-vercel-ip-country': 'pl' }));
       expect(response.status).toBe(200);
       expect(mockInsertAnalysis).toHaveBeenCalledWith(expect.objectContaining({ device_info: { country: 'PL' } }));
+    });
+    it("returns 422 for a non-public host without inserting", async () => {
+      const response = await POST(
+        createRequest({
+          url: "https://localhost/page",
+          domain: "localhost",
+          renderType: "CSR",
+          confidence: 80,
+        }),
+      );
+      expect(response.status).toBe(422);
+      expect(await response.json()).toEqual({
+        success: false,
+        error: "Non-public host",
+      });
+      expect(mockInsertAnalysis).not.toHaveBeenCalled();
     });
     it.each([101, 140])(
       "inserts hybrid points %s without clamping",
       async (hybridScore) => {
         const response = await POST(
           createRequest({
-            url: "https://example.test",
-            domain: "example.test",
+            url: "https://example.com",
+            domain: "example.com",
             renderType: "Hybrid/Islands Architecture",
             confidence: 90,
             performanceMetrics: { hybridScore },
@@ -298,8 +314,8 @@ describe("POST /api/analyze", () => {
       const response = await POST(
         createRequest(
           {
-            url: "https://EXAMPLE.test/SENTINEL?q=SENTINEL#SENTINEL",
-            domain: "other.test",
+            url: "https://EXAMPLE.com/SENTINEL?q=SENTINEL#SENTINEL",
+            domain: "other.com",
             renderType: "SSR",
             confidence: 0,
             indicators: ["SENTINEL"],
@@ -319,8 +335,8 @@ describe("POST /api/analyze", () => {
         "SENTINEL",
       );
       expect(mockInsertAnalysis.mock.calls[0][0]).toMatchObject({
-        url: "https://example.test",
-        domain: "example.test",
+        url: "https://example.com",
+        domain: "example.com",
         confidence: 0,
         indicators: [],
       });
@@ -330,10 +346,10 @@ describe("POST /api/analyze", () => {
       [
         null,
         [],
-        { url: 12, domain: "example.test", renderType: "SSR", confidence: 10 },
+        { url: 12, domain: "example.com", renderType: "SSR", confidence: 10 },
         {
-          url: "https://example.test",
-          domain: "example.test",
+          url: "https://example.com",
+          domain: "example.com",
           renderType: "SSR",
           confidence: 10,
           coreWebVitals: { lcp: "SENTINEL" },

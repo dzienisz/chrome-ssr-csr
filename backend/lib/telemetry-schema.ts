@@ -1,4 +1,14 @@
 export const MAX_BODY_BYTES = 64 * 1024;
+const NON_PUBLIC_HOST_SUFFIXES = [
+  ".localhost",
+  ".local",
+  ".internal",
+  ".lan",
+  ".test",
+  ".invalid",
+  ".example",
+  ".home.arpa",
+];
 export const RENDER_TYPES = [
   "Server-Side Rendered (SSR)",
   "Client-Side Rendered (CSR)",
@@ -81,7 +91,13 @@ export const TECH_LABELS = {
 
 export class TelemetryError extends Error {
   constructor(public status = 400) {
-    super(status === 413 ? "Telemetry body too large" : "Invalid telemetry");
+    super(
+      status === 413
+        ? "Telemetry body too large"
+        : status === 422
+          ? "Non-public host"
+          : "Invalid telemetry",
+    );
   }
 }
 function invalid(): never {
@@ -200,6 +216,27 @@ export function normalizeHostname(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+export function isPublicHostname(host: string): boolean {
+  const normalized = host.toLowerCase().replace(/\.$/, "");
+  if (
+    !normalized ||
+    normalized.endsWith(".") ||
+    !normalized.includes(".") ||
+    (normalized.startsWith("[") && normalized.endsWith("]"))
+  )
+    return false;
+
+  const labels = normalized.split(".");
+  if (
+    labels.length === 4 &&
+    labels.every((label) => /^\d+$/.test(label) && Number(label) <= 255)
+  )
+    return false;
+
+  return !NON_PUBLIC_HOST_SUFFIXES.some((suffix) =>
+    normalized.endsWith(suffix),
+  );
 }
 export function normalizeCountry(value: unknown): string | null {
   return typeof value === "string" && /^[a-z]{2}$/i.test(value)
@@ -357,6 +394,7 @@ export function parseTelemetry(value: unknown, country?: unknown) {
     return invalid();
   const domain = normalizeHostname(url.hostname);
   if (!domain) return invalid();
+  if (!isPublicHostname(domain)) throw new TelemetryError(422);
   const device = deviceSchema(value.deviceInfo);
   const validatedCountry = normalizeCountry(country);
   const enrichedDevice: (NonNullable<typeof device> & { country: string | null }) | null =
