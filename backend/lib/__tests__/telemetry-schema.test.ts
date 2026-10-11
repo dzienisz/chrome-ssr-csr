@@ -1,14 +1,63 @@
 import { describe, expect, it } from "vitest";
-import { parseTelemetry, RENDER_TYPES } from "../telemetry-schema";
+import {
+  isPublicHostname,
+  parseTelemetry,
+  RENDER_TYPES,
+  TelemetryError,
+} from "../telemetry-schema";
 
 const base = {
-  url: "https://Example.test/private?q=SENTINEL#SENTINEL",
-  domain: "different.test",
+  url: "https://Example.com/private?q=SENTINEL#SENTINEL",
+  domain: "different.com",
   renderType: "SSR",
   confidence: 0,
 };
 
 describe("telemetry ingress projection", () => {
+  it.each([
+    "localhost",
+    "app.localhost",
+    "printer.local",
+    "db.internal",
+    "127.0.0.1",
+    "192.168.68.109",
+    "51.49.1.213",
+    "[::1]",
+    "devbox",
+    "localhost.",
+    "ci.lan",
+    "ci.test",
+    "ci.invalid",
+    "ci.example",
+    "node.home.arpa",
+  ])("rejects non-public host %s with 422", (host) => {
+    let error: unknown;
+    try {
+      parseTelemetry({ ...base, url: `https://${host}/private` });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(TelemetryError);
+    expect(error).toMatchObject({ status: 422, message: "Non-public host" });
+  });
+  it.each([
+    "example.com",
+    "ua.sitbackdev.com.au",
+    "www.v2.dentarra.ai",
+    "xn--bcher-kva.de",
+  ])("accepts public host %s", (host) => {
+    expect(
+      parseTelemetry({ ...base, url: `https://${host}/private` }).domain,
+    ).toBe(host);
+  });
+  it.each([
+    "app.localhost.",
+    "printer.local.",
+    "db.internal.",
+    "node.home.arpa.",
+  ])("rejects non-public host with a trailing dot: %s", (host) => {
+    expect(isPublicHostname(host)).toBe(false);
+  });
   it.each([undefined, null])('retains server country without deviceInfo %s', deviceInfo => {
     expect(parseTelemetry({ ...base, deviceInfo }, 'pl').device_info).toEqual({ country: 'PL' });
   });
@@ -36,7 +85,7 @@ describe("telemetry ingress projection", () => {
       ).toThrow("Invalid telemetry");
     },
   );
-  it.each(["https://[::1]/private", "https://example.test./private"])(
+  it.each(["https://example.com./private"])(
     "accepts valid HTTP host forms %s",
     (url) => {
       expect(parseTelemetry({ ...base, url }).domain).toBe(
@@ -57,8 +106,8 @@ describe("telemetry ingress projection", () => {
     "Hybrid/Mixed Rendering",
   ])("accepts %s and zero confidence", (renderType) => {
     const result = parseTelemetry({ ...base, renderType });
-    expect(result.url).toBe("https://example.test");
-    expect(result.domain).toBe("example.test");
+    expect(result.url).toBe("https://example.com");
+    expect(result.domain).toBe("example.com");
     expect(result.confidence).toBe(0);
     expect(RENDER_TYPES).toContain(renderType);
   });
@@ -170,11 +219,11 @@ describe("telemetry ingress projection", () => {
   it("normalizes IDN, unknown classifications and version", () => {
     const result = parseTelemetry({
       ...base,
-      url: "https://BÜCHER.example/path",
+      url: "https://BÜCHER.com/path",
       pageType: "SENTINEL",
       version: "SENTINEL",
     });
-    expect(result.domain).toBe("xn--bcher-kva.example");
+    expect(result.domain).toBe("xn--bcher-kva.com");
     expect(result.page_type).toBe("other");
     expect(result.extension_version).toBe("unknown");
   });
@@ -208,7 +257,7 @@ describe("telemetry ingress projection", () => {
     { url: 12 },
     { url: "/relative" },
     { url: "file:///etc/file" },
-    { url: "https://u:p@example.test" },
+    { url: "https://u:p@example.com" },
     { url: `https://${"a".repeat(64)}.test` },
     { domain: 3 },
     { renderType: "Analysis Error" },

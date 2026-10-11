@@ -137,6 +137,21 @@ constant in `extension/popup.js` to your deployment URL.
 - **Free Tier**: Good for thousands of analyses per month
 - **If you exceed**: Vercel Pro ($20/month) + Postgres ($10+/month)
 
+## Purge telemetry from non-public hosts
+
+Run this as the database owner with `POSTGRES_URL` set for the intended
+database. Review the dry-run results first:
+
+```bash
+npm run db:purge-non-public
+```
+
+After reviewing the rows that would be deleted, apply the purge:
+
+```bash
+npm run db:purge-non-public -- --apply
+```
+
 ## Troubleshooting
 
 **Database connection error?**

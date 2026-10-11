@@ -307,6 +307,8 @@ function executeScript(options) {
  */
 async function collectAndSendTelemetry(tabId, result, page, documentId) {
   try {
+    if (!publicTelemetryLocation(page.url)) return;
+
     await executeScript({
       target: { tabId },
       files: ["src/telemetry-bundle.js"],
@@ -331,21 +333,24 @@ async function collectAndSendTelemetry(tabId, result, page, documentId) {
   }
 }
 
+function publicTelemetryLocation(pageUrl) {
+  try {
+    const url = new URL(pageUrl);
+    if (!window.isPublicHostname(url.hostname)) return null;
+    return { domain: url.hostname, url: url.origin };
+  } catch {
+    return null;
+  }
+}
+
 async function sendAnalysisData(results, page) {
   try {
-    let domain = "unknown";
-    let anonymizedUrl = page.url;
-    try {
-      const url = new URL(page.url);
-      domain = url.hostname;
-      anonymizedUrl = url.origin;
-    } catch {
-      // keep defaults
-    }
+    const location = publicTelemetryLocation(page.url);
+    if (!location) return;
 
     const payload = {
-      url: anonymizedUrl,
-      domain,
+      url: location.url,
+      domain: location.domain,
       renderType: results.renderType,
       confidence: results.confidence,
       frameworks: results.detailedInfo?.frameworks || [],
