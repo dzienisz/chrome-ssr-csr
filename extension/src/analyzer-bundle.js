@@ -33,11 +33,13 @@ const CONFIG = {
     lowScriptRatio: 10,
     // New CSR detection weights
     rawVsRenderedMismatch: 40, // Raw HTML much smaller than rendered = CSR
+    rawVsRenderedPartial: 40, // Raw HTML holds under 40% of rendered = partial CSR
     rawVsRenderedMatch: 30,    // Raw HTML similar to rendered = SSR
     spaRootPattern: 20,        // #root/#app with data attributes = CSR
     noscriptFallback: 15,      // "JavaScript required" message = CSR
     fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
     decisiveCsrSsrCap: 10,     // Max SSR score when raw HTML is near-empty vs rendered
+    partialCsrSsrCap: 50,      // Max SSR score under 40% text; with 40 CSR points, SSR share rounds to 56%, below the SSR threshold
     // Modern platform signals (see platform-detector.js)
     speculationRules: 15,      // <script type="speculationrules"> in raw HTML = MPA
     crossDocViewTransition: 15,// @view-transition{navigation:auto} = MPA that animates
@@ -86,6 +88,7 @@ const CONFIG = {
   // Content comparison thresholds (raw HTML vs rendered DOM)
   contentComparison: {
     csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
+    partialRatio: 0.4,      // Raw/rendered ratio below this (and >= csrRatio) = server sent under 40% of visible text: partial/mixed
     decisiveCsrRatio: 0.1,  // Below this = near-conclusive CSR (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
     minRenderedLength: 200  // Minimum text (either side) to trust the comparison
@@ -314,6 +317,10 @@ async function compareInitialVsRendered() {
     const isLikelyCSR =
       contentRatio < config.contentComparison.csrRatio &&
       renderedLength > minLength;
+    const isPartialCSR =
+      contentRatio >= config.contentComparison.csrRatio &&
+      contentRatio < config.contentComparison.partialRatio &&
+      renderedLength > minLength;
     const isLikelySSR =
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
 
@@ -327,6 +334,7 @@ async function compareInitialVsRendered() {
       renderedLength,
       contentRatio: Math.round(contentRatio * 100) / 100,
       isLikelyCSR,
+      isPartialCSR,
       isLikelySSR,
       isDecisiveCSR,
       source: "fetch",
@@ -387,6 +395,10 @@ function compareParsedSnapshot() {
     contentRatio: Math.round(contentRatio * 100) / 100,
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
+      renderedLength > minLength,
+    isPartialCSR:
+      contentRatio >= config.contentComparison.csrRatio &&
+      contentRatio < config.contentComparison.partialRatio &&
       renderedLength > minLength,
     isLikelySSR:
       contentRatio > config.contentComparison.ssrRatio && rawLength > minLength,
@@ -2688,6 +2700,20 @@ async function pageAnalyzer() {
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
             : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
         });
+      } else if (comparisonResults.isPartialCSR) {
+        csrScore += config.scoring.rawVsRenderedPartial;
+        indicators.push(
+          `raw HTML holds under 40% of rendered content (${comparisonResults.contentRatio}x ratio) - partial CSR`,
+        );
+        signals.push({
+          id: "comparison.partial",
+          label: "The server sent part of what you see",
+          impact: "csr",
+          weight: config.scoring.rawVsRenderedPartial,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen — JavaScript added the rest.`
+            : `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters (${Math.round(comparisonResults.contentRatio * 100)}%) were in the initial response; JavaScript added the rest.`,
+        });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
         indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
@@ -2778,6 +2804,21 @@ async function pageAnalyzer() {
         detail:
           `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
+    } else if (comparisonResults?.isPartialCSR) {
+      const cappedFrom = ssrScore;
+      ssrScore = Math.min(ssrScore, config.scoring.partialCsrSsrCap);
+      const removed = cappedFrom - ssrScore;
+      if (removed > 0) {
+        indicators.push("raw HTML holds under 40% of rendered - SSR signals capped (partial)");
+        signals.push({
+          id: "comparison.partialCap",
+          label: "Server-side signals capped",
+          impact: "ssr",
+          weight: -removed,
+          detail:
+            `The served HTML held under 40% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
+        });
+      }
     }
 
     if (!comparisonResults) {
