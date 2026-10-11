@@ -19,6 +19,10 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 - Apply technology allowlists before top-ten limits, read current connection metadata with a legacy fallback, and preserve server-derived country when device details are absent.
 - Clarify public telemetry exposure and disabled deletion. No historical cleanup, migration, consent-default change or deployment is included.
 
+### Performance
+
+- Cache public dashboard aggregates for 60 seconds in-process and at the CDN.
+
 ## [1.6.0] - 2026-07-08
 
 ### Added

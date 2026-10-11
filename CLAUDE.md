@@ -332,6 +332,9 @@ Classification thresholds:
 | `/api/admin/stats?type=all` | GET | Password-protected full statistics |
 | `/api/stats?type=frameworks\|timeline\|…` | GET | Individual public stat slices |
 
+Public aggregates may be up to ~60 seconds stale (instance memo plus CDN
+`s-maxage=60`); admin domains and recent data are always fresh.
+
 ### API Error Response Format
 
 All API errors return consistent format:

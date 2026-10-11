@@ -6,11 +6,13 @@ import { sql } from "@vercel/postgres";
 import { GET } from "../route";
 import { GET as getAdminStats } from "@/app/api/admin/stats/route";
 import Dashboard from "@/app/dashboard/page";
+import { resetPublicAggregatesCache } from "@/lib/public-stats";
 
 vi.mock("next/cache", () => ({ unstable_noStore: vi.fn() }));
 const mockSql = vi.mocked(sql);
 
 beforeEach(() => {
+  resetPublicAggregatesCache();
   mockSql.mockImplementation(async (strings: TemplateStringsArray) => {
     const query = strings.join("");
     if (query.includes("ORDER BY timestamp DESC") && query.includes("OFFSET"))

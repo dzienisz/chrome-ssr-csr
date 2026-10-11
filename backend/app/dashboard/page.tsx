@@ -1,14 +1,5 @@
 import { LiveDashboard, DashboardData } from '@/components/dashboard/live-dashboard';
-import {
-  getTotalStats,
-  getTopFrameworks,
-  getAnalysesByDate,
-  getLatestAnalysisTime,
-  getContentComparisonStats,
-  getCoreWebVitalsByRenderType,
-} from '@/lib/db';
-import { getTechStackStats, getSEOStats } from '@/lib/db-phase2';
-import { getNavigationByRenderType } from '@/lib/db-phase3';
+import { getPublicAggregates } from '@/lib/public-stats';
 
 // Mark as dynamic - dashboard needs fresh data
 export const dynamic = 'force-dynamic';
@@ -16,34 +7,7 @@ export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    const [
-      total, frameworks, timeline, latestTime, contentComparison,
-      techStack, seoStats,
-      coreWebVitals,
-      navigationByRenderType,
-    ] = await Promise.all([
-      getTotalStats(),
-      getTopFrameworks(10),
-      getAnalysesByDate(30),
-      getLatestAnalysisTime(),
-      getContentComparisonStats(),
-      getTechStackStats(),
-      getSEOStats(),
-      getCoreWebVitalsByRenderType(),
-      getNavigationByRenderType(),
-    ]);
-
-    return {
-      total,
-      frameworks,
-      timeline,
-      latestTime,
-      contentComparison,
-      techStack,
-      seoStats,
-      coreWebVitals,
-      navigationByRenderType,
-    };
+    return await getPublicAggregates();
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     return null;

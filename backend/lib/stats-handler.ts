@@ -6,15 +6,15 @@ import {
   getTopDomains,
   getAnalysesByDate,
   getRecentAnalyses,
-  getLatestAnalysisTime,
   getContentComparisonStats,
-  getCoreWebVitalsByRenderType,
 } from "@/lib/db";
-import { getTechStackStats, getSEOStats } from "@/lib/db-phase2";
-import { getNavigationByRenderType } from "@/lib/db-phase3";
+import { getPublicAggregates } from "@/lib/public-stats";
 
 const cacheHeaders = {
   "Cache-Control": "no-store, no-cache, must-revalidate",
+};
+const publicAggregateCacheHeaders = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
 interface StatsHandlerOptions {
@@ -101,50 +101,24 @@ export async function handleStats(
 
       case "all":
       default: {
-        const [baseStats, adminStats] = await Promise.all([
-          Promise.all([
-            getTotalStats(),
-            getTopFrameworks(10),
-            getAnalysesByDate(30),
-            getLatestAnalysisTime(),
-            getContentComparisonStats(),
-            getTechStackStats(),
-            getSEOStats(),
-            getCoreWebVitalsByRenderType(),
-            getNavigationByRenderType(),
-          ]),
-          admin
-            ? Promise.all([getTopDomains(10), getRecentAnalyses(20)])
-            : Promise.resolve(null),
-        ]);
-        const [
-          total,
-          topFrameworks,
-          timelineData,
-          latestTime,
-          contentComparison,
-          techStack,
-          seoStats,
-          coreWebVitals,
-          navigationByRenderType,
-        ] = baseStats;
-        const response: Record<string, unknown> = {
-          total,
-          frameworks: topFrameworks,
-          timeline: timelineData,
-          latestTime,
-          contentComparison,
-          techStack,
-          seoStats,
-          coreWebVitals,
-          navigationByRenderType,
-        };
-        if (adminStats) {
-          response.domains = adminStats[0];
-          response.recent = adminStats[1];
+        const baseStatsPromise = getPublicAggregates();
+        const headers =
+          !admin && type === "all"
+            ? publicAggregateCacheHeaders
+            : cacheHeaders;
+        if (!admin) {
+          return NextResponse.json(await baseStatsPromise, { headers });
         }
 
-        return NextResponse.json(response, { headers: cacheHeaders });
+        const [baseStats, domains, recent] = await Promise.all([
+          baseStatsPromise,
+          getTopDomains(10),
+          getRecentAnalyses(20),
+        ]);
+        return NextResponse.json(
+          { ...baseStats, domains, recent },
+          { headers },
+        );
       }
     }
   } catch (error) {
