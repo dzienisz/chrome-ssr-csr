@@ -4,6 +4,10 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ## [Unreleased]
 
+### Upgraded
+
+- Upgrade the backend to Next.js 16.4.0 and React 19.
+
 ### Added
 
 - Add a public version breakdown of SSR, CSR, and Hybrid verdicts by extension release.

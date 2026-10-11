@@ -21,7 +21,7 @@ Features:
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Database**: Vercel Postgres
 - **UI**: Tremor (charts and dashboard components)
 - **Styling**: Tailwind CSS

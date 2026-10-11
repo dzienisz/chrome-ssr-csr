@@ -2,9 +2,14 @@
 
 import { Card, Title, Text } from '@tremor/react';
 
-export function HybridInsights({ data }: { data: any }) {
-  const hybridCount = parseInt(data?.hybrid_count) || 0;
-  const totalAnalyses = parseInt(data?.total_analyses) || 0;
+interface HybridStats {
+  hybrid_count?: number | string | null;
+  total_analyses?: number | string | null;
+}
+
+export function HybridInsights({ data }: { data: HybridStats }) {
+  const hybridCount = parseInt(String(data?.hybrid_count), 10) || 0;
+  const totalAnalyses = parseInt(String(data?.total_analyses), 10) || 0;
 
   if (hybridCount === 0 || totalAnalyses === 0) {
     return (

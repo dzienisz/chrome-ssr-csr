@@ -30,6 +30,7 @@ export function RecentAnalyses({
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const target = observerTarget.current;
     const observer = new IntersectionObserver(
       (entries) => {
         if (
@@ -44,14 +45,10 @@ export function RecentAnalyses({
       { threshold: 1.0 },
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
+    if (target) observer.observe(target);
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
+      observer.disconnect();
     };
   }, [hasMore, isLoadingMore, onLoadMore]);
 
