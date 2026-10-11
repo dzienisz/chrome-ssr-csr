@@ -20,11 +20,17 @@ vi.mock("@/lib/cors", () => ({
   corsOptionsResponse: vi.fn(),
 }));
 
+vi.mock("@/lib/ingest-guard", () => ({
+  checkIngest: vi.fn(),
+}));
+
 import { insertAnalysis } from "@/lib/db";
 import { verifyApiKey } from "@/lib/auth";
+import { checkIngest } from "@/lib/ingest-guard";
 
 const mockInsertAnalysis = insertAnalysis as ReturnType<typeof vi.fn>;
 const mockVerifyApiKey = verifyApiKey as ReturnType<typeof vi.fn>;
+const mockCheckIngest = checkIngest as ReturnType<typeof vi.fn>;
 
 function createRequest(body: unknown, headers: Record<string, string> = {}) {
   return new NextRequest("http://localhost/api/analyze", {
@@ -41,6 +47,7 @@ describe("POST /api/analyze", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyApiKey.mockReturnValue(true);
+    mockCheckIngest.mockResolvedValue({ decision: "accept" });
   });
 
   describe("authentication", () => {
@@ -77,6 +84,7 @@ describe("POST /api/analyze", () => {
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
       expect(data.error).toBe("Invalid telemetry");
+      expect(mockCheckIngest).not.toHaveBeenCalled();
     });
 
     it("should return 400 when domain is missing", async () => {
@@ -188,6 +196,59 @@ describe("POST /api/analyze", () => {
       expect(data.success).toBe(true);
       expect(data.id).toBe(123);
       expect(mockInsertAnalysis).toHaveBeenCalled();
+      expect(mockCheckIngest).toHaveBeenCalledWith(
+        request,
+        "example.com",
+      );
+    });
+
+    it("returns 429 with Retry-After and CORS headers when rate limited", async () => {
+      mockCheckIngest.mockResolvedValue({
+        decision: "rate-limited",
+        retryAfter: 125,
+      });
+
+      const response = await POST(
+        createRequest({
+          url: "https://example.com",
+          domain: "example.com",
+          renderType: "SSR",
+          confidence: 85,
+        }),
+      );
+
+      expect(response.status).toBe(429);
+      expect(await response.json()).toEqual({
+        success: false,
+        error: "Too many requests",
+      });
+      expect(response.headers.get("Retry-After")).toBe("125");
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+        "POST, OPTIONS",
+      );
+      expect(mockInsertAnalysis).not.toHaveBeenCalled();
+    });
+
+    it("returns a duplicate response with CORS headers without inserting", async () => {
+      mockCheckIngest.mockResolvedValue({ decision: "duplicate" });
+
+      const response = await POST(
+        createRequest({
+          url: "https://example.com",
+          domain: "example.com",
+          renderType: "SSR",
+          confidence: 85,
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        success: true,
+        duplicate: true,
+      });
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(mockInsertAnalysis).not.toHaveBeenCalled();
     });
 
     it("should handle minimal required fields", async () => {
@@ -289,6 +350,7 @@ describe("POST /api/analyze", () => {
         error: "Non-public host",
       });
       expect(mockInsertAnalysis).not.toHaveBeenCalled();
+      expect(mockCheckIngest).not.toHaveBeenCalled();
     });
     it.each([101, 140])(
       "inserts hybrid points %s without clamping",
@@ -363,6 +425,7 @@ describe("POST /api/analyze", () => {
         error: "Invalid telemetry",
       });
       expect(mockInsertAnalysis).not.toHaveBeenCalled();
+      expect(mockCheckIngest).not.toHaveBeenCalled();
     });
 
     it("returns 400 for invalid JSON", async () => {
@@ -375,6 +438,7 @@ describe("POST /api/analyze", () => {
       expect(response.status).toBe(400);
       expect(JSON.stringify(await response.json())).not.toContain("SENTINEL");
       expect(mockInsertAnalysis).not.toHaveBeenCalled();
+      expect(mockCheckIngest).not.toHaveBeenCalled();
     });
 
     it.each([{}, { "Content-Length": "1" }])(

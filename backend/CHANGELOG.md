@@ -6,6 +6,7 @@ All notable changes to the SSR/CSR Analytics Dashboard will be documented in thi
 
 ### Security and privacy
 
+- Rate-limit telemetry by IP and suppress duplicate IP+domain posts during each 10-minute window.
 - Add a password-protected `/admin` backoffice and restrict the public dashboard to aggregates only.
 - Security: Next.js 14.2.15 → 14.2.35 and patched transitive deps (npm audit fix)
 - Reject telemetry from non-public hosts (422) + purge script.

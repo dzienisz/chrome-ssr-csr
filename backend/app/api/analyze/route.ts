@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { insertAnalysis } from "@/lib/db";
 import { verifyApiKey } from "@/lib/auth";
 import { getCorsHeaders, corsOptionsResponse } from "@/lib/cors";
+import { checkIngest } from "@/lib/ingest-guard";
 import {
   parseTelemetry,
   readTelemetryBody,
@@ -24,6 +25,26 @@ export async function POST(request: NextRequest) {
       await readTelemetryBody(request),
       request.geo?.country || request.headers.get("x-vercel-ip-country"),
     );
+
+    const ingestDecision = await checkIngest(request, analysisRecord.domain);
+    if (ingestDecision.decision === "rate-limited") {
+      return NextResponse.json(
+        { success: false, error: "Too many requests" },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Retry-After": String(ingestDecision.retryAfter),
+          },
+        },
+      );
+    }
+    if (ingestDecision.decision === "duplicate") {
+      return NextResponse.json(
+        { success: true, duplicate: true },
+        { headers: corsHeaders },
+      );
+    }
 
     // Insert into database
     const result = await insertAnalysis(analysisRecord);
