@@ -26,6 +26,12 @@ export default function Home() {
               </code>
               {' '}- Get aggregated statistics
             </li>
+            <li>
+              <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                /admin
+              </code>
+              {' '}- Password-protected dashboard with domain-level details
+            </li>
           </ul>
         </div>
 

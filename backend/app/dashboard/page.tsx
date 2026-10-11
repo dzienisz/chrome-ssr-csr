@@ -2,9 +2,7 @@ import { LiveDashboard, DashboardData } from '@/components/dashboard/live-dashbo
 import {
   getTotalStats,
   getTopFrameworks,
-  getTopDomains,
   getAnalysesByDate,
-  getRecentAnalyses,
   getLatestAnalysisTime,
   getContentComparisonStats,
   getCoreWebVitalsByRenderType,
@@ -19,16 +17,14 @@ export const revalidate = 0;
 async function getDashboardData() {
   try {
     const [
-      total, frameworks, domains, timeline, recent, latestTime, contentComparison,
+      total, frameworks, timeline, latestTime, contentComparison,
       techStack, seoStats,
       coreWebVitals,
       navigationByRenderType,
     ] = await Promise.all([
       getTotalStats(),
       getTopFrameworks(10),
-      getTopDomains(10),
       getAnalysesByDate(30),
-      getRecentAnalyses(20),
       getLatestAnalysisTime(),
       getContentComparisonStats(),
       getTechStackStats(),
@@ -40,9 +36,7 @@ async function getDashboardData() {
     return {
       total,
       frameworks,
-      domains,
       timeline,
-      recent,
       latestTime,
       contentComparison,
       techStack,
@@ -74,7 +68,10 @@ export default async function Dashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <LiveDashboard initialData={data as unknown as DashboardData} />
+      <LiveDashboard
+        initialData={data as unknown as DashboardData}
+        mode="public"
+      />
     </main>
   );
 }
