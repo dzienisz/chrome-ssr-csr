@@ -165,6 +165,18 @@ describe('probe parse-time text snapshot', () => {
     r.window.close();
   });
 
+  it('includes open shadow-root text in the parse-time length', () => {
+    const { r, setState } = loadingRealm('<article id="host">Light text</article>');
+    const shadowRoot = r.window.document
+      .getElementById('host')
+      .attachShadow({ mode: 'open' });
+    shadowRoot.innerHTML = '<p>Shadow  text</p><script>ignored text</script>';
+    setState('interactive');
+
+    expect(read(r.window).parsedTextLength).toBe('Shadow textLight text'.length);
+    r.window.close();
+  });
+
   it('records nothing when injected after parsing already ended', () => {
     const late = new JSDOM('<!doctype html><html><head></head><body><p>Late</p></body></html>', { url: 'https://probe.test/', runScripts: 'outside-only' });
     Object.defineProperty(late.window.document, 'readyState', { configurable: true, get: () => 'complete' });

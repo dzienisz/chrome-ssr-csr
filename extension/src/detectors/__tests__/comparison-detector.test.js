@@ -12,6 +12,17 @@ function mockFetchedHTML(html) {
 
 const LONG_TEXT = "Real user-visible article text. ".repeat(20); // ~640 chars
 
+function oldExtractVisibleText(body) {
+  if (!body) return "";
+  const clone = body.cloneNode(true);
+  clone
+    .querySelectorAll(
+      "script, style, noscript, template, #ssr-detector-probe-data",
+    )
+    .forEach((el) => el.remove());
+  return (clone.textContent || "").replace(/\s+/g, " ").trim();
+}
+
 describe("getDetectionBodyHTML", () => {
   it("returns unmodified page HTML without a bridge", () => {
     document.body.innerHTML =
@@ -103,6 +114,88 @@ describe("extractVisibleText", () => {
     window.extractVisibleText(document.body);
 
     expect(document.body.querySelector("script")).not.toBeNull();
+  });
+
+  it("matches the previous extractor for varied shadow-free HTML", () => {
+    const samples = [
+      `<p>Text <span>inside <strong>nested inline</strong> elements</span>.</p>
+       <!-- ignored comment --><p>  Spaced   text &amp; entities &#33; </p>`,
+      `<script>ignored script text</script><style>ignored CSS</style>
+       <noscript>ignored fallback</noscript>
+       <template><p>ignored template content</p></template>
+       <p>Visible &copy; text</p>`,
+      `<!-- start --><div>Before<!-- middle --> after</div>
+       <p>A&nbsp;B &lt; C</p>`,
+    ];
+
+    for (const sample of samples) {
+      const doc = new DOMParser().parseFromString(
+        `<body>${sample}</body>`,
+        "text/html",
+      );
+      expect(window.extractVisibleText(doc.body)).toBe(
+        oldExtractVisibleText(doc.body),
+      );
+    }
+  });
+
+  it("counts text in open shadow roots and excludes shadow scripts and styles", () => {
+    const host = document.createElement("article");
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    shadowRoot.innerHTML =
+      "<p>Open shadow text</p><script>ignored shadow script</script>" +
+      "<style>ignored shadow style</style>";
+    document.body.replaceChildren(host);
+
+    expect(window.extractVisibleText(document.body)).toBe("Open shadow text");
+  });
+
+  it("walks deeply nested open shadow roots iteratively", () => {
+    const host = document.createElement("x-host");
+    let current = host;
+
+    for (let i = 0; i < 119; i++) {
+      const shadowRoot = current.attachShadow({ mode: "open" });
+      if (i === 118) {
+        shadowRoot.appendChild(document.createTextNode("Deep shadow text"));
+      } else {
+        current = document.createElement("x-host");
+        shadowRoot.appendChild(current);
+      }
+    }
+
+    document.body.replaceChildren(host);
+    expect(window.extractVisibleText(document.body)).toBe("Deep shadow text");
+  });
+
+  it("counts text inside declarative shadow templates but skips ordinary templates", () => {
+    const doc = new DOMParser().parseFromString(
+      `<body><article>
+        <template shadowrootmode="open"><p>Declarative shadow text</p></template>
+        <template><p>Ordinary template text</p></template>
+        Light DOM text
+      </article></body>`,
+      "text/html",
+    );
+
+    expect(window.extractVisibleText(doc.body)).toBe(
+      "Declarative shadow text Light DOM text",
+    );
+  });
+
+  it("counts slotted light text once without walking assigned nodes through the slot", () => {
+    const host = document.createElement("article");
+    const lightText = document.createElement("span");
+    lightText.slot = "content";
+    lightText.textContent = "Slotted light text";
+    host.appendChild(lightText);
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    shadowRoot.innerHTML = "<p>Shadow root text</p><slot name='content'></slot>";
+    document.body.replaceChildren(host);
+
+    const text = window.extractVisibleText(document.body);
+    expect(text).toBe("Shadow root textSlotted light text");
+    expect(text.match(/Slotted light text/g)).toHaveLength(1);
   });
 });
 

@@ -250,13 +250,45 @@ if (typeof module !== 'undefined' && module.exports) {
  */
 function extractVisibleText(body) {
   if (!body) return "";
-  const clone = body.cloneNode(true);
-  clone
-    .querySelectorAll(
-      "script, style, noscript, template, #ssr-detector-probe-data",
-    )
-    .forEach((el) => el.remove());
-  return (clone.textContent || "").replace(/\s+/g, " ").trim();
+  const parts = [];
+  const stack = [body];
+
+  function pushChildren(node) {
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      stack.push(node.childNodes[i]);
+    }
+  }
+
+  while (stack.length) {
+    const node = stack.pop();
+    if (node.nodeType === 3) {
+      parts.push(node.data);
+      continue;
+    }
+
+    if (node.nodeType === 1) {
+      if (
+        node.id === "ssr-detector-probe-data" ||
+        node.tagName === "SCRIPT" ||
+        node.tagName === "STYLE" ||
+        node.tagName === "NOSCRIPT"
+      ) {
+        continue;
+      }
+      if (node.tagName === "TEMPLATE") {
+        if (node.hasAttribute("shadowrootmode")) pushChildren(node.content);
+        continue;
+      }
+
+      pushChildren(node);
+      if (node.shadowRoot) pushChildren(node.shadowRoot);
+      continue;
+    }
+
+    if (node.nodeType === 9 || node.nodeType === 11) pushChildren(node);
+  }
+
+  return parts.join("").replace(/\s+/g, " ").trim();
 }
 
 /**

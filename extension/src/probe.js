@@ -110,28 +110,40 @@
   // readyState turns "interactive" when parsing ends and before deferred and
   // module scripts run, so the text present then is what the server sent —
   // plus whatever classic inline scripts wrote, which makes it an upper bound.
-  // Only the length is kept, never the text.
+  // Shadow-root text is included; only the length is kept, never the text.
   const SNAPSHOT_SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
   function measureParsedText() {
     try {
       const body = document.body;
       if (!body) return;
-      const walker = document.createTreeWalker(
-        body,
-        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-        {
-          acceptNode(node) {
-            if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
-            return SNAPSHOT_SKIP[node.tagName] ||
-              node.id === "ssr-detector-probe-data"
-              ? NodeFilter.FILTER_REJECT
-              : NodeFilter.FILTER_SKIP;
-          },
-        },
-      );
-      let text = "";
-      while (walker.nextNode()) text += walker.currentNode.data;
-      STORE.parsedTextLength = text.replace(/\s+/g, " ").trim().length;
+      const parts = [];
+      const stack = [body];
+      function pushChildren(node) {
+        for (let i = node.childNodes.length - 1; i >= 0; i--) {
+          stack.push(node.childNodes[i]);
+        }
+      }
+
+      while (stack.length) {
+        const node = stack.pop();
+        if (node.nodeType === 3) {
+          parts.push(node.data);
+          continue;
+        }
+
+        if (node.nodeType === 1) {
+          if (SNAPSHOT_SKIP[node.tagName] || node.id === "ssr-detector-probe-data") {
+            continue;
+          }
+          pushChildren(node);
+          if (node.shadowRoot) pushChildren(node.shadowRoot);
+          continue;
+        }
+
+        if (node.nodeType === 11) pushChildren(node);
+      }
+
+      STORE.parsedTextLength = parts.join("").replace(/\s+/g, " ").trim().length;
     } catch (e) {}
   }
 
