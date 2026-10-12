@@ -2,8 +2,8 @@
 
 These snapshots capture 25 production-built apps with known rendering origins.
 The app sources and build outputs are kept outside this repository in
-`/home/ubuntu/v5lab/apps/`; this directory contains only recorded responses,
-metadata, and the shared `/home/ubuntu/v5lab/content.json` copy.
+a local lab checkout (`<lab>/apps/`); this directory contains only recorded
+responses, metadata, and a copy of the shared `<lab>/content.json`.
 
 The region order is shell (nav and footer), h1, article, comments:
 
@@ -63,11 +63,11 @@ These are the dependency version specifications read from each app's
 ## Re-recording
 
 Start the lab apps on ports 4101–4125 from
-`/home/ubuntu/v5lab/apps/start-all.sh` if they are not already running, then
+`<lab>/apps/start-all.sh` if they are not already running, then
 from the repository's `extension/` directory run:
 
 ```bash
-node scripts/record-lab.mjs /home/ubuntu/v5lab/apps/manifest.json
+node scripts/record-lab.mjs <lab>/apps/manifest.json
 ```
 
 The recorder uses Playwright Chromium, runs the probe at document start, waits

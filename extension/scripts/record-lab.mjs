@@ -16,7 +16,7 @@ if (!Array.isArray(manifest)) throw new Error("The lab manifest must be an array
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = path.join(SCRIPT_DIR, "fixtures", "lab");
 const PROBE = path.join(SCRIPT_DIR, "..", "src", "probe.js");
-const CONTENT = "/home/ubuntu/v5lab/content.json";
+const CONTENT = path.join(path.dirname(path.resolve(manifestPath)), "..", "content.json");
 const packageVersions = {
   "Next.js": ["next"],
   Nuxt: ["nuxt"],
