@@ -92,11 +92,11 @@
     "renderType": "Server-Side Rendered (SSR)"
   },
   "skeleton-swap": {
-    "bucket": "SSR",
-    "renderType": "Server-Side Rendered (SSR)"
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
   },
   "prerendered-shell": {
-    "bucket": "HYBRID",
-    "renderType": "Hybrid/Islands Architecture"
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
   }
 }

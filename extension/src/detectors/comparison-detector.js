@@ -55,6 +55,108 @@ function extractVisibleText(body) {
 }
 
 /**
+ * Extract visible words with element boundaries preserved.
+ * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @returns {string[]} Normalized word tokens
+ */
+function extractVisibleWords(body) {
+  if (!body) return [];
+  const parts = [];
+  const stack = [body];
+
+  function pushChildren(node) {
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      stack.push(node.childNodes[i]);
+    }
+  }
+
+  while (stack.length) {
+    const node = stack.pop();
+    if (node && node.separator) {
+      parts.push(" ");
+      continue;
+    }
+
+    if (node.nodeType === 3) {
+      parts.push(node.data);
+      continue;
+    }
+
+    if (node.nodeType === 1) {
+      if (
+        node.id === "ssr-detector-probe-data" ||
+        node.tagName === "SCRIPT" ||
+        node.tagName === "STYLE" ||
+        node.tagName === "NOSCRIPT"
+      ) {
+        continue;
+      }
+
+      if (node.tagName === "TEMPLATE") {
+        if (node.hasAttribute("shadowrootmode")) {
+          parts.push(" ");
+          stack.push({ separator: true });
+          pushChildren(node.content);
+        }
+        continue;
+      }
+
+      parts.push(" ");
+      stack.push({ separator: true });
+      pushChildren(node);
+      if (node.shadowRoot) pushChildren(node.shadowRoot);
+      continue;
+    }
+
+    if (node.nodeType === 9 || node.nodeType === 11) pushChildren(node);
+  }
+
+  const text = parts
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim()
+    .normalize("NFKC")
+    .toLowerCase();
+
+  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+    const segmenter = new Intl.Segmenter("und", { granularity: "word" });
+    return Array.from(segmenter.segment(text))
+      .filter((part) => part.isWordLike)
+      .map((part) => part.segment);
+  }
+
+  return text.match(/[\p{L}\p{N}]+/gu) || [];
+}
+
+/**
+ * Measure how many rendered words are present in the raw HTML, preserving
+ * duplicate occurrences on both sides.
+ * @param {string[]} rawWords
+ * @param {string[]} renderedWords
+ * @returns {{matched: number, coverage: number}}
+ */
+function wordCoverage(rawWords, renderedWords) {
+  const rawCounts = new Map();
+  for (const word of rawWords) {
+    rawCounts.set(word, (rawCounts.get(word) || 0) + 1);
+  }
+
+  let matched = 0;
+  for (const word of renderedWords) {
+    const count = rawCounts.get(word) || 0;
+    if (count > 0) {
+      matched++;
+      rawCounts.set(word, count - 1);
+    }
+  }
+
+  return {
+    matched,
+    coverage: renderedWords.length ? matched / renderedWords.length : 0,
+  };
+}
+
+/**
  * Compare initial HTML (before JS) vs rendered DOM (after JS)
  * True SSR will have similar content in both; CSR will have minimal raw HTML
  * @returns {Promise<Object|null>} Comparison results or null if fetch fails
@@ -99,7 +201,10 @@ async function compareInitialVsRendered() {
       rawTitle &&
       fnv1a(rawTitle) !== snapshot.parsedTitleHash
     ) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "title",
+      });
     }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
@@ -112,29 +217,44 @@ async function compareInitialVsRendered() {
 
     // Calculate content ratio
     const contentRatio = rawLength / Math.max(renderedLength, 1);
-
-    // Determine if CSR or SSR based on ratio.
-    // Both branches require enough real text to judge (symmetric guards).
     const minLength = config.contentComparison.minRenderedLength;
+    const rawWords = extractVisibleWords(rawDoc.body);
+    const renderedWords = extractVisibleWords(document.body);
+    const { matched, coverage } = wordCoverage(rawWords, renderedWords);
+
+    if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "no-shared-words",
+      });
+    }
+
+    // Determine if CSR or SSR based on rendered-word coverage.
+    // Both branches require enough real text to judge (symmetric guards).
     const isLikelyCSR =
-      contentRatio < config.contentComparison.csrRatio &&
+      coverage < config.contentComparison.csrRatio &&
       renderedLength > minLength;
     const isPartialCSR =
-      contentRatio >= config.contentComparison.csrRatio &&
-      contentRatio < config.contentComparison.partialRatio &&
+      coverage >= config.contentComparison.csrRatio &&
+      coverage < config.contentComparison.partialRatio &&
       renderedLength > minLength;
     const isLikelySSR =
-      contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
+      coverage > config.contentComparison.ssrRatio && rawLength > minLength;
 
     // Server sent almost none of the visible text: near-conclusive CSR
     const isDecisiveCSR =
-      contentRatio < config.contentComparison.decisiveCsrRatio &&
+      coverage < config.contentComparison.decisiveCsrRatio &&
       renderedLength > minLength;
 
     return {
       rawLength,
       renderedLength,
       contentRatio: Math.round(contentRatio * 100) / 100,
+      wordCoverage: Math.round(coverage * 100) / 100,
+      rawWordCount: rawWords.length,
+      renderedWordCount: renderedWords.length,
+      matchedWordCount: matched,
+      measure: "words",
       isLikelyCSR,
       isPartialCSR,
       isLikelySSR,
@@ -239,6 +359,11 @@ function compareParsedSnapshot(options = {}) {
     rawLength,
     renderedLength,
     contentRatio: Math.round(contentRatio * 100) / 100,
+    wordCoverage: null,
+    rawWordCount: null,
+    renderedWordCount: null,
+    matchedWordCount: null,
+    measure: "length",
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
       renderedLength > minLength,
@@ -257,6 +382,7 @@ function compareParsedSnapshot(options = {}) {
     rawDocument: null,
     rawHTML: null,
     refetchMismatch: options.refetchMismatch === true,
+    refetchMismatchReason: options.refetchMismatchReason ?? null,
   };
 }
 
@@ -275,6 +401,8 @@ function getDetectionBodyHTML() {
 if (typeof window !== "undefined") {
   window.getDetectionBodyHTML = getDetectionBodyHTML;
   window.extractVisibleText = extractVisibleText;
+  window.extractVisibleWords = extractVisibleWords;
+  window.wordCoverage = wordCoverage;
   window.compareInitialVsRendered = compareInitialVsRendered;
   window.compareParsedSnapshot = compareParsedSnapshot;
 }

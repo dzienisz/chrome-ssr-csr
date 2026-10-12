@@ -257,6 +257,7 @@ function stat(name, value) {
  */
 function renderOverview(result, options = {}) {
   const showTopSignals = options.topSignals !== false;
+  const assessable = result.assessable !== false;
   const info = result.detailedInfo || {};
   const comparison = info.contentComparison;
   const delivery = info.delivery;
@@ -270,6 +271,11 @@ function renderOverview(result, options = {}) {
   if (comparison) {
     stats.appendChild(stat("In HTML", num(comparison.rawLength)));
     stats.appendChild(stat("On screen", num(comparison.renderedLength)));
+    if (assessable && comparison.wordCoverage != null) {
+      stats.appendChild(
+        stat("Words from server", `${Math.round(comparison.wordCoverage * 100)}%`),
+      );
+    }
   }
   if (delivery && delivery.ttfb != null) stats.appendChild(stat("TTFB", ms(delivery.ttfb)));
   if (timing) {
@@ -630,9 +636,11 @@ function renderDiff(result) {
   }
 
   const rows = diff.regions.map((region) => {
+    const serverChars =
+      region.coveredChars ?? Math.min(region.rawChars, region.renderedChars);
     const serverPct =
       region.renderedChars > 0
-        ? Math.max(0, Math.min(100, Math.round((region.rawChars / region.renderedChars) * 100)))
+        ? Math.max(0, Math.min(100, Math.round((serverChars / region.renderedChars) * 100)))
         : 100;
     const server = el("div", { className: "split-server" });
     const client = el("div", { className: "split-client" });
@@ -654,11 +662,18 @@ function renderDiff(result) {
         region.label !== region.key
           ? el("div", { className: "region-key", text: region.key })
           : null,
-        el("div", { className: "region-track", children: [server, client] }),
+        el("div", {
+          className: "region-track",
+          attrs: {
+            role: "img",
+            "aria-label": `${num(serverChars)} characters from server, ${num(region.addedChars)} added by JavaScript`,
+          },
+          children: [server, client],
+        }),
         el("div", {
           className: "split-legend",
           children: [
-            el("span", { text: `${num(region.rawChars)} from server` }),
+            el("span", { text: `${num(serverChars)} from server` }),
             el("span", { text: `${num(region.addedChars)} added` }),
           ],
         }),

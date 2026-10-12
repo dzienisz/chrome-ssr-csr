@@ -81,7 +81,7 @@ const CONFIG = {
   contentComparison: {
     csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
     partialRatio: 0.4,      // Raw/rendered ratio below this (and >= csrRatio) = server sent under 40% of visible text: partial/mixed
-    decisiveCsrRatio: 0.1,  // Below this = near-conclusive CSR (caps SSR signals)
+    decisiveCsrRatio: 0.2,  // Entire CSR band: server sent under 20% (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
     minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },

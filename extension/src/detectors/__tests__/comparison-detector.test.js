@@ -11,6 +11,11 @@ function mockFetchedHTML(html) {
 }
 
 const LONG_TEXT = "Real user-visible article text. ".repeat(20); // ~640 chars
+const WORDS = Array.from({ length: 100 }, (_, i) => `articleword${i}`);
+
+function wordText(count) {
+  return WORDS.slice(0, count).join(" ");
+}
 
 function oldExtractVisibleText(body) {
   if (!body) return "";
@@ -199,6 +204,73 @@ describe("extractVisibleText", () => {
   });
 });
 
+describe("extractVisibleWords", () => {
+  it("separates text at element boundaries", () => {
+    document.body.innerHTML = "<span>Home</span><span>About</span>";
+
+    expect(window.extractVisibleWords(document.body)).toEqual(["home", "about"]);
+  });
+
+  it("follows the visible-text skips and shadow-tree walk", () => {
+    const doc = new DOMParser().parseFromString(
+      `<body>
+        <span>Home</span>
+        <script>script hidden</script>
+        <style>style hidden</style>
+        <noscript>noscript hidden</noscript>
+        <template><p>ordinary hidden</p></template>
+        <template shadowrootmode="open"><p>shadow visible</p></template>
+      </body>`,
+      "text/html",
+    );
+    const bridge = doc.createElement("div");
+    bridge.id = "ssr-detector-probe-data";
+    bridge.textContent = "bridge hidden";
+    doc.body.appendChild(bridge);
+
+    expect(window.extractVisibleWords(doc.body)).toEqual([
+      "home",
+      "shadow",
+      "visible",
+    ]);
+  });
+
+  it("walks open shadow roots", () => {
+    document.body.innerHTML = "<div id='host'><span>light content</span></div>";
+    document.querySelector("#host").attachShadow({ mode: "open" }).innerHTML =
+      "<span>shadow content</span>";
+
+    expect(window.extractVisibleWords(document.body)).toEqual([
+      "shadow",
+      "content",
+      "light",
+      "content",
+    ]);
+  });
+
+  it("extracts CJK words", () => {
+    const doc = new DOMParser().parseFromString(
+      "<body><p>日本語の記事を読んでいます。</p></body>",
+      "text/html",
+    );
+
+    expect(window.extractVisibleWords(doc.body).length).toBeGreaterThan(0);
+  });
+});
+
+describe("wordCoverage", () => {
+  it("counts duplicate rendered words only as often as they occur in raw text", () => {
+    expect(window.wordCoverage(["word"], ["word", "word", "word", "word", "word"])).toEqual({
+      matched: 1,
+      coverage: 0.2,
+    });
+  });
+
+  it("returns zero coverage for an empty rendered word list", () => {
+    expect(window.wordCoverage(["word"], [])).toEqual({ matched: 0, coverage: 0 });
+  });
+});
+
 describe("compareInitialVsRendered", () => {
   it("should flag decisive CSR when raw HTML is script-only", async () => {
     // A CSR app shell: big inline bundle, no real text (the old code counted
@@ -214,6 +286,11 @@ describe("compareInitialVsRendered", () => {
     expect(result.isLikelyCSR).toBe(true);
     expect(result.isDecisiveCSR).toBe(true);
     expect(result.isLikelySSR).toBe(false);
+    expect(result).toMatchObject({
+      wordCoverage: 0,
+      rawWordCount: 0,
+      measure: "words",
+    });
   });
 
   it("should flag SSR when raw text matches rendered text", async () => {
@@ -227,46 +304,102 @@ describe("compareInitialVsRendered", () => {
     expect(result.isLikelySSR).toBe(true);
     expect(result.isLikelyCSR).toBe(false);
     expect(result.isDecisiveCSR).toBe(false);
+    expect(result).toMatchObject({
+      wordCoverage: 1,
+      rawWordCount: result.renderedWordCount,
+      matchedWordCount: result.renderedWordCount,
+      measure: "words",
+    });
   });
 
-  it("flags partial content at 0.3 and 0.39 but not at 0.4 or 0.19", async () => {
-    const compareLengths = async (rawLength, renderedLength) => {
-      const rawText = "r".repeat(rawLength);
-      const renderedText = "r".repeat(renderedLength);
+  it("flags partial word coverage at 0.3 and 0.39 but not at 0.4 or 0.19", async () => {
+    const compareWords = async (rawWordCount) => {
+      const rawText = wordText(rawWordCount);
+      const renderedText = wordText(100);
       mockFetchedHTML(`<html><body><main>${rawText}</main></body></html>`);
       document.body.innerHTML = `<main>${renderedText}</main>`;
       return window.compareInitialVsRendered();
     };
 
-    const partial = await compareLengths(300, 1000);
-    expect(partial.contentRatio).toBe(0.3);
+    const partial = await compareWords(30);
+    expect(partial.wordCoverage).toBe(0.3);
     expect(partial.isPartialCSR).toBe(true);
 
-    const upperPartial = await compareLengths(390, 1000);
-    expect(upperPartial.contentRatio).toBe(0.39);
+    const upperPartial = await compareWords(39);
+    expect(upperPartial.wordCoverage).toBe(0.39);
     expect(upperPartial.isPartialCSR).toBe(true);
 
-    const upperBound = await compareLengths(400, 1000);
-    expect(upperBound.contentRatio).toBe(0.4);
+    const upperBound = await compareWords(40);
+    expect(upperBound.wordCoverage).toBe(0.4);
     expect(upperBound.isPartialCSR).toBe(false);
 
-    const likelyCsr = await compareLengths(380, 2000);
-    expect(likelyCsr.contentRatio).toBe(0.19);
+    const likelyCsr = await compareWords(19);
+    expect(likelyCsr.wordCoverage).toBe(0.19);
     expect(likelyCsr.isLikelyCSR).toBe(true);
     expect(likelyCsr.isPartialCSR).toBe(false);
+    expect(likelyCsr.isDecisiveCSR).toBe(true);
+
+    const decisiveBoundary = await compareWords(20);
+    expect(decisiveBoundary.wordCoverage).toBe(0.2);
+    expect(decisiveBoundary.isLikelyCSR).toBe(false);
+    expect(decisiveBoundary.isPartialCSR).toBe(true);
+    expect(decisiveBoundary.isDecisiveCSR).toBe(false);
   });
 
   it("flags partial content with short raw text when rendered text is long enough", async () => {
-    mockFetchedHTML(
-      `<html><body><main>${"r".repeat(151)}</main></body></html>`,
-    );
-    document.body.innerHTML = `<main>${"r".repeat(650)}</main>`;
+    mockFetchedHTML(`<html><body><main>${wordText(23)}</main></body></html>`);
+    document.body.innerHTML = `<main>${wordText(100)}</main>`;
 
     const result = await window.compareInitialVsRendered();
 
-    expect(result.contentRatio).toBe(0.23);
-    expect(result.rawLength).toBe(151);
+    expect(result.wordCoverage).toBe(0.23);
+    expect(result.rawWordCount).toBe(23);
     expect(result.isPartialCSR).toBe(true);
+  });
+
+  it("uses word coverage to identify same-length skeleton placeholders as CSR", async () => {
+    const nav = "Home About";
+    const placeholders = "Loading content please wait. ".repeat(48);
+    const renderedArticle = WORDS.join(" ");
+    mockFetchedHTML(
+      `<html><body><nav>${nav}</nav><main>${placeholders}</main></body></html>`,
+    );
+    document.body.innerHTML =
+      `<nav>${nav}</nav><main>${renderedArticle}</main>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.contentRatio).toBeGreaterThan(0.9);
+    expect(result.contentRatio).toBeLessThan(1.1);
+    expect(result.wordCoverage).toBeLessThan(0.2);
+    expect(result.isLikelyCSR).toBe(true);
+    expect(result.isDecisiveCSR).toBe(true);
+    expect(result.isLikelySSR).toBe(false);
+  });
+
+  it("recognizes the same words in a different order as SSR", async () => {
+    mockFetchedHTML(
+      `<html><body><main>${WORDS.join(" ")}</main></body></html>`,
+    );
+    document.body.innerHTML =
+      `<main>${WORDS.slice().reverse().join(" ")}</main>`;
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.wordCoverage).toBe(1);
+    expect(result.matchedWordCount).toBe(result.renderedWordCount);
+    expect(result.isLikelySSR).toBe(true);
+    expect(result.isLikelyCSR).toBe(false);
+  });
+
+  it("counts repeated words as a multiset", async () => {
+    mockFetchedHTML("<html><body><main>word</main></body></html>");
+    document.body.innerHTML = "<main>word word word word word</main>";
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.wordCoverage).toBe(0.2);
+    expect(result.matchedWordCount).toBe(1);
   });
 
   it("does not flag partial content when rendered text is too short", async () => {
@@ -360,6 +493,11 @@ describe("parser snapshot fallback", () => {
     expect(result.isLikelySSR).toBe(false);
     expect(result.rawDocument).toBeNull();
     expect(result.responseHeaders).toBeNull();
+    expect(result.wordCoverage).toBeNull();
+    expect(result.rawWordCount).toBeNull();
+    expect(result.renderedWordCount).toBeNull();
+    expect(result.matchedWordCount).toBeNull();
+    expect(result.measure).toBe("length");
   });
 
   it("flags partial content from the parser snapshot", async () => {
@@ -372,6 +510,21 @@ describe("parser snapshot fallback", () => {
     expect(result.source).toBe("parser-snapshot");
     expect(result.contentRatio).toBe(0.3);
     expect(result.isPartialCSR).toBe(true);
+  });
+
+  it("uses the 0.2 decisive boundary for parser snapshots", async () => {
+    document.body.innerHTML = `<main>${"r".repeat(1000)}</main>`;
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+
+    probeBridge({ parsedTextLength: 190 });
+    const decisive = await window.compareInitialVsRendered();
+    expect(decisive.contentRatio).toBe(0.19);
+    expect(decisive.isDecisiveCSR).toBe(true);
+
+    probeBridge({ parsedTextLength: 200 });
+    const boundary = await window.compareInitialVsRendered();
+    expect(boundary.contentRatio).toBe(0.2);
+    expect(boundary.isDecisiveCSR).toBe(false);
   });
 
   it("uses it when the fetch throws, and can still read as SSR", async () => {
@@ -393,11 +546,41 @@ describe("parser snapshot fallback", () => {
     expect(await window.compareInitialVsRendered()).toBeNull();
   });
 
+  it("uses the parser snapshot for a long fetched document with zero word overlap", async () => {
+    probeBridge({ parsedTextLength: 160 });
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><body><main>${"unrelated server placeholder ".repeat(20)}</main></body></html>`,
+    );
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.refetchMismatch).toBe(true);
+    expect(result.refetchMismatchReason).toBe("no-shared-words");
+    expect(result.rawLength).toBe(160);
+    expect(result.measure).toBe("length");
+    expect(result.wordCoverage).toBeNull();
+  });
+
+  it("returns null for a long fetched document with zero overlap and no snapshot", async () => {
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockFetchedHTML(
+      `<html><body><main>${"unrelated server placeholder ".repeat(20)}</main></body></html>`,
+    );
+
+    expect(await window.compareInitialVsRendered()).toBeNull();
+  });
+
   it("marks a successful fetch as the source", async () => {
     mockFetchedHTML(`<html><body><main>${LONG_TEXT}</main></body></html>`);
     document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
 
-    expect((await window.compareInitialVsRendered()).source).toBe("fetch");
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.source).toBe("fetch");
+    expect(result.measure).toBe("words");
+    expect(result.wordCoverage).toBe(1);
   });
 
   it("uses the parse-time snapshot when a successful fetch has a different title", async () => {
@@ -416,6 +599,7 @@ describe("parser snapshot fallback", () => {
 
     expect(result.source).toBe("parser-snapshot");
     expect(result.refetchMismatch).toBe(true);
+    expect(result.refetchMismatchReason).toBe("title");
     expect(result.rawLength).toBe(LONG_TEXT.trim().length);
     expect(result.rawDocument).toBeNull();
   });

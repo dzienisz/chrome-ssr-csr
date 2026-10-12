@@ -27,7 +27,12 @@ function result(overrides = {}) {
       hybridScore: 0,
       frameworks: ["react"],
       generators: [],
-      contentComparison: { rawLength: 40, renderedLength: 8000, ratio: 0.01 },
+      contentComparison: {
+        rawLength: 40,
+        renderedLength: 8000,
+        ratio: 0.01,
+        wordCoverage: 0.01,
+      },
       delivery: {
         available: true,
         modeLabel: "Served from CDN cache",
@@ -117,6 +122,7 @@ describe("toCSV", () => {
     expect(rows[0]).toBe('"Field","Value"');
     expect(rows.some((row) => row.startsWith('"Render type"'))).toBe(true);
     expect(rows.some((row) => row.includes("Cloudflare"))).toBe(true);
+    expect(rows).toContain('"Word coverage","1%"');
   });
 
   it("quotes an indicator list that contains commas", () => {
@@ -158,6 +164,23 @@ describe("toMarkdown", () => {
 
     expect(markdown).toContain("| Region | Origin | From server | Added by JS |");
     expect(markdown).toContain("| `#root` | client |");
+  });
+
+  it("exports word-covered characters in the region breakdown", () => {
+    const data = result();
+    data.detailedInfo.domDiff.regions = [
+      {
+        key: "#article",
+        origin: "client",
+        rawChars: 719,
+        coveredChars: 0,
+        renderedChars: 720,
+        addedChars: 720,
+      },
+    ];
+    const markdown = toMarkdown(data, PAGE, "4.0.0");
+
+    expect(markdown).toContain("| `#article` | client | 0 | 720 |");
   });
 
   it("omits sections it has no data for", () => {

@@ -270,7 +270,8 @@ Cover those in the fixtures instead.
 Since v3.7.0 both sides are measured identically with `script/style/noscript`
 and ordinary-template text stripped; the walk includes open shadow roots and
 declarative shadow templates. Both the CSR and SSR branches require ~200 chars
-of real text. When the server sent <10% of the visible text (decisive CSR), the
+of real text. When the server sent under 20% of the visible text (decisive
+CSR: word coverage on the fetch path, text length on the parser snapshot), the
 rendered-DOM SSR signals are capped rather than allowed to outvote the
 comparison. When the raw fetch is refused (bot protection answers it with a
 403) or throws, `probe.js` supplies the length of the text the parser produced
@@ -288,9 +289,15 @@ confidence is capped and definitive verdicts downgrade to
 ground-truth harness: `node extension/scripts/validate-detection.mjs`
 (requires playwright).
 
-When the server sent 20–40% of the visible text (the partial band), the
-comparison adds 40 CSR points and caps the rendered-DOM SSR signals at 50, so
-the verdict is Hybrid or CSR, never SSR.
+On the successful fetch path, comparison flags use multiset word coverage:
+each visible rendered word can match only as many times as it appears in the
+raw HTML, so equally sized skeleton placeholders do not look like SSR. Parser
+snapshots remain length-based. If a long fetched document has no words in
+common with the rendered page, it is treated as a different document and the
+comparison falls back to the parse-time snapshot when available.
+
+From 20–40% word coverage, the partial band adds 40 CSR points and caps those
+signals at 50, so the verdict is Hybrid or CSR, never SSR.
 
 Before classification, a quality gate reports “Cannot assess” when fewer than
 200 visible characters remain or a short page matches a known bot-challenge

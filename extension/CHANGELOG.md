@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Fetch-path raw HTML comparisons now use multiset word coverage, so same-length
+  skeleton placeholders no longer count as server-rendered content.
+- The fetch-path decisive-CSR cap now covers the full under-20% word-coverage
+  band; parser snapshots remain length-based.
+
 ## [4.2.0] - 2026-10-12
 
 ### Added

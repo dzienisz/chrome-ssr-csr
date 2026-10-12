@@ -89,7 +89,7 @@ const CONFIG = {
   contentComparison: {
     csrRatio: 0.2,          // Raw/rendered ratio below this = likely CSR
     partialRatio: 0.4,      // Raw/rendered ratio below this (and >= csrRatio) = server sent under 40% of visible text: partial/mixed
-    decisiveCsrRatio: 0.1,  // Below this = near-conclusive CSR (caps SSR signals)
+    decisiveCsrRatio: 0.2,  // Entire CSR band: server sent under 20% (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
     minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },
@@ -301,6 +301,108 @@ function extractVisibleText(body) {
 }
 
 /**
+ * Extract visible words with element boundaries preserved.
+ * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @returns {string[]} Normalized word tokens
+ */
+function extractVisibleWords(body) {
+  if (!body) return [];
+  const parts = [];
+  const stack = [body];
+
+  function pushChildren(node) {
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      stack.push(node.childNodes[i]);
+    }
+  }
+
+  while (stack.length) {
+    const node = stack.pop();
+    if (node && node.separator) {
+      parts.push(" ");
+      continue;
+    }
+
+    if (node.nodeType === 3) {
+      parts.push(node.data);
+      continue;
+    }
+
+    if (node.nodeType === 1) {
+      if (
+        node.id === "ssr-detector-probe-data" ||
+        node.tagName === "SCRIPT" ||
+        node.tagName === "STYLE" ||
+        node.tagName === "NOSCRIPT"
+      ) {
+        continue;
+      }
+
+      if (node.tagName === "TEMPLATE") {
+        if (node.hasAttribute("shadowrootmode")) {
+          parts.push(" ");
+          stack.push({ separator: true });
+          pushChildren(node.content);
+        }
+        continue;
+      }
+
+      parts.push(" ");
+      stack.push({ separator: true });
+      pushChildren(node);
+      if (node.shadowRoot) pushChildren(node.shadowRoot);
+      continue;
+    }
+
+    if (node.nodeType === 9 || node.nodeType === 11) pushChildren(node);
+  }
+
+  const text = parts
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim()
+    .normalize("NFKC")
+    .toLowerCase();
+
+  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+    const segmenter = new Intl.Segmenter("und", { granularity: "word" });
+    return Array.from(segmenter.segment(text))
+      .filter((part) => part.isWordLike)
+      .map((part) => part.segment);
+  }
+
+  return text.match(/[\p{L}\p{N}]+/gu) || [];
+}
+
+/**
+ * Measure how many rendered words are present in the raw HTML, preserving
+ * duplicate occurrences on both sides.
+ * @param {string[]} rawWords
+ * @param {string[]} renderedWords
+ * @returns {{matched: number, coverage: number}}
+ */
+function wordCoverage(rawWords, renderedWords) {
+  const rawCounts = new Map();
+  for (const word of rawWords) {
+    rawCounts.set(word, (rawCounts.get(word) || 0) + 1);
+  }
+
+  let matched = 0;
+  for (const word of renderedWords) {
+    const count = rawCounts.get(word) || 0;
+    if (count > 0) {
+      matched++;
+      rawCounts.set(word, count - 1);
+    }
+  }
+
+  return {
+    matched,
+    coverage: renderedWords.length ? matched / renderedWords.length : 0,
+  };
+}
+
+/**
  * Compare initial HTML (before JS) vs rendered DOM (after JS)
  * True SSR will have similar content in both; CSR will have minimal raw HTML
  * @returns {Promise<Object|null>} Comparison results or null if fetch fails
@@ -345,7 +447,10 @@ async function compareInitialVsRendered() {
       rawTitle &&
       fnv1a(rawTitle) !== snapshot.parsedTitleHash
     ) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "title",
+      });
     }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
@@ -358,29 +463,44 @@ async function compareInitialVsRendered() {
 
     // Calculate content ratio
     const contentRatio = rawLength / Math.max(renderedLength, 1);
-
-    // Determine if CSR or SSR based on ratio.
-    // Both branches require enough real text to judge (symmetric guards).
     const minLength = config.contentComparison.minRenderedLength;
+    const rawWords = extractVisibleWords(rawDoc.body);
+    const renderedWords = extractVisibleWords(document.body);
+    const { matched, coverage } = wordCoverage(rawWords, renderedWords);
+
+    if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "no-shared-words",
+      });
+    }
+
+    // Determine if CSR or SSR based on rendered-word coverage.
+    // Both branches require enough real text to judge (symmetric guards).
     const isLikelyCSR =
-      contentRatio < config.contentComparison.csrRatio &&
+      coverage < config.contentComparison.csrRatio &&
       renderedLength > minLength;
     const isPartialCSR =
-      contentRatio >= config.contentComparison.csrRatio &&
-      contentRatio < config.contentComparison.partialRatio &&
+      coverage >= config.contentComparison.csrRatio &&
+      coverage < config.contentComparison.partialRatio &&
       renderedLength > minLength;
     const isLikelySSR =
-      contentRatio > config.contentComparison.ssrRatio && rawLength > minLength;
+      coverage > config.contentComparison.ssrRatio && rawLength > minLength;
 
     // Server sent almost none of the visible text: near-conclusive CSR
     const isDecisiveCSR =
-      contentRatio < config.contentComparison.decisiveCsrRatio &&
+      coverage < config.contentComparison.decisiveCsrRatio &&
       renderedLength > minLength;
 
     return {
       rawLength,
       renderedLength,
       contentRatio: Math.round(contentRatio * 100) / 100,
+      wordCoverage: Math.round(coverage * 100) / 100,
+      rawWordCount: rawWords.length,
+      renderedWordCount: renderedWords.length,
+      matchedWordCount: matched,
+      measure: "words",
       isLikelyCSR,
       isPartialCSR,
       isLikelySSR,
@@ -485,6 +605,11 @@ function compareParsedSnapshot(options = {}) {
     rawLength,
     renderedLength,
     contentRatio: Math.round(contentRatio * 100) / 100,
+    wordCoverage: null,
+    rawWordCount: null,
+    renderedWordCount: null,
+    matchedWordCount: null,
+    measure: "length",
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
       renderedLength > minLength,
@@ -503,6 +628,7 @@ function compareParsedSnapshot(options = {}) {
     rawDocument: null,
     rawHTML: null,
     refetchMismatch: options.refetchMismatch === true,
+    refetchMismatchReason: options.refetchMismatchReason ?? null,
   };
 }
 
@@ -521,6 +647,8 @@ function getDetectionBodyHTML() {
 if (typeof window !== "undefined") {
   window.getDetectionBodyHTML = getDetectionBodyHTML;
   window.extractVisibleText = extractVisibleText;
+  window.extractVisibleWords = extractVisibleWords;
+  window.wordCoverage = wordCoverage;
   window.compareInitialVsRendered = compareInitialVsRendered;
   window.compareParsedSnapshot = compareParsedSnapshot;
 }
@@ -1239,7 +1367,26 @@ function collectRegions(renderedBody, rawBody) {
       const key = regionKey(child);
       const rawElement = findInRaw(rawBody, key);
       const rawChars = visibleTextLength(rawElement);
-      const ratio = renderedChars > 0 ? rawChars / renderedChars : 1;
+      let coveredChars = Math.min(rawChars, renderedChars);
+      if (
+        rawElement &&
+        typeof window !== "undefined" &&
+        typeof window.extractVisibleWords === "function" &&
+        typeof window.wordCoverage === "function"
+      ) {
+        const renderedWords = window.extractVisibleWords(child);
+        if (renderedWords.length > 0) {
+          const coverage = window.wordCoverage(
+            window.extractVisibleWords(rawElement),
+            renderedWords,
+          ).coverage;
+          coveredChars = Math.min(
+            rawChars,
+            Math.round(renderedChars * coverage),
+          );
+        }
+      }
+      const ratio = renderedChars > 0 ? coveredChars / renderedChars : 1;
 
       let origin;
       if (!rawElement) origin = "client";
@@ -1271,8 +1418,9 @@ function collectRegions(renderedBody, rawBody) {
         key,
         label: regionLabel(child, key),
         rawChars,
+        coveredChars,
         renderedChars,
-        addedChars: Math.max(0, renderedChars - rawChars),
+        addedChars: Math.max(0, renderedChars - coveredChars),
         origin,
         existedInRawHtml: Boolean(rawElement),
       });
@@ -1328,7 +1476,7 @@ function detectDomDiff(rawDocument) {
   let serverChars = 0;
   let clientChars = 0;
   for (const region of regions) {
-    serverChars += Math.min(region.rawChars, region.renderedChars);
+    serverChars += region.coveredChars;
     clientChars += region.addedChars;
   }
 
@@ -2771,20 +2919,38 @@ async function pageAnalyzer() {
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
       const fromSnapshot = comparisonResults.source === "parser-snapshot";
+      const wordCoverage = comparisonResults.wordCoverage ?? 0;
+      const comparisonMeasure = fromSnapshot
+        ? `${comparisonResults.contentRatio}x ratio`
+        : `word coverage ${wordCoverage}`;
+      const matchedWords = (
+        comparisonResults.matchedWordCount ?? 0
+      ).toLocaleString();
+      const renderedWords = (
+        comparisonResults.renderedWordCount ?? 0
+      ).toLocaleString();
+      const wordCoveragePercent = Math.round(
+        wordCoverage * 100,
+      );
       if (fromSnapshot) {
         signals.push({
           id: "comparison.parserSnapshot",
           label: "Measured while the page loaded",
           impact: "info",
           weight: 0,
-          detail: comparisonResults.refetchMismatch
-            ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
-            : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+          detail:
+            comparisonResults.refetchMismatchReason === "no-shared-words"
+              ? "The second copy of the HTML shared no words with the page on screen, so it was treated as a different document and the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+              : comparisonResults.refetchMismatch
+                ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+                : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
         });
       }
       if (comparisonResults.isLikelyCSR) {
         csrScore += config.scoring.rawVsRenderedMismatch;
-        indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
+        indicators.push(
+          `raw HTML much smaller than rendered (${comparisonMeasure}) - CSR`,
+        );
         signals.push({
           id: "comparison.mismatch",
           label: "The server sent a fraction of what you see",
@@ -2792,12 +2958,12 @@ async function pageAnalyzer() {
           weight: config.scoring.rawVsRenderedMismatch,
           detail: fromSnapshot
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
-            : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
+            : `${matchedWords} of ${renderedWords} visible words (${wordCoveragePercent}%) arrived in the HTML.`,
         });
       } else if (comparisonResults.isPartialCSR) {
         csrScore += config.scoring.rawVsRenderedPartial;
         indicators.push(
-          `raw HTML holds under 40% of rendered content (${comparisonResults.contentRatio}x ratio) - partial CSR`,
+          `raw HTML holds under 40% of rendered content (${comparisonMeasure}) - partial CSR`,
         );
         signals.push({
           id: "comparison.partial",
@@ -2806,24 +2972,33 @@ async function pageAnalyzer() {
           weight: config.scoring.rawVsRenderedPartial,
           detail: fromSnapshot
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen — JavaScript added the rest.`
-            : `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters (${Math.round(comparisonResults.contentRatio * 100)}%) were in the initial response; JavaScript added the rest.`,
+            : `${matchedWords} of ${renderedWords} visible words (${wordCoveragePercent}%) were in the initial response; JavaScript added the rest.`,
         });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
-        indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
+        indicators.push(
+          `raw HTML matches rendered content (${comparisonMeasure}) - SSR`,
+        );
         signals.push({
           id: "comparison.match",
           label: "The served HTML already contained the page",
           impact: "ssr",
           weight: config.scoring.rawVsRenderedMatch,
-          detail: `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters were in the initial response.`,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters were in the initial response.`
+            : `${matchedWords} of ${renderedWords} visible words were in the initial response.`,
         });
       }
       detailedInfo.contentComparison = {
         rawLength: comparisonResults.rawLength,
         renderedLength: comparisonResults.renderedLength,
         ratio: comparisonResults.contentRatio,
-        source: comparisonResults.source || "fetch"
+        source: comparisonResults.source || "fetch",
+        wordCoverage: comparisonResults.wordCoverage ?? null,
+        rawWords: comparisonResults.rawWordCount ?? null,
+        renderedWords: comparisonResults.renderedWordCount ?? null,
+        matchedWords: comparisonResults.matchedWordCount ?? null,
+        measure: comparisonResults.measure ?? (fromSnapshot ? "length" : "words"),
       };
     }
 
@@ -2896,7 +3071,7 @@ async function pageAnalyzer() {
         impact: "ssr",
         weight: -removed,
         detail:
-          `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
+          `The served HTML held under 20% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
     } else if (comparisonResults?.isPartialCSR) {
       const cappedFrom = ssrScore;

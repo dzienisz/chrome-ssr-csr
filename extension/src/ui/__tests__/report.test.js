@@ -46,6 +46,7 @@ function result(overrides = {}) {
         renderedLength: 2010,
         ratio: 0.99,
         source: "fetch",
+        wordCoverage: 0.99,
       },
       timing: { domContentLoaded: 12, firstContentfulPaint: 340 },
       delivery: {
@@ -238,6 +239,29 @@ describe("escaping", () => {
 });
 
 describe("renderOverview", () => {
+  it("shows the server word-coverage percentage when available", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderOverview(result()));
+
+    const stat = [...container.querySelectorAll(".stat")].find(
+      (item) => item.querySelector(".stat-label")?.textContent === "Words from server",
+    );
+
+    expect(stat.querySelector(".stat-value").textContent).toBe("99%");
+  });
+
+  it("omits the server word-coverage stat for unassessable results", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderOverview(result({ assessable: false })));
+
+    expect(
+      [...container.querySelectorAll(".stat")].some(
+        (item) =>
+          item.querySelector(".stat-label")?.textContent === "Words from server",
+      ),
+    ).toBe(false);
+  });
+
   it("lists frameworks and generators as chips", () => {
     const container = document.createElement("div");
     container.appendChild(renderOverview(result()));
@@ -435,6 +459,30 @@ describe("renderDiff", () => {
 
     expect(container.querySelectorAll(".region")).toHaveLength(1);
     expect(container.textContent).toContain("Main content");
+  });
+
+  it("uses word-covered characters for the region bar, label, and accessible name", () => {
+    const data = result();
+    data.detailedInfo.domDiff.regions = [
+      {
+        key: "#article",
+        label: "Article",
+        rawChars: 719,
+        coveredChars: 0,
+        renderedChars: 720,
+        addedChars: 720,
+        origin: "client",
+      },
+    ];
+    const container = document.createElement("div");
+    container.appendChild(renderDiff(data));
+    const track = container.querySelector(".region-track");
+
+    expect(container.textContent).toContain("0 from server");
+    expect(track.querySelector(".split-server").style.width).toBe("0%");
+    expect(track.getAttribute("aria-label")).toBe(
+      "0 characters from server, 720 added by JavaScript",
+    );
   });
 
   it("explains itself when the raw HTML was unavailable", () => {

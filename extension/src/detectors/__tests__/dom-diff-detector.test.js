@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
+import "../comparison-detector.js";
 import "../dom-diff-detector.js";
 
 /**
@@ -89,6 +90,73 @@ describe("detectDomDiff", () => {
 
     expect(details.domDiff.regions[0].origin).toBe("mixed");
     expect(details.domDiff.regions[0].addedChars).toBeGreaterThan(0);
+  });
+
+  it("attributes same-length placeholder text to JavaScript", () => {
+    const navText = "home links ".repeat(8).trim();
+    const rawPlaceholder = "loading pending waiting ".repeat(12).trim();
+    const articleText = "visible article content ".repeat(12).trim();
+    const commentsText = "authors mention updates ".repeat(7).trim();
+    const rawComments = "loading pending waiting ".repeat(7).trim();
+    expect(rawPlaceholder.length).toBe(articleText.length);
+    expect(rawComments.length).toBe(commentsText.length);
+
+    const raw = rawDocumentFrom(
+      `<body><nav><p>${navText}</p></nav><article id="story"><p>${rawPlaceholder}</p></article><section id="comments"><p>${rawComments}</p></section></body>`,
+    );
+    document.body.innerHTML = `<nav><p>${navText}</p></nav><article id="story"><p>${articleText}</p></article><section id="comments"><p>${commentsText}</p></section>`;
+
+    const { details } = window.detectDomDiff(raw);
+    const article = details.domDiff.regions.find((region) => region.key === "#story");
+    const comments = details.domDiff.regions.find((region) => region.key === "#comments");
+
+    expect(article.origin).toBe("client");
+    expect(article.rawChars).toBe(article.renderedChars);
+    expect(article.coveredChars).toBe(0);
+    expect(comments.origin).toBe("client");
+    expect(details.domDiff.serverSharePct).toBeGreaterThanOrEqual(11);
+    expect(details.domDiff.serverSharePct).toBeLessThanOrEqual(20);
+  });
+
+  it("keeps reordered words attributed to the server", () => {
+    const rawText =
+      "Alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu.";
+    const renderedText =
+      "Mu lambda kappa iota theta eta zeta epsilon delta gamma beta alpha.";
+    const raw = rawDocumentFrom(
+      `<body><main id="article"><p>${rawText}</p></main></body>`,
+    );
+    document.body.innerHTML = `<main id="article"><p>${renderedText}</p></main>`;
+
+    const { details } = window.detectDomDiff(raw);
+    const article = details.domDiff.regions[0];
+
+    expect(article.key).toBe("#article");
+    expect(article.origin).toBe("server");
+    expect(article.coveredChars).toBe(article.renderedChars);
+    expect(details.domDiff.serverSharePct).toBe(100);
+  });
+
+  it("falls back to character coverage when word helpers are unavailable", () => {
+    const extractVisibleWords = window.extractVisibleWords;
+    const wordCoverage = window.wordCoverage;
+    const html = `<main><p>${PROSE}</p></main>`;
+    document.body.innerHTML = html;
+
+    try {
+      window.extractVisibleWords = undefined;
+      window.wordCoverage = undefined;
+
+      const { details } = window.detectDomDiff(rawDocumentFrom(`<body>${html}</body>`));
+
+      expect(details.domDiff.regions[0].origin).toBe("server");
+      expect(details.domDiff.regions[0].coveredChars).toBe(
+        details.domDiff.regions[0].rawChars,
+      );
+    } finally {
+      window.extractVisibleWords = extractVisibleWords;
+      window.wordCoverage = wordCoverage;
+    }
   });
 
   it("matches a non-id region key from the body instead of a nested duplicate", () => {
