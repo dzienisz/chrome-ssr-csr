@@ -51,6 +51,138 @@
     "message": "Why this verdict",
     "description": "Card title above the strongest signals"
   },
+  "decisionPageCheck": {
+    "message": "Page check",
+    "description": "Step heading for the decision-path card's page quality gate"
+  },
+  "decisionGateBotChallenge": {
+    "message": "A short bot-challenge page was detected; its $1 visible characters cannot be assessed.",
+    "description": "Decision-path explanation when the page fails the bot-challenge quality gate"
+  },
+  "decisionGateTooLittle": {
+    "message": "Only $1 visible characters were available, so the page could not be assessed.",
+    "description": "Decision-path explanation when too little visible text is available"
+  },
+  "decisionGatePassed": {
+    "message": "Passed: $1 characters of visible text.",
+    "description": "Decision-path explanation when the page passes the quality gate"
+  },
+  "decisionMeasurement": {
+    "message": "Measurement",
+    "description": "Step heading for the raw-HTML comparison measurement"
+  },
+  "decisionNoMeasurement": {
+    "message": "The page HTML could not be fetched again, so nothing was measured.",
+    "description": "Decision-path explanation when the raw HTML comparison is unavailable"
+  },
+  "decisionFetchMeasurement": {
+    "message": "$1 of $2 visible words ($3%) were in the HTML the server sent.",
+    "description": "Decision-path measurement using matching visible words from the fetched HTML"
+  },
+  "decisionSnapshotTitle": {
+    "message": "The second HTML copy had a different title, so it was treated as a different page.",
+    "description": "Reason a fetched HTML document was rejected in favor of the parser snapshot"
+  },
+  "decisionSnapshotNoWords": {
+    "message": "The second HTML copy shared no words with the page on screen, so it was treated as a different document.",
+    "description": "Reason a zero-overlap fetched HTML document was rejected in favor of the parser snapshot"
+  },
+  "decisionSnapshotRefused": {
+    "message": "The site refused a second copy of its HTML.",
+    "description": "Reason the initial parser snapshot was used when the site refused a re-fetch"
+  },
+  "decisionSnapshotMeasurement": {
+    "message": "$1 of $2 characters were on the page when the HTML finished parsing.",
+    "description": "Decision-path measurement taken from the parser snapshot"
+  },
+  "decisionRule": {
+    "message": "Comparison rule",
+    "description": "Step heading for the comparison band and any server-signal cap"
+  },
+  "decisionBandCsr": {
+    "message": "Under $1% → client-rendered evidence: CSR +$2.",
+    "description": "Decision-path result for the client-rendered comparison band"
+  },
+  "decisionBandPartial": {
+    "message": "$1–$2% → partly client-rendered: CSR +$3.",
+    "description": "Decision-path result for the partial client-rendered comparison band"
+  },
+  "decisionBandNeutral": {
+    "message": "$1–$2% → inconclusive, no points either way.",
+    "description": "Decision-path result for the neutral comparison band"
+  },
+  "decisionBandSsr": {
+    "message": "Over $1% → server-rendered evidence: SSR +$2.",
+    "description": "Decision-path result for the server-rendered comparison band"
+  },
+  "decisionBandShort": {
+    "message": "Too little text for the comparison to count.",
+    "description": "Decision-path result when the comparison text is below its minimum length"
+  },
+  "decisionBandUnknown": {
+    "message": "No comparison band was recorded.",
+    "description": "Fallback when a decision record has an unknown comparison band"
+  },
+  "decisionBandUnavailable": {
+    "message": "No content-comparison rule could be applied.",
+    "description": "Decision-path result when the raw HTML comparison was unavailable"
+  },
+  "decisionCap": {
+    "message": "Server-side signals read after JavaScript were capped from $1 to $2.",
+    "description": "Decision-path explanation of the server-side signal score cap"
+  },
+  "decisionScore": {
+    "message": "Score",
+    "description": "Step heading for the final SSR and CSR scores"
+  },
+  "decisionScoreDetail": {
+    "message": "SSR $1 vs CSR $2 → $3% SSR · hybrid score $4.",
+    "description": "Decision-path summary of the final scores and SSR share"
+  },
+  "decisionVerdict": {
+    "message": "Verdict",
+    "description": "Step heading for the classification rule that selected the verdict"
+  },
+  "decisionVerdictStrongHybrid": {
+    "message": "Hybrid score ≥ $1 (island/partial-hydration markers) → Hybrid, regardless of the measurement.",
+    "description": "Decision-path explanation for the strong hybrid classification rule"
+  },
+  "decisionVerdictBalancedHybrid": {
+    "message": "SSR share $1% with SSR $2 and CSR $3 fell in the $4–$5% hybrid band → Hybrid.",
+    "description": "Decision-path explanation for the balanced hybrid classification rule"
+  },
+  "decisionVerdictSsr": {
+    "message": "SSR share $1% ≥ $2% → Server-Side Rendered (SSR).",
+    "description": "Decision-path explanation for the definitive SSR classification rule"
+  },
+  "decisionVerdictCsr": {
+    "message": "SSR share $1% ≤ $2% → Client-Side Rendered (CSR).",
+    "description": "Decision-path explanation for the definitive CSR classification rule"
+  },
+  "decisionVerdictLikelySsr": {
+    "message": "SSR share $1% ≥ $2% → Likely SSR with Hydration.",
+    "description": "Decision-path explanation for the likely SSR classification rule"
+  },
+  "decisionVerdictLikelyCsr": {
+    "message": "SSR share $1% ≤ $2% → Likely CSR/SPA.",
+    "description": "Decision-path explanation for the likely CSR classification rule"
+  },
+  "decisionVerdictMixed": {
+    "message": "No classification threshold matched → Hybrid/Mixed Rendering.",
+    "description": "Decision-path explanation for the mixed classification fallback"
+  },
+  "decisionDowngraded": {
+    "message": "Without a comparison, the definitive verdict was downgraded to Likely and confidence was capped at $1%.",
+    "description": "Decision-path explanation for downgrade and confidence cap when comparison is unavailable"
+  },
+  "decisionAlgorithm": {
+    "message": "Algorithm",
+    "description": "Step heading for the algorithm version footer"
+  },
+  "decisionFooter": {
+    "message": "Algorithm v$1 · every signal is in the Evidence tab",
+    "description": "Decision-path footer with version and pointer to the Evidence tab"
+  },
   "scoredEvidence": {
     "message": "Scored evidence",
     "description": "Card title for signals that changed the score"

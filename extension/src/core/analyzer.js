@@ -164,6 +164,7 @@ async function pageAnalyzer() {
     const indicators = [];
     const signals = [];
     const detailedInfo = {};
+    let comparisonCap = null;
 
     // Add hybrid detection results
     indicators.push(...hybridResults.indicators);
@@ -313,6 +314,13 @@ async function pageAnalyzer() {
       const cappedFrom = ssrScore;
       ssrScore = Math.min(ssrScore, config.scoring.decisiveCsrSsrCap);
       const removed = cappedFrom - ssrScore;
+      if (removed > 0) {
+        comparisonCap = {
+          kind: "decisive",
+          from: cappedFrom,
+          to: ssrScore,
+        };
+      }
       indicators.push('raw HTML nearly empty vs rendered - SSR signals capped (CSR)');
       // A negative SSR weight, not a positive CSR one. The branch takes points
       // away from the SSR side; it adds nothing to the CSR side, and labelling
@@ -332,6 +340,11 @@ async function pageAnalyzer() {
       ssrScore = Math.min(ssrScore, config.scoring.partialCsrSsrCap);
       const removed = cappedFrom - ssrScore;
       if (removed > 0) {
+        comparisonCap = {
+          kind: "partial",
+          from: cappedFrom,
+          to: ssrScore,
+        };
         indicators.push("raw HTML holds under 40% of rendered - SSR signals capped (partial)");
         signals.push({
           id: "comparison.partialCap",
@@ -389,6 +402,7 @@ async function pageAnalyzer() {
     const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
     let renderType = classification.renderType;
     let confidence = classification.confidence;
+    let downgraded = false;
 
     // Comparison unavailable: the highest-priority signal is missing and the
     // remaining signals are rendered-DOM based, so cap confidence and avoid
@@ -397,8 +411,10 @@ async function pageAnalyzer() {
       confidence = Math.min(confidence, config.confidence.maxConfidenceNoComparison);
       if (renderType === 'Server-Side Rendered (SSR)') {
         renderType = 'Likely SSR with Hydration';
+        downgraded = true;
       } else if (renderType === 'Client-Side Rendered (CSR)') {
         renderType = 'Likely CSR/SPA';
+        downgraded = true;
       }
     }
 
@@ -412,6 +428,79 @@ async function pageAnalyzer() {
       renderType = "Cannot assess";
       confidence = 0;
     }
+
+    let measurement = null;
+    if (comparisonResults) {
+      const fromSnapshot = comparisonResults.source === "parser-snapshot";
+      const bandLimits = {
+        csr: config.contentComparison.csrRatio,
+        partial: config.contentComparison.partialRatio,
+        ssr: config.contentComparison.ssrRatio,
+      };
+      let band;
+      let points = null;
+
+      if (comparisonResults.isLikelyCSR) {
+        band = "csr";
+        points = { side: "csr", value: config.scoring.rawVsRenderedMismatch };
+      } else if (comparisonResults.isPartialCSR) {
+        band = "partial";
+        points = { side: "csr", value: config.scoring.rawVsRenderedPartial };
+      } else if (comparisonResults.isLikelySSR) {
+        band = "ssr";
+        points = { side: "ssr", value: config.scoring.rawVsRenderedMatch };
+      } else if (
+        comparisonResults.renderedLength <= config.contentComparison.minRenderedLength
+      ) {
+        band = "short";
+      } else {
+        band = "neutral";
+      }
+
+      measurement = {
+        source: fromSnapshot ? "parser-snapshot" : "fetch",
+        measure:
+          comparisonResults.measure ?? (fromSnapshot ? "length" : "words"),
+        value: fromSnapshot
+          ? comparisonResults.contentRatio
+          : comparisonResults.wordCoverage,
+        matched: fromSnapshot
+          ? comparisonResults.rawLength
+          : comparisonResults.matchedWordCount,
+        total: fromSnapshot
+          ? comparisonResults.renderedLength
+          : comparisonResults.renderedWordCount,
+        snapshotReason: fromSnapshot
+          ? comparisonResults.refetchMismatchReason || "refused"
+          : null,
+        band,
+        bandLimits,
+        points,
+      };
+    }
+
+    const decision = {
+      algorithmVersion: config.algorithmVersion,
+      gate: {
+        passed: !unassessableReason,
+        reason: unassessableReason,
+        visibleChars: visibleLength,
+      },
+      measurement,
+      cap: comparisonCap,
+      score: {
+        ssr: ssrScore,
+        csr: csrScore,
+        ssrPercentage: classification.ssrPercentage,
+        hybridScore: classification.hybridScore,
+      },
+      rule: classification.rule,
+      threshold: classification.threshold,
+      downgraded,
+      confidenceCap: comparisonResults
+        ? null
+        : config.confidence.maxConfidenceNoComparison,
+    };
 
     // Strongest first, so a reader sees the evidence that decided the verdict
     // before the supporting detail. By magnitude, not by value: a signal that
@@ -432,6 +521,8 @@ async function pageAnalyzer() {
     return {
       renderType,
       confidence,
+      algorithmVersion: config.algorithmVersion,
+      decision,
       ...(unassessableReason
         ? { assessable: false, unassessableReason }
         : { assessable: true }),
@@ -458,6 +549,8 @@ async function pageAnalyzer() {
     return {
       renderType: "Analysis Error",
       confidence: 0,
+      algorithmVersion: config.algorithmVersion,
+      decision: null,
       indicators: ["analysis failed - " + error.message],
       signals: [],
       renderOrigin: null,

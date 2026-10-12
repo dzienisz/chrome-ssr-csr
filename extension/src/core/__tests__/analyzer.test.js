@@ -307,3 +307,221 @@ describe('pageAnalyzer', () => {
     expect(JSON.parse(JSON.stringify(result))).toBeTruthy();
   });
 });
+
+describe('decision metadata', () => {
+  beforeEach(() => {
+    document.title = 'Example page';
+    document.body.innerHTML = `<p>${'visible text '.repeat(40)}</p>`;
+  });
+
+  function fetchComparison(overrides = {}) {
+    return {
+      source: 'fetch',
+      measure: 'words',
+      rawLength: 1000,
+      renderedLength: 1000,
+      contentRatio: 1,
+      wordCoverage: 0.5,
+      rawWordCount: 100,
+      renderedWordCount: 100,
+      matchedWordCount: 50,
+      isLikelyCSR: false,
+      isPartialCSR: false,
+      isLikelySSR: false,
+      isDecisiveCSR: false,
+      ...overrides,
+    };
+  }
+
+  it('records the fetch CSR rule, decisive cap, measurement, and score', async () => {
+    stubDetectors({
+      content: {
+        ssrScore: 80,
+        csrScore: 0,
+        indicators: ['rich initial content'],
+        details: {},
+      },
+      comparison: fetchComparison({
+        rawLength: 800,
+        renderedLength: 1600,
+        wordCoverage: 0.11,
+        matchedWordCount: 22,
+        renderedWordCount: 193,
+        isLikelyCSR: true,
+        isDecisiveCSR: true,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.algorithmVersion).toBe(2);
+    expect(result.decision).toMatchObject({
+      algorithmVersion: 2,
+      gate: { passed: true, reason: null, visibleChars: 1600 },
+      measurement: {
+        source: 'fetch',
+        measure: 'words',
+        value: 0.11,
+        matched: 22,
+        total: 193,
+        snapshotReason: null,
+        band: 'csr',
+        bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+        points: { side: 'csr', value: 40 },
+      },
+      cap: { kind: 'decisive', from: 80, to: 10 },
+      score: { ssr: 10, csr: 40, ssrPercentage: 20, hybridScore: 0 },
+      rule: 'csr',
+      threshold: 25,
+      downgraded: false,
+      confidenceCap: null,
+    });
+  });
+
+  it('records partial-band points and the partial SSR cap', async () => {
+    stubDetectors({
+      content: {
+        ssrScore: 80,
+        csrScore: 0,
+        indicators: ['rich initial content'],
+        details: {},
+      },
+      comparison: fetchComparison({
+        wordCoverage: 0.3,
+        matchedWordCount: 30,
+        isPartialCSR: true,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision).toMatchObject({
+      measurement: {
+        band: 'partial',
+        points: { side: 'csr', value: 40 },
+      },
+      cap: { kind: 'partial', from: 80, to: 50 },
+      score: { ssr: 50, csr: 40, ssrPercentage: 56, hybridScore: 0 },
+      rule: 'balancedHybrid',
+      threshold: { min: 41, max: 59 },
+    });
+  });
+
+  it.each([
+    [
+      'neutral',
+      fetchComparison({ wordCoverage: 0.55 }),
+      { band: 'neutral', points: null },
+    ],
+    [
+      'SSR',
+      fetchComparison({
+        wordCoverage: 0.8,
+        matchedWordCount: 80,
+        isLikelySSR: true,
+      }),
+      { band: 'ssr', points: { side: 'ssr', value: 30 } },
+    ],
+    [
+      'short',
+      fetchComparison({
+        rawLength: 100,
+        renderedLength: 200,
+        contentRatio: 0.5,
+        wordCoverage: 0.5,
+      }),
+      { band: 'short', points: null },
+    ],
+  ])('records the %s comparison band', async (_name, comparison, expected) => {
+    stubDetectors({ comparison });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement).toMatchObject(expected);
+  });
+
+  it.each(['title', 'no-shared-words', 'refused'])(
+    'records the parser-snapshot reason %s',
+    async (snapshotReason) => {
+      stubDetectors({
+        comparison: {
+          source: 'parser-snapshot',
+          measure: 'length',
+          rawLength: 1200,
+          renderedLength: 5400,
+          contentRatio: 0.22,
+          wordCoverage: null,
+          isLikelyCSR: false,
+          isPartialCSR: true,
+          isLikelySSR: false,
+          isDecisiveCSR: false,
+          refetchMismatch: snapshotReason !== 'refused',
+          refetchMismatchReason:
+            snapshotReason === 'refused' ? null : snapshotReason,
+        },
+      });
+
+      const result = await window.pageAnalyzer();
+
+      expect(result.decision.measurement).toMatchObject({
+        source: 'parser-snapshot',
+        measure: 'length',
+        value: 0.22,
+        matched: 1200,
+        total: 5400,
+        snapshotReason,
+      });
+    },
+  );
+
+  it('records the Likely downgrade and confidence cap when comparison is unavailable', async () => {
+    stubDetectors({
+      content: {
+        ssrScore: 80,
+        csrScore: 0,
+        indicators: ['rich content'],
+        details: {},
+      },
+      comparison: null,
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toBe('Likely SSR with Hydration');
+    expect(result.decision).toMatchObject({
+      measurement: null,
+      rule: 'ssr',
+      threshold: 75,
+      downgraded: true,
+      confidenceCap: 60,
+    });
+  });
+
+  it('records a failed quality gate for Cannot assess', async () => {
+    document.body.textContent = 'x'.repeat(120);
+    stubDetectors({ comparison: null });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toBe('Cannot assess');
+    expect(result.decision.gate).toEqual({
+      passed: false,
+      reason: 'too-little-text',
+      visibleChars: 120,
+    });
+  });
+
+  it('returns a null decision for analysis errors', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    stubDetectors();
+    window.compareInitialVsRendered = vi.fn(() => {
+      throw new Error('comparison failed');
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.algorithmVersion).toBe(2);
+    expect(result.decision).toBeNull();
+    errorLog.mockRestore();
+  });
+});

@@ -175,3 +175,20 @@ describe('calculateClassification', () => {
     });
   });
 });
+
+describe('classification decision metadata', () => {
+  it.each([
+    ['strongHybrid', 50, 50, 30, 30],
+    ['balancedHybrid', 50, 50, 0, { min: 41, max: 59 }],
+    ['ssr', 80, 10, 0, 75],
+    ['csr', 10, 80, 0, 25],
+    ['likelySsr', 60, 30, 0, 60],
+    ['likelyCsr', 30, 50, 0, 40],
+    ['mixed', 10, 10, 0, null],
+  ])('returns the %s rule and threshold', (rule, ssr, csr, hybrid, threshold) => {
+    const result = window.calculateClassification(ssr, csr, hybrid, []);
+
+    expect(result.rule).toBe(rule);
+    expect(result.threshold).toEqual(threshold);
+  });
+});

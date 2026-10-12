@@ -53,15 +53,282 @@ function el(tag, props = {}) {
  * @param {string} fallback
  * @returns {string}
  */
-function label(key, fallback) {
+function label(key, fallback, substitutions) {
   return typeof window !== "undefined" && typeof window.t === "function"
-    ? window.t(key, fallback)
+    ? window.t(key, fallback, substitutions)
     : fallback;
 }
 
 /** @param {number|null|undefined} n */
 function num(n) {
   return typeof n === "number" && isFinite(n) ? n.toLocaleString() : "—";
+}
+
+/** @param {number|null|undefined} value */
+function percent(value) {
+  return typeof value === "number" && isFinite(value)
+    ? String(Math.round(value * 100))
+    : "—";
+}
+
+/**
+ * Explain the recorded decision path using only values carried by the result.
+ * @param {Object|null} decision
+ * @returns {{id: string, label: string, detail: string}[]}
+ */
+function describeDecision(decision) {
+  if (!decision || !decision.gate) return [];
+
+  const gate = decision.gate;
+  const gateLabel = label("decisionPageCheck", "Page check");
+  if (!gate.passed) {
+    const detail =
+      gate.reason === "bot-challenge"
+        ? label(
+            "decisionGateBotChallenge",
+            `A short bot-challenge page was detected; its ${num(gate.visibleChars)} visible characters cannot be assessed.`,
+            [num(gate.visibleChars)],
+          )
+        : label(
+            "decisionGateTooLittle",
+            `Only ${num(gate.visibleChars)} visible characters were available, so the page could not be assessed.`,
+            [num(gate.visibleChars)],
+          );
+    return [{ id: "gate", label: gateLabel, detail }];
+  }
+
+  const steps = [
+    {
+      id: "gate",
+      label: gateLabel,
+      detail: label(
+        "decisionGatePassed",
+        `Passed: ${num(gate.visibleChars)} characters of visible text.`,
+        [num(gate.visibleChars)],
+      ),
+    },
+  ];
+  const measurement = decision.measurement;
+
+  if (!measurement) {
+    steps.push({
+      id: "measurement",
+      label: label("decisionMeasurement", "Measurement"),
+      detail: label(
+        "decisionNoMeasurement",
+        "The page HTML could not be fetched again, so nothing was measured.",
+      ),
+    });
+  } else if (measurement.source === "fetch") {
+    const coverage = percent(measurement.value);
+    steps.push({
+      id: "measurement",
+      label: label("decisionMeasurement", "Measurement"),
+      detail: label(
+        "decisionFetchMeasurement",
+        `${num(measurement.matched)} of ${num(measurement.total)} visible words (${coverage}%) were in the HTML the server sent.`,
+        [num(measurement.matched), num(measurement.total), coverage],
+      ),
+    });
+  } else {
+    const why =
+      measurement.snapshotReason === "title"
+        ? label(
+            "decisionSnapshotTitle",
+            "The second HTML copy had a different title, so it was treated as a different page.",
+          )
+        : measurement.snapshotReason === "no-shared-words"
+          ? label(
+              "decisionSnapshotNoWords",
+              "The second HTML copy shared no words with the page on screen, so it was treated as a different document.",
+            )
+          : label(
+              "decisionSnapshotRefused",
+              "The site refused a second copy of its HTML.",
+            );
+    steps.push({
+      id: "measurement",
+      label: label("decisionMeasurement", "Measurement"),
+      detail: `${label(
+        "decisionSnapshotMeasurement",
+        `${num(measurement.matched)} of ${num(measurement.total)} characters were on the page when the HTML finished parsing.`,
+        [num(measurement.matched), num(measurement.total)],
+      )} ${why}`,
+    });
+  }
+
+  const limits = measurement?.bandLimits || {};
+  let ruleDetail;
+  if (!measurement) {
+    ruleDetail = label(
+      "decisionBandUnavailable",
+      "No content-comparison rule could be applied.",
+    );
+  } else {
+    switch (measurement.band) {
+      case "csr": {
+        const pointValue = num(measurement.points?.value);
+        const limit = percent(limits.csr);
+        ruleDetail = label(
+          "decisionBandCsr",
+          `Under ${limit}% → client-rendered evidence: CSR +${pointValue}.`,
+          [limit, pointValue],
+        );
+        break;
+      }
+      case "partial": {
+        const lower = percent(limits.csr);
+        const upper = percent(limits.partial);
+        const pointValue = num(measurement.points?.value);
+        ruleDetail = label(
+          "decisionBandPartial",
+          `${lower}–${upper}% → partly client-rendered: CSR +${pointValue}.`,
+          [lower, upper, pointValue],
+        );
+        break;
+      }
+      case "neutral": {
+        const lower = percent(limits.partial);
+        const upper = percent(limits.ssr);
+        ruleDetail = label(
+          "decisionBandNeutral",
+          `${lower}–${upper}% → inconclusive, no points either way.`,
+          [lower, upper],
+        );
+        break;
+      }
+      case "ssr": {
+        const limit = percent(limits.ssr);
+        const pointValue = num(measurement.points?.value);
+        ruleDetail = label(
+          "decisionBandSsr",
+          `Over ${limit}% → server-rendered evidence: SSR +${pointValue}.`,
+          [limit, pointValue],
+        );
+        break;
+      }
+      case "short":
+        ruleDetail = label(
+          "decisionBandShort",
+          "Too little text for the comparison to count.",
+        );
+        break;
+      default:
+        ruleDetail = label(
+          "decisionBandUnknown",
+          "No comparison band was recorded.",
+        );
+    }
+  }
+  if (decision.cap) {
+    ruleDetail += ` ${label(
+      "decisionCap",
+      `Server-side signals read after JavaScript were capped from ${num(decision.cap.from)} to ${num(decision.cap.to)}.`,
+      [num(decision.cap.from), num(decision.cap.to)],
+    )}`;
+  }
+  steps.push({
+    id: "rule",
+    label: label("decisionRule", "Comparison rule"),
+    detail: ruleDetail,
+  });
+
+  const score = decision.score || {};
+  steps.push({
+    id: "score",
+    label: label("decisionScore", "Score"),
+    detail: label(
+      "decisionScoreDetail",
+      `SSR ${num(score.ssr)} vs CSR ${num(score.csr)} → ${num(score.ssrPercentage)}% SSR · hybrid score ${num(score.hybridScore)}.`,
+      [
+        num(score.ssr),
+        num(score.csr),
+        num(score.ssrPercentage),
+        num(score.hybridScore),
+      ],
+    ),
+  });
+
+  const share = num(score.ssrPercentage);
+  const threshold = decision.threshold;
+  let verdictDetail;
+  switch (decision.rule) {
+    case "strongHybrid": {
+      const minimum = num(threshold);
+      verdictDetail = label(
+        "decisionVerdictStrongHybrid",
+        `Hybrid score ≥ ${minimum} (island/partial-hydration markers) → Hybrid, regardless of the measurement.`,
+        [minimum],
+      );
+      break;
+    }
+    case "balancedHybrid": {
+      const minimum = num(threshold?.min);
+      const maximum = num(threshold?.max);
+      verdictDetail = label(
+        "decisionVerdictBalancedHybrid",
+        `SSR share ${share}% with SSR ${num(score.ssr)} and CSR ${num(score.csr)} fell in the ${minimum}–${maximum}% hybrid band → Hybrid.`,
+        [share, num(score.ssr), num(score.csr), minimum, maximum],
+      );
+      break;
+    }
+    case "ssr":
+      verdictDetail = label(
+        "decisionVerdictSsr",
+        `SSR share ${share}% ≥ ${num(threshold)}% → Server-Side Rendered (SSR).`,
+        [share, num(threshold)],
+      );
+      break;
+    case "csr":
+      verdictDetail = label(
+        "decisionVerdictCsr",
+        `SSR share ${share}% ≤ ${num(threshold)}% → Client-Side Rendered (CSR).`,
+        [share, num(threshold)],
+      );
+      break;
+    case "likelySsr":
+      verdictDetail = label(
+        "decisionVerdictLikelySsr",
+        `SSR share ${share}% ≥ ${num(threshold)}% → Likely SSR with Hydration.`,
+        [share, num(threshold)],
+      );
+      break;
+    case "likelyCsr":
+      verdictDetail = label(
+        "decisionVerdictLikelyCsr",
+        `SSR share ${share}% ≤ ${num(threshold)}% → Likely CSR/SPA.`,
+        [share, num(threshold)],
+      );
+      break;
+    default:
+      verdictDetail = label(
+        "decisionVerdictMixed",
+        "No classification threshold matched → Hybrid/Mixed Rendering.",
+      );
+  }
+  if (decision.downgraded) {
+    verdictDetail += ` ${label(
+      "decisionDowngraded",
+      `Without a comparison, the definitive verdict was downgraded to Likely and confidence was capped at ${num(decision.confidenceCap)}%.`,
+      [num(decision.confidenceCap)],
+    )}`;
+  }
+  steps.push({
+    id: "verdict",
+    label: label("decisionVerdict", "Verdict"),
+    detail: verdictDetail,
+  });
+  steps.push({
+    id: "algorithm",
+    label: label("decisionAlgorithm", "Algorithm"),
+    detail: label(
+      "decisionFooter",
+      `Algorithm v${num(decision.algorithmVersion)} · every signal is in the Evidence tab`,
+      [num(decision.algorithmVersion)],
+    ),
+  });
+
+  return steps;
 }
 
 /** @param {number|null|undefined} ms */
@@ -310,10 +577,13 @@ function renderOverview(result, options = {}) {
     );
   }
 
-  const top = showTopSignals
+  const decisionSteps = showTopSignals && result.decision
+    ? describeDecision(result.decision)
+    : null;
+  const top = showTopSignals && !result.decision
     ? (result.signals || []).filter((s) => s.weight).slice(0, 3)
     : [];
-  if (top.length) {
+  if (decisionSteps?.length || top.length) {
     frag.appendChild(
       el("section", {
         className: "card",
@@ -322,7 +592,11 @@ function renderOverview(result, options = {}) {
             className: "card-title",
             text: label("whyThisVerdict", "Why this verdict"),
           }),
-          ...top.map(renderSignal),
+          ...(decisionSteps
+            ? decisionSteps.map((step) =>
+                renderSignal({ ...step, impact: "info", weight: 0 }),
+              )
+            : top.map(renderSignal)),
         ],
       }),
     );
@@ -700,6 +974,7 @@ if (typeof window !== "undefined") {
     verdictBadge,
     renderVerdict,
     renderOverview,
+    describeDecision,
     renderJevCard,
     renderSignal,
     renderSignals,

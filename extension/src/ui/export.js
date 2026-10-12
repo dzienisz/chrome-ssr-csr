@@ -70,6 +70,7 @@ function toCSV(result, page) {
     ["URL", page.url],
     ["Title", page.title],
     ["Exported", new Date().toISOString()],
+    ["Algorithm version", result.algorithmVersion ?? ""],
     ["Render type", result.renderType],
     ["Confidence", `${result.confidence}%`],
     ["Assessable", result.assessable !== false],
@@ -133,6 +134,24 @@ function toMarkdown(result, page, version) {
     );
   }
   lines.push("");
+
+  const decisionSteps =
+    result.decision &&
+    typeof window !== "undefined" &&
+    typeof window.SSRReport?.describeDecision === "function"
+      ? window.SSRReport.describeDecision(result.decision)
+      : [];
+  if (decisionSteps.length) {
+    const title =
+      typeof window !== "undefined" && typeof window.t === "function"
+        ? window.t("whyThisVerdict", "Why this verdict")
+        : "Why this verdict";
+    lines.push(`## ${title}`, "");
+    for (const step of decisionSteps) {
+      lines.push(`- **${step.label}:** ${step.detail}`);
+    }
+    lines.push("");
+  }
 
   if ((info.frameworks || []).length || (info.generators || []).length) {
     lines.push("## Stack", "");
