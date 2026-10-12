@@ -1,0 +1,102 @@
+{
+  "next-app-ssr": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "next-app-static": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "next-app-streaming": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "next-app-client-comments": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "next-app-ssr-false": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "next-pages-gssp": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "next-pages-client-fetch": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "nuxt-ssr": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "nuxt-spa": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "nuxt-clientonly-comments": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "sveltekit-ssr": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "sveltekit-spa": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "react-router-ssr": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "react-router-spa": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "astro-static": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "astro-client-only": {
+    "bucket": "HYBRID",
+    "renderType": "Hybrid/Islands Architecture"
+  },
+  "astro-server-defer": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "angular-csr": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "angular-ssr": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "angular-ssr-defer": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "qwik-city": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "vite-react-spa": {
+    "bucket": "CSR",
+    "renderType": "Client-Side Rendered (CSR)"
+  },
+  "htmx-load": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "skeleton-swap": {
+    "bucket": "SSR",
+    "renderType": "Server-Side Rendered (SSR)"
+  },
+  "prerendered-shell": {
+    "bucket": "HYBRID",
+    "renderType": "Hybrid/Islands Architecture"
+  }
+}

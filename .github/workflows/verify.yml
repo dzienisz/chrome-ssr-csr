@@ -100,6 +100,8 @@ jobs:
         run: npx playwright install --with-deps chromium chromium-headless-shell
       - name: Grade detection against the offline fixtures
         run: npm run validate:local
+      - name: Grade v4 against the recorded framework lab
+        run: npm run validate:lab
       # Installs the unpacked extension in a throwaway profile: the manifest,
       # the service worker, probe.js as a real content script and every
       # extension page. The harness above never loads the extension at all, so
