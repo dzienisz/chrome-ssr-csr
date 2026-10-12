@@ -34,6 +34,10 @@ const RUNNER = `(() => {
 })()`;
 
 const POLL_INTERVAL_MS = 120;
+const NAVIGATION_EVAL_ERRORS = new Set([
+  "Operation failed: %s",
+  "Operation failed: %s.",
+]);
 
 /**
  * The analysis re-fetches the document, parses it and runs every detector, so
@@ -103,6 +107,26 @@ function evaluate(expression) {
   });
 }
 
+async function evaluateWithRetry(expression, stale, retryState) {
+  try {
+    return await evaluate(expression);
+  } catch (error) {
+    const message = error && error.message;
+    if (
+      stale() ||
+      retryState.used ||
+      !NAVIGATION_EVAL_ERRORS.has(message)
+    ) {
+      throw error;
+    }
+
+    retryState.used = true;
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    if (stale()) return null;
+    return evaluate(expression);
+  }
+}
+
 async function loadBundle() {
   if (state.bundle) return state.bundle;
   const response = await fetch(chrome.runtime.getURL("src/analyzer-bundle.js"));
@@ -114,6 +138,7 @@ async function run() {
   const runId = ++state.runId;
   /** Has a newer run started — usually because the page navigated? */
   const stale = () => runId !== state.runId;
+  const retryState = { used: false };
 
   showStatus(window.t("analyzing", "Analyzing this page…"));
 
@@ -123,16 +148,16 @@ async function run() {
 
     // The bundle guards against double injection itself, so re-running after a
     // navigation is cheap and re-running on the same document is a no-op.
-    await evaluate(bundle);
+    await evaluateWithRetry(bundle, stale, retryState);
     if (stale()) return;
 
-    const started = await evaluate(RUNNER);
+    const started = await evaluateWithRetry(RUNNER, stale, retryState);
     if (stale()) return;
     if (started && started.status === "missing") {
       throw new Error("The analyzer did not load into this page.");
     }
 
-    const result = await pollForResult(stale);
+    const result = await pollForResult(stale, retryState);
     if (stale() || result === null) return;
     if (result.failed) throw new Error(result.failed);
 
@@ -158,11 +183,11 @@ async function run() {
  * @param {() => boolean} stale - True once a newer run has superseded this one
  * @returns {Promise<Object|null>} the result, or null if this run was abandoned
  */
-async function pollForResult(stale) {
+async function pollForResult(stale, retryState) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   for (;;) {
     if (stale()) return null;
-    const status = await evaluate(RUNNER);
+    const status = await evaluateWithRetry(RUNNER, stale, retryState);
     if (status && status.status === "done") return status.result;
     // The document was replaced under us: the analyzer is no longer loaded, so
     // waiting for the old run's result can only end in a timeout.

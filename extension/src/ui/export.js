@@ -182,6 +182,12 @@ function toMarkdown(result, page, version) {
  * @param {{url: string}} page
  */
 function toSummary(result, page) {
+  if (result.assessable === false) {
+    return `${page.url} → Cannot assess — ${
+      result.unassessableReason || "not enough evidence"
+    }`;
+  }
+
   const info = result.detailedInfo || {};
   const origin = result.renderOrigin ? ` · ${result.renderOrigin.label}` : "";
   const share =
