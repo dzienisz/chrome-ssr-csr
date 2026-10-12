@@ -129,11 +129,70 @@ export interface AnalysisRecord {
   seo_accessibility?: SEOAccessibility | null;
   hydration_stats?: HydrationStats | null;
   navigation_stats?: NavigationStats | null;
+  algorithm_version?: number | null;
+  confidence_level?: "high" | "medium" | "low" | null;
+}
+
+let analysisColumnsReady: Promise<void> | undefined;
+
+function ensureAnalysisColumns(): Promise<void> {
+  if (!analysisColumnsReady) {
+    analysisColumnsReady = (async () => {
+      await sql`
+        ALTER TABLE analyses
+        ADD COLUMN IF NOT EXISTS algorithm_version SMALLINT DEFAULT NULL;
+      `;
+      await sql`
+        ALTER TABLE analyses
+        ADD COLUMN IF NOT EXISTS confidence_level VARCHAR(10) DEFAULT NULL;
+      `;
+    })().catch((error) => {
+      analysisColumnsReady = undefined;
+      console.warn(
+        "Could not ensure optional analysis columns; continuing without them.",
+        error,
+      );
+      throw error;
+    });
+  }
+  return analysisColumnsReady;
 }
 
 export async function insertAnalysis(data: AnalysisRecord | TelemetryRecord) {
   try {
-    const result = await sql`
+    const includeOptionalColumns = await ensureAnalysisColumns()
+      .then(() => true)
+      .catch(() => false);
+    const result = includeOptionalColumns
+      ? await sql`
+      INSERT INTO analyses (
+        url, domain, render_type, confidence, frameworks,
+        performance_metrics, indicators, extension_version, user_agent,
+        core_web_vitals, page_type, device_info, tech_stack, seo_accessibility,
+        hydration_stats, navigation_stats, algorithm_version, confidence_level
+      ) VALUES (
+        ${data.url},
+        ${data.domain},
+        ${data.render_type},
+        ${data.confidence},
+        ${JSON.stringify(data.frameworks)},
+        ${JSON.stringify(data.performance_metrics)},
+        ${JSON.stringify(data.indicators)},
+        ${data.extension_version},
+        ${("user_agent" in data ? data.user_agent : null) || null},
+        ${data.core_web_vitals ? JSON.stringify(data.core_web_vitals) : null},
+        ${data.page_type || null},
+        ${data.device_info ? JSON.stringify(data.device_info) : null},
+        ${data.tech_stack ? JSON.stringify(data.tech_stack) : null},
+        ${data.seo_accessibility ? JSON.stringify(data.seo_accessibility) : null},
+        ${data.hydration_stats ? JSON.stringify(data.hydration_stats) : null},
+        ${data.navigation_stats ? JSON.stringify(data.navigation_stats) : null},
+        ${data.algorithm_version ?? null},
+        ${data.confidence_level ?? null}
+      )
+      RETURNING id;
+    `
+      : await sql`
       INSERT INTO analyses (
         url, domain, render_type, confidence, frameworks,
         performance_metrics, indicators, extension_version, user_agent,
@@ -172,9 +231,22 @@ export async function getRecentAnalyses(
   offset: number = 0,
 ) {
   try {
-    const result = await sql`
+    const includeOptionalColumns = await ensureAnalysisColumns()
+      .then(() => true)
+      .catch(() => false);
+    const result = includeOptionalColumns
+      ? await sql`
       SELECT id, domain, render_type, confidence, timestamp, frameworks,
-        core_web_vitals, tech_stack, hydration_stats, navigation_stats, device_info
+        core_web_vitals, tech_stack, hydration_stats, navigation_stats,
+        device_info, algorithm_version, confidence_level
+      FROM analyses
+      ORDER BY timestamp DESC
+      LIMIT ${limit} OFFSET ${offset};
+    `
+      : await sql`
+      SELECT id, domain, render_type, confidence, timestamp, frameworks,
+        core_web_vitals, tech_stack, hydration_stats, navigation_stats,
+        device_info
       FROM analyses
       ORDER BY timestamp DESC
       LIMIT ${limit} OFFSET ${offset};

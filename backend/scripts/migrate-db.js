@@ -67,6 +67,21 @@ async function migrateDatabase() {
     `;
     console.log('  ✓ navigation_stats');
 
+    // Optional telemetry metadata (v5.0.0)
+    console.log('\nOptional telemetry metadata (v5.0.0): Adding algorithm version and confidence level...');
+
+    await sql`
+      ALTER TABLE analyses
+      ADD COLUMN IF NOT EXISTS algorithm_version SMALLINT DEFAULT NULL;
+    `;
+    console.log('  ✓ algorithm_version');
+
+    await sql`
+      ALTER TABLE analyses
+      ADD COLUMN IF NOT EXISTS confidence_level VARCHAR(10) DEFAULT NULL;
+    `;
+    console.log('  ✓ confidence_level');
+
     // Add index for page_type if it doesn't exist
     console.log('\nAdding indexes...');
     await sql`CREATE INDEX IF NOT EXISTS idx_page_type ON analyses(page_type);`;

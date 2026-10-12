@@ -406,6 +406,19 @@ export function parseTelemetry(value: unknown, country?: unknown) {
     domain,
     render_type: closed(RENDER_TYPES)(value.renderType),
     confidence: percent(value.confidence),
+    algorithm_version:
+      typeof value.algorithmVersion === "number" &&
+      Number.isInteger(value.algorithmVersion) &&
+      value.algorithmVersion >= 1 &&
+      value.algorithmVersion <= 999
+        ? value.algorithmVersion
+        : null,
+    confidence_level:
+      value.confidenceLevel === "high" ||
+      value.confidenceLevel === "medium" ||
+      value.confidenceLevel === "low"
+        ? value.confidenceLevel
+        : null,
     frameworks: frameworks(value.frameworks),
     performance_metrics: performanceSchema(value.performanceMetrics),
     indicators: [] as string[],
@@ -438,6 +451,8 @@ export interface PublicAnalysis {
   hydration_stats?: TelemetryRecord["hydration_stats"];
   navigation_stats?: { isSPA?: boolean; clientRoutes?: number } | null;
   device_info?: { country: string | null };
+  algorithm_version?: number | null;
+  confidence_level?: "high" | "medium" | "low" | null;
 }
 function historical<T>(parse: (value: unknown) => T, value: unknown): T | null {
   try {
@@ -495,6 +510,19 @@ export function toPublicAnalysis(value: unknown): PublicAnalysis {
     core_web_vitals: historical(cwvSchema, row.core_web_vitals),
     tech_stack: historical(techSchema, row.tech_stack),
     hydration_stats: historical(hydrationSchema, row.hydration_stats),
+    algorithm_version:
+      typeof row.algorithm_version === "number" &&
+      Number.isInteger(row.algorithm_version) &&
+      row.algorithm_version >= 1 &&
+      row.algorithm_version <= 999
+        ? row.algorithm_version
+        : null,
+    confidence_level:
+      row.confidence_level === "high" ||
+      row.confidence_level === "medium" ||
+      row.confidence_level === "low"
+        ? row.confidence_level
+        : null,
     navigation_stats: historical(
       object({ isSPA: boolean, clientRoutes: count }),
       row.navigation_stats,

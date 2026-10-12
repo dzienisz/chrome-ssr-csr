@@ -31,6 +31,8 @@ beforeEach(() => {
               score: 95,
               errors: ["PRIVATE_SENTINEL"],
             },
+            algorithm_version: 5,
+            confidence_level: "high",
             navigation_stats: { isSPA: true, routes: ["PRIVATE_SENTINEL"] },
             seo_accessibility: { title: "PRIVATE_SENTINEL" },
           },
@@ -53,6 +55,8 @@ describe("stats reads", () => {
       const rows = type === "recent" ? body : body.recent;
       expect(rows).toHaveLength(1);
       expect(rows[0].hydration_stats).toEqual({ errorCount: 1, score: 95 });
+      expect(rows[0].algorithm_version).toBe(5);
+      expect(rows[0].confidence_level).toBe("high");
       expect(Object.keys(rows[0]).sort()).toEqual(
         [
           "id",
@@ -66,6 +70,8 @@ describe("stats reads", () => {
           "hydration_stats",
           "navigation_stats",
           "device_info",
+          "algorithm_version",
+          "confidence_level",
         ].sort(),
       );
     },
