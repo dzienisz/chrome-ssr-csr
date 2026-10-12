@@ -128,6 +128,8 @@ describe("public database boundary", () => {
     );
   });
   it("projects historical records without losing order, count or pagination", async () => {
+    mockSql.mockResolvedValueOnce({ rows: [] });
+    mockSql.mockResolvedValueOnce({ rows: [] });
     mockSql.mockResolvedValueOnce({
       rows: [
         {
@@ -203,8 +205,8 @@ describe("public database boundary", () => {
       algorithm_version: null,
       confidence_level: null,
     });
-    expect(mockSql.mock.calls[0].slice(1)).toEqual([2, 9]);
-    expect(mockSql.mock.calls[0][0].join("")).not.toContain("SELECT *");
+    expect(mockSql.mock.calls[2].slice(1)).toEqual([2, 9]);
+    expect(mockSql.mock.calls[2][0].join("")).not.toContain("SELECT *");
   });
 
   it.each([
@@ -294,8 +296,6 @@ describe("db functions", () => {
 
   describe("insertAnalysis", () => {
     it("should insert analysis and return id", async () => {
-      mockSql.mockResolvedValueOnce({ rows: [] });
-      mockSql.mockResolvedValueOnce({ rows: [] });
       mockSql.mockResolvedValueOnce({
         rows: [{ id: 123 }],
       });
@@ -319,8 +319,8 @@ describe("db functions", () => {
       const result = await insertAnalysis(data);
 
       expect(result).toEqual({ id: 123 });
-      expect(mockSql).toHaveBeenCalledTimes(3);
-      const [insertParts, ...insertValues] = mockSql.mock.calls[2];
+      expect(mockSql).toHaveBeenCalledOnce();
+      const [insertParts, ...insertValues] = mockSql.mock.calls[0];
       expect(insertParts.join("")).toContain(
         "algorithm_version, confidence_level",
       );

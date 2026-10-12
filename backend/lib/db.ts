@@ -231,10 +231,22 @@ export async function getRecentAnalyses(
   offset: number = 0,
 ) {
   try {
-    const result = await sql`
+    const includeOptionalColumns = await ensureAnalysisColumns()
+      .then(() => true)
+      .catch(() => false);
+    const result = includeOptionalColumns
+      ? await sql`
       SELECT id, domain, render_type, confidence, timestamp, frameworks,
         core_web_vitals, tech_stack, hydration_stats, navigation_stats,
         device_info, algorithm_version, confidence_level
+      FROM analyses
+      ORDER BY timestamp DESC
+      LIMIT ${limit} OFFSET ${offset};
+    `
+      : await sql`
+      SELECT id, domain, render_type, confidence, timestamp, frameworks,
+        core_web_vitals, tech_stack, hydration_stats, navigation_stats,
+        device_info
       FROM analyses
       ORDER BY timestamp DESC
       LIMIT ${limit} OFFSET ${offset};
