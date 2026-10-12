@@ -3,8 +3,18 @@ import { describe, it, expect, beforeEach } from "vitest";
 import "../jev.js";
 import "../report.js";
 
-const { verdictKind, verdictBadge, renderVerdict, renderOverview, renderSignals, renderDelivery, renderDiff, describeDecision } =
-  window.SSRReport;
+const {
+  verdictKind,
+  verdictBadge,
+  confidenceLevelLabel,
+  historyConfidenceText,
+  renderVerdict,
+  renderOverview,
+  renderSignals,
+  renderDelivery,
+  renderDiff,
+  describeDecision,
+} = window.SSRReport;
 
 /** A complete, realistic result — the renderer must not need every field. */
 function result(overrides = {}) {
@@ -187,6 +197,177 @@ describe("describeDecision", () => {
         detail: "Algorithm v2 · every signal is in the Evidence tab",
       },
     ]);
+  });
+
+  it("adds a measurement-quality confidence step before the algorithm footer", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "fetch",
+          measure: "words",
+          value: 0.11,
+          matched: 22,
+          total: 200,
+          snapshotReason: null,
+          band: "csr",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: { side: "csr", value: 40 },
+        },
+        rule: "csr",
+        threshold: 25,
+        confidenceLevel: "medium",
+        confidenceLevelReason: "near-threshold",
+        confidenceScore: 75,
+        confidenceLevels: { minWords: 200, clearCsr: 0.1, clearSsr: 0.8 },
+      }),
+    );
+    const confidence = steps.find((step) => step.id === "confidence");
+
+    expect(confidence).toEqual({
+      id: "confidence",
+      label: "Confidence",
+      detail:
+        "Medium — the measurement is near the 20% threshold (11%; score 75). Levels are rules about measurement quality, not a calibrated probability.",
+    });
+    expect(steps.findIndex((step) => step.id === "confidence")).toBeLessThan(
+      steps.findIndex((step) => step.id === "algorithm"),
+    );
+  });
+
+  it.each([
+    [
+      "no measurement",
+      "no-measurement",
+      null,
+      "Low — no comparison measurement was available, so confidence is limited (score 75).",
+    ],
+    [
+      "contradictory verdict",
+      "verdict-contradicts-measurement",
+      sampleDecision().measurement,
+      "Low — the CSR measurement (11%) contradicts the verdict (score 75).",
+    ],
+    [
+      "neutral band",
+      "inconclusive-band",
+      {
+        ...sampleDecision().measurement,
+        value: 0.55,
+        band: "neutral",
+        bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+      },
+      "Low — the 55% measurement is in the inconclusive 40–70% band (score 75).",
+    ],
+    [
+      "few fetch words",
+      "few-words",
+      { ...sampleDecision().measurement, total: 193 },
+      "Low — only 193 visible words were measured; at least 200 are needed for high confidence (score 75).",
+    ],
+    [
+      "short parser snapshot",
+      "few-words",
+      {
+        ...sampleDecision().measurement,
+        source: "parser-snapshot",
+        measure: "length",
+        matched: 100,
+        total: 120,
+        band: "short",
+      },
+      "Low — the parser snapshot contained only 120 characters, too little for a reliable confidence level (score 75).",
+    ],
+    [
+      "length-only parser snapshot",
+      "length-only",
+      {
+        ...sampleDecision().measurement,
+        source: "parser-snapshot",
+        measure: "length",
+        matched: 1200,
+        total: 5400,
+        band: "ssr",
+      },
+      "Medium — the parser snapshot measured 1,200 of 5,400 characters, so it cannot confirm word coverage (score 75).",
+    ],
+    [
+      "partial band",
+      "partial-band",
+      {
+        ...sampleDecision().measurement,
+        value: 0.3,
+        band: "partial",
+        bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+      },
+      "Medium — 30% word coverage falls in the partial 20–40% band (score 75).",
+    ],
+    [
+      "near threshold",
+      "near-threshold",
+      sampleDecision().measurement,
+      "Medium — the measurement is near the 20% threshold (11%; score 75).",
+    ],
+    [
+      "clear CSR",
+      "clear-measurement",
+      {
+        ...sampleDecision().measurement,
+        value: 0.1,
+      },
+      "High — 10% word coverage is at or below the 10% clear-CSR level (score 75).",
+    ],
+    [
+      "clear SSR",
+      "clear-measurement",
+      {
+        ...sampleDecision().measurement,
+        value: 0.8,
+        matched: 160,
+        total: 200,
+        band: "ssr",
+      },
+      "High — 80% word coverage is at or above the 80% clear-SSR level (score 75).",
+    ],
+  ])("explains %s confidence from the recorded measurement", (_, reason, measurement, expected) => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement,
+        confidenceLevel:
+          reason === "clear-measurement"
+            ? "high"
+            : ["length-only", "partial-band", "near-threshold"].includes(reason)
+              ? "medium"
+              : "low",
+        confidenceLevelReason: reason,
+        confidenceScore: 75,
+        confidenceLevels: { minWords: 200, clearCsr: 0.1, clearSsr: 0.8 },
+      }),
+    );
+    const detail = steps.find((step) => step.id === "confidence").detail;
+
+    expect(detail).toContain(expected);
+    expect(detail).toContain(
+      "Levels are rules about measurement quality, not a calibrated probability.",
+    );
+  });
+
+  it("renders the confidence explanation in the Overview Why card", () => {
+    const overview = renderOverview(
+      result({
+        decision: sampleDecision({
+          confidenceLevel: "medium",
+          confidenceLevelReason: "near-threshold",
+          confidenceScore: 75,
+          confidenceLevels: { minWords: 200, clearCsr: 0.1, clearSsr: 0.8 },
+        }),
+      }),
+    );
+
+    expect(overview.textContent).toContain("Confidence");
+    expect(overview.textContent).toContain("score 75");
+    expect(overview.textContent).toContain(
+      "Levels are rules about measurement quality, not a calibrated probability.",
+    );
   });
 
   it("describes partial coverage and the partial cap", () => {
@@ -385,6 +566,25 @@ describe("renderVerdict", () => {
     expect(node.querySelector(".verdict-kind").textContent).toBe("SSR");
     expect(node.querySelector(".dial-value").textContent).toBe("92");
     expect(node.querySelector(".dial").style.getPropertyValue("--value")).toBe("92");
+  });
+
+  it("shows the qualitative confidence level with an accessible label and styling data", () => {
+    const node = renderVerdict(result({ confidence: 75, confidenceLevel: "medium" }));
+    const dial = node.querySelector(".dial");
+
+    expect(node.querySelector(".dial-value").textContent).toBe("Medium");
+    expect(dial.dataset.level).toBe("medium");
+    expect(dial.getAttribute("aria-label")).toBe("Medium confidence");
+    expect(dial.style.getPropertyValue("--value")).toBe("100");
+  });
+
+  it("formats history with a level and falls back to the numeric confidence", () => {
+    expect(historyConfidenceText({ confidenceLevel: "high", confidence: 95 })).toBe(
+      "High · ",
+    );
+    expect(historyConfidenceText({ confidence: 75 })).toBe("75% · ");
+    expect(historyConfidenceText({ assessable: false, confidence: 0 })).toBe("");
+    expect(confidenceLevelLabel("low")).toBe("Low");
   });
 
   it("shows why an unassessable result has no confidence dial", () => {

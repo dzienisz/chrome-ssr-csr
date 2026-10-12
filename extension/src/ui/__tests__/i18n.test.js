@@ -10,6 +10,21 @@ const LOCALES_DIR = join(EXTENSION_DIR, "_locales");
 /** Every page that localizes itself declaratively. */
 const PAGES = ["popup.html", "options.html", "welcome.html", "devtools/panel.html"];
 const ENGLISH_ONLY_KEYS = [
+  "confidenceLevelHigh",
+  "confidenceLevelLow",
+  "confidenceLevelMedium",
+  "confidenceQualityDisclaimer",
+  "confidenceReasonClearCsr",
+  "confidenceReasonClearSsr",
+  "confidenceReasonContradiction",
+  "confidenceReasonFewCharacters",
+  "confidenceReasonFewWords",
+  "confidenceReasonInconclusive",
+  "confidenceReasonLengthOnly",
+  "confidenceReasonNearThreshold",
+  "confidenceReasonNoMeasurement",
+  "confidenceReasonPartialBand",
+  "decisionConfidence",
   "decisionAlgorithm",
   "decisionBandCsr",
   "decisionBandNeutral",

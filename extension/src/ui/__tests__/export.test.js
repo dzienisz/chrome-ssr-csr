@@ -93,13 +93,20 @@ describe("toJSON", () => {
   it("includes algorithmVersion and decision in the wrapped analysis", () => {
     const parsed = JSON.parse(
       toJSON(
-        result({ algorithmVersion: 2, decision: sampleDecision() }),
+        result({
+          algorithmVersion: 2,
+          decision: sampleDecision(),
+          confidenceLevel: "medium",
+          confidenceLevelReason: "near-threshold",
+        }),
         PAGE,
       ),
     );
 
     expect(parsed.analysis.algorithmVersion).toBe(2);
     expect(parsed.analysis.decision.rule).toBe("csr");
+    expect(parsed.analysis.confidence).toBe(88);
+    expect(parsed.analysis.confidenceLevel).toBe("medium");
   });
 });
 
@@ -168,6 +175,16 @@ describe("toCSV", () => {
     expect(rows).toContain('"Algorithm version","2"');
   });
 
+  it("keeps numeric confidence and adds the qualitative confidence level", () => {
+    const rows = toCSV(
+      result({ confidence: 75, confidenceLevel: "medium" }),
+      PAGE,
+    ).split("\n");
+
+    expect(rows).toContain('"Confidence","75%"');
+    expect(rows).toContain('"Confidence level","Medium"');
+  });
+
   it("quotes an indicator list that contains commas", () => {
     const csv = toCSV(result(), PAGE);
     const line = csv.split("\n").find((row) => row.startsWith('"Indicators"'));
@@ -218,6 +235,23 @@ describe("toMarkdown", () => {
     );
     expect(markdown).toContain(
       "- **Verdict:** SSR share 20% ≤ 25% → Client-Side Rendered (CSR).",
+    );
+  });
+
+  it("exports the confidence level and reason", () => {
+    const markdown = toMarkdown(
+      result({
+        confidence: 75,
+        confidenceLevel: "medium",
+        confidenceLevelReason: "near-threshold",
+      }),
+      PAGE,
+      "4.0.0",
+    );
+
+    expect(markdown).toContain("- **Confidence:** 75%");
+    expect(markdown).toContain(
+      "- **Confidence level:** Medium (near-threshold)",
     );
   });
 
@@ -276,6 +310,12 @@ describe("toSummary", () => {
     );
 
     expect(withDecision).toBe(baseline);
+  });
+
+  it("uses the confidence level in the copy summary when available", () => {
+    expect(toSummary(result({ confidenceLevel: "medium" }), PAGE)).toContain(
+      "(medium confidence)",
+    );
   });
 
   it("drops the parts it has no data for", () => {

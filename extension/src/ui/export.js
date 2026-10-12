@@ -55,6 +55,13 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function confidenceLevelName(level) {
+  if (typeof window !== "undefined" && window.SSRReport?.confidenceLevelLabel) {
+    return window.SSRReport.confidenceLevelLabel(level);
+  }
+  return { high: "High", medium: "Medium", low: "Low" }[level] || "";
+}
+
 /**
  * @param {Object} result
  * @param {{url: string, title: string}} page
@@ -73,6 +80,7 @@ function toCSV(result, page) {
     ["Algorithm version", result.algorithmVersion ?? ""],
     ["Render type", result.renderType],
     ["Confidence", `${result.confidence}%`],
+    ["Confidence level", confidenceLevelName(result.confidenceLevel)],
     ["Assessable", result.assessable !== false],
     ["Unassessable reason", result.unassessableReason || ""],
     ["Render origin", result.renderOrigin ? result.renderOrigin.label : ""],
@@ -120,6 +128,11 @@ function toMarkdown(result, page, version) {
   lines.push("## Verdict", "");
   lines.push(`- **Render type:** ${result.renderType}`);
   lines.push(`- **Confidence:** ${result.confidence}%`);
+  if (result.confidenceLevel && result.confidenceLevelReason) {
+    lines.push(
+      `- **Confidence level:** ${confidenceLevelName(result.confidenceLevel)} (${result.confidenceLevelReason})`,
+    );
+  }
   lines.push(`- **Assessable:** ${result.assessable !== false ? "Yes" : "No"}`);
   if (result.unassessableReason) {
     lines.push(`- **Unassessable reason:** ${result.unassessableReason}`);
@@ -224,7 +237,9 @@ function toSummary(result, page) {
   const assessment =
     result.assessable === false
       ? ` — ${result.unassessableReason || "not enough evidence"}`
-      : ` (${result.confidence}% confidence)`;
+      : confidenceLevelName(result.confidenceLevel)
+        ? ` (${confidenceLevelName(result.confidenceLevel).toLowerCase()} confidence)`
+        : ` (${result.confidence}% confidence)`;
   return `${page.url} → ${result.renderType}${assessment}${origin}${share}`;
 }
 

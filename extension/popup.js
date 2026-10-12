@@ -362,6 +362,7 @@ async function sendAnalysisData(results, page) {
       seoAccessibility: results.seoAccessibility || null,
       hydrationData: results.hydrationData || null,
       navigationData: results.navigationData || null,
+      confidenceLevel: results.confidenceLevel ?? null,
       performanceMetrics: {
         domReady: results.detailedInfo?.timing?.domContentLoaded,
         fcp: results.detailedInfo?.timing?.firstContentfulPaint,
@@ -624,11 +625,7 @@ function renderHistoryPanel() {
                 attrs: { title: entry.results.renderType },
               }),
               window.SSRReport.el("span", {
-                text: `${
-                  entry.results.assessable === false
-                    ? ""
-                    : `${entry.results.confidence}% · `
-                }${new Date(entry.timestamp).toLocaleString()}`,
+                text: `${window.SSRReport.historyConfidenceText(entry.results)}${new Date(entry.timestamp).toLocaleString()}`,
               }),
             ],
           }),

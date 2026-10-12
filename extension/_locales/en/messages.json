@@ -35,6 +35,66 @@
     "message": "confidence",
     "description": "Caption under the confidence dial; lowercase"
   },
+  "confidenceLevelHigh": {
+    "message": "High",
+    "description": "Qualitative measurement-confidence level for a clear comparison"
+  },
+  "confidenceLevelMedium": {
+    "message": "Medium",
+    "description": "Qualitative measurement-confidence level for a limited comparison"
+  },
+  "confidenceLevelLow": {
+    "message": "Low",
+    "description": "Qualitative measurement-confidence level for weak or insufficient evidence"
+  },
+  "decisionConfidence": {
+    "message": "Confidence",
+    "description": "Step heading for the measurement-quality confidence level"
+  },
+  "confidenceReasonNoMeasurement": {
+    "message": "Low — no comparison measurement was available, so confidence is limited (score $1).",
+    "description": "Confidence explanation when fetching or measuring the initial HTML was unavailable"
+  },
+  "confidenceReasonContradiction": {
+    "message": "Low — the $1 measurement ($2%) contradicts the verdict (score $3).",
+    "description": "Confidence explanation when the measured comparison band conflicts with the verdict"
+  },
+  "confidenceReasonInconclusive": {
+    "message": "Low — the $1% measurement is in the inconclusive $2–$3% band (score $4).",
+    "description": "Confidence explanation for a measurement in the neutral comparison band"
+  },
+  "confidenceReasonFewWords": {
+    "message": "Low — only $1 visible words were measured; at least $2 are needed for high confidence (score $3).",
+    "description": "Confidence explanation when a fetch comparison contains fewer than the minimum words"
+  },
+  "confidenceReasonFewCharacters": {
+    "message": "Low — the parser snapshot contained only $1 characters, too little for a reliable confidence level (score $2).",
+    "description": "Confidence explanation when the parser-snapshot comparison is too short"
+  },
+  "confidenceReasonLengthOnly": {
+    "message": "Medium — the parser snapshot measured $1 of $2 characters, so it cannot confirm word coverage (score $3).",
+    "description": "Confidence explanation when the comparison uses parser-snapshot text length"
+  },
+  "confidenceReasonPartialBand": {
+    "message": "Medium — $1% word coverage falls in the partial $2–$3% band (score $4).",
+    "description": "Confidence explanation for an agreeing measurement in the partial-coverage band"
+  },
+  "confidenceReasonNearThreshold": {
+    "message": "Medium — the measurement is near the $1% threshold ($2%; score $3).",
+    "description": "Confidence explanation for an agreeing measurement near a comparison-band boundary"
+  },
+  "confidenceReasonClearCsr": {
+    "message": "High — $1% word coverage is at or below the $2% clear-CSR level (score $3).",
+    "description": "Confidence explanation for a clear client-rendered content measurement"
+  },
+  "confidenceReasonClearSsr": {
+    "message": "High — $1% word coverage is at or above the $2% clear-SSR level (score $3).",
+    "description": "Confidence explanation for a clear server-rendered content measurement"
+  },
+  "confidenceQualityDisclaimer": {
+    "message": "Levels are rules about measurement quality, not a calibrated probability.",
+    "description": "Caveat clarifying that qualitative confidence levels are not probabilities"
+  },
   "fromServer": {
     "message": "from server",
     "description": "Legend for the share of text that came from the server"

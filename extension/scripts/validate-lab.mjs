@@ -144,6 +144,7 @@ try {
         bucket: bucket(renderType),
         renderType,
         confidence: result.confidence ?? null,
+        confidenceLevel: result.confidenceLevel ?? null,
         ratio: result.detailedInfo?.contentComparison?.ratio ?? null,
         error: null,
       });
@@ -154,6 +155,7 @@ try {
         bucket: "ERROR",
         renderType: "ERROR",
         confidence: null,
+        confidenceLevel: null,
         ratio: null,
         error: String(error).slice(0, 200),
       });
@@ -167,18 +169,19 @@ try {
 }
 
 const accurate = rows.filter((row) => row.bucket === row.expected).length;
-console.log("| name | framework | mode | expected | v4 verdict (confidence) | content ratio | sections | result |");
+console.log("| name | framework | mode | expected | v4 verdict (score / level) | content ratio | sections | result |");
 console.log("| --- | --- | --- | --- | --- | ---: | --- | --- |");
 for (const row of rows) {
   const { app } = row;
   const ratio = row.ratio === null ? "—" : row.ratio.toFixed(3);
   const confidence = row.confidence === null ? "—" : row.confidence;
+  const confidenceLevel = row.confidenceLevel || "—";
   const sections =
     app.origin.article === "S" && ["C", "D"].includes(app.origin.comments) ? "JS" : "—";
   const result = row.bucket === row.expected ? "PASS" : "FAIL";
   console.log(
     `| ${app.name} | ${app.framework} | ${app.mode} | ${row.expected} | ` +
-      `${row.renderType} (${confidence}) | ${ratio} | ${sections} | ${result} |`,
+      `${row.renderType} (${confidence} / ${confidenceLevel}) | ${ratio} | ${sections} | ${result} |`,
   );
   if (row.error) console.log(`  ${app.name}: ${row.error}`);
 }

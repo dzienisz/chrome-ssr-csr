@@ -319,6 +319,22 @@ a:hover {
   color: var(--dial-color);
 }
 
+.dial[data-level="high"] {
+  --dial-color: var(--ssr);
+}
+
+.dial[data-level="medium"] {
+  --dial-color: var(--hybrid);
+}
+
+.dial[data-level="low"] {
+  --dial-color: var(--csr);
+}
+
+.dial[data-level="medium"] .dial-value {
+  font-size: 10px;
+}
+
 .dial-wrap {
   flex: 0 0 52px;
 }
