@@ -461,6 +461,30 @@ describe("renderDiff", () => {
     expect(container.textContent).toContain("Main content");
   });
 
+  it("uses word-covered characters for the region bar, label, and accessible name", () => {
+    const data = result();
+    data.detailedInfo.domDiff.regions = [
+      {
+        key: "#article",
+        label: "Article",
+        rawChars: 719,
+        coveredChars: 0,
+        renderedChars: 720,
+        addedChars: 720,
+        origin: "client",
+      },
+    ];
+    const container = document.createElement("div");
+    container.appendChild(renderDiff(data));
+    const track = container.querySelector(".region-track");
+
+    expect(container.textContent).toContain("0 from server");
+    expect(track.querySelector(".split-server").style.width).toBe("0%");
+    expect(track.getAttribute("aria-label")).toBe(
+      "0 characters from server, 720 added by JavaScript",
+    );
+  });
+
   it("explains itself when the raw HTML was unavailable", () => {
     const data = result();
     data.detailedInfo.domDiff = { available: false };

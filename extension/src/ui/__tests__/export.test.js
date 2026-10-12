@@ -166,6 +166,23 @@ describe("toMarkdown", () => {
     expect(markdown).toContain("| `#root` | client |");
   });
 
+  it("exports word-covered characters in the region breakdown", () => {
+    const data = result();
+    data.detailedInfo.domDiff.regions = [
+      {
+        key: "#article",
+        origin: "client",
+        rawChars: 719,
+        coveredChars: 0,
+        renderedChars: 720,
+        addedChars: 720,
+      },
+    ];
+    const markdown = toMarkdown(data, PAGE, "4.0.0");
+
+    expect(markdown).toContain("| `#article` | client | 0 | 720 |");
+  });
+
   it("omits sections it has no data for", () => {
     const bare = result({
       signals: [],

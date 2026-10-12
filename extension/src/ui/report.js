@@ -636,9 +636,11 @@ function renderDiff(result) {
   }
 
   const rows = diff.regions.map((region) => {
+    const serverChars =
+      region.coveredChars ?? Math.min(region.rawChars, region.renderedChars);
     const serverPct =
       region.renderedChars > 0
-        ? Math.max(0, Math.min(100, Math.round((region.rawChars / region.renderedChars) * 100)))
+        ? Math.max(0, Math.min(100, Math.round((serverChars / region.renderedChars) * 100)))
         : 100;
     const server = el("div", { className: "split-server" });
     const client = el("div", { className: "split-client" });
@@ -660,11 +662,18 @@ function renderDiff(result) {
         region.label !== region.key
           ? el("div", { className: "region-key", text: region.key })
           : null,
-        el("div", { className: "region-track", children: [server, client] }),
+        el("div", {
+          className: "region-track",
+          attrs: {
+            role: "img",
+            "aria-label": `${num(serverChars)} characters from server, ${num(region.addedChars)} added by JavaScript`,
+          },
+          children: [server, client],
+        }),
         el("div", {
           className: "split-legend",
           children: [
-            el("span", { text: `${num(region.rawChars)} from server` }),
+            el("span", { text: `${num(serverChars)} from server` }),
             el("span", { text: `${num(region.addedChars)} added` }),
           ],
         }),

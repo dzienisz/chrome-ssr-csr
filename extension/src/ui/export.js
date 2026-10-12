@@ -170,8 +170,10 @@ function toMarkdown(result, page, version) {
     lines.push("| Region | Origin | From server | Added by JS |");
     lines.push("| --- | --- | ---: | ---: |");
     for (const region of diff.regions) {
+      const serverChars =
+        region.coveredChars ?? Math.min(region.rawChars, region.renderedChars);
       lines.push(
-        `| \`${region.key}\` | ${region.origin} | ${region.rawChars.toLocaleString()} | ${region.addedChars.toLocaleString()} |`,
+        `| \`${region.key}\` | ${region.origin} | ${serverChars.toLocaleString()} | ${region.addedChars.toLocaleString()} |`,
       );
     }
     lines.push("");
