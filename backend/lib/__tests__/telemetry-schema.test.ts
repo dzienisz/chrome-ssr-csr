@@ -111,6 +111,51 @@ describe("telemetry ingress projection", () => {
     expect(result.confidence).toBe(0);
     expect(RENDER_TYPES).toContain(renderType);
   });
+  it.each([1, 999])("accepts algorithm version %i", (algorithmVersion) => {
+    expect(
+      parseTelemetry({ ...base, algorithmVersion }).algorithm_version,
+    ).toBe(algorithmVersion);
+  });
+  it.each([
+    undefined,
+    null,
+    "1",
+    true,
+    {},
+    [],
+    0,
+    -1,
+    1000,
+    1.5,
+    NaN,
+    Infinity,
+  ])("normalizes invalid algorithm version %j to null", (algorithmVersion) => {
+    expect(
+      parseTelemetry({ ...base, algorithmVersion }).algorithm_version,
+    ).toBeNull();
+  });
+  it.each(["high", "medium", "low"] as const)(
+    "accepts confidence level %s",
+    (confidenceLevel) => {
+      expect(
+        parseTelemetry({ ...base, confidenceLevel }).confidence_level,
+      ).toBe(confidenceLevel);
+    },
+  );
+  it.each([undefined, null, "HIGH", "other", 1, true, {}, []])(
+    "normalizes invalid confidence level %j to null",
+    (confidenceLevel) => {
+      expect(
+        parseTelemetry({ ...base, confidenceLevel }).confidence_level,
+      ).toBeNull();
+    },
+  );
+  it("defaults new fields to null for older payloads", () => {
+    expect(parseTelemetry(base)).toMatchObject({
+      algorithm_version: null,
+      confidence_level: null,
+    });
+  });
   it("accepts all current groups while excluding raw and unknown fields", () => {
     const result = parseTelemetry(
       {

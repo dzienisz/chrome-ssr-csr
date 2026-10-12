@@ -187,6 +187,8 @@ describe("public database boundary", () => {
       navigation_stats: { isSPA: true, clientRoutes: 1 },
       tech_stack: { cssFramework: "Tailwind" },
       device_info: { country: "PL" },
+      algorithm_version: null,
+      confidence_level: null,
     });
     expect(result[1]).toMatchObject({
       domain: "unknown",
@@ -198,6 +200,8 @@ describe("public database boundary", () => {
       navigation_stats: null,
       tech_stack: null,
       device_info: { country: null },
+      algorithm_version: null,
+      confidence_level: null,
     });
     expect(mockSql.mock.calls[0].slice(1)).toEqual([2, 9]);
     expect(mockSql.mock.calls[0][0].join("")).not.toContain("SELECT *");
@@ -290,6 +294,8 @@ describe("db functions", () => {
 
   describe("insertAnalysis", () => {
     it("should insert analysis and return id", async () => {
+      mockSql.mockResolvedValueOnce({ rows: [] });
+      mockSql.mockResolvedValueOnce({ rows: [] });
       mockSql.mockResolvedValueOnce({
         rows: [{ id: 123 }],
       });
@@ -306,12 +312,20 @@ describe("db functions", () => {
         },
         indicators: ["framework hydration markers"],
         extension_version: "3.5.0",
+        algorithm_version: 5,
+        confidence_level: "high",
       };
 
       const result = await insertAnalysis(data);
 
       expect(result).toEqual({ id: 123 });
-      expect(mockSql).toHaveBeenCalled();
+      expect(mockSql).toHaveBeenCalledTimes(3);
+      const [insertParts, ...insertValues] = mockSql.mock.calls[2];
+      expect(insertParts.join("")).toContain(
+        "algorithm_version, confidence_level",
+      );
+      expect(insertValues).toContain(5);
+      expect(insertValues).toContain("high");
     });
 
     it("should throw on database error", async () => {
@@ -485,7 +499,13 @@ describe("db functions", () => {
   describe("getRecentAnalyses", () => {
     it("should return recent analyses with default limit", async () => {
       const mockRows = [
-        { id: 1, domain: "example.com", render_type: "SSR" },
+        {
+          id: 1,
+          domain: "example.com",
+          render_type: "SSR",
+          algorithm_version: 5,
+          confidence_level: "high",
+        },
         { id: 2, domain: "test.com", render_type: "CSR" },
       ];
 
@@ -494,6 +514,10 @@ describe("db functions", () => {
       const result = await getRecentAnalyses();
 
       expect(result).toMatchObject(mockRows);
+      expect(result[0]).toMatchObject({
+        algorithm_version: 5,
+        confidence_level: "high",
+      });
       expect(mockSql).toHaveBeenCalled();
     });
 
