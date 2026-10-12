@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-10-12
+
 ### Added
 
 - Offline `validate:lab` report for 25 recorded framework fixtures, with a
@@ -16,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pages with fewer than 200 visible characters or short bot-challenge pages
   report “Cannot assess” instead of an SSR/CSR verdict.
+
+### Fixed
+
+- The DevTools Rendering panel now opens in released builds and reliably
+  re-runs analysis after navigation.
+- Unassessable export summaries no longer include render-origin or server-share
+  details.
 
 ## [4.1.1] - 2026-10-12
 
