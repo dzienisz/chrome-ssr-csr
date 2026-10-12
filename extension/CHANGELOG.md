@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.1] - 2026-10-12
+
+### Fixed
+
 - Popup no longer sends telemetry for localhost/private hosts; validate:extension disables telemetry.
 - LCP collection ignores paints after the page is first hidden and rebases
   prerendered pages on their activation time, avoiding inflated background-tab

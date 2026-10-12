@@ -479,6 +479,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v4.1.1**: Skip telemetry for localhost/private hosts; ignore hidden-tab LCP paints and rebase prerender activation
 - **v4.1.0**: Partial-content and re-fetch identity fixes, shadow-DOM text extraction, optional Ask Jev second opinion
 - **v4.0.1**: Pages behind bot protection (claude.ai) no longer read as SSR — parse-time text-length snapshot from `probe.js` when the HTML re-fetch is refused
 - **v4.0.0**: Rendering intelligence — delivery classification from response headers ("rendered where"), per-region server/client attribution, explainable signals, DevTools panel, popup rewrite with auto-analyze, offline detection harness, localized UI
