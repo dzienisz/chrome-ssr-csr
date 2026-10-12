@@ -173,6 +173,19 @@ async function pageAnalyzer() {
     // Add raw HTML comparison results (highest priority signal)
     if (comparisonResults) {
       const fromSnapshot = comparisonResults.source === "parser-snapshot";
+      const wordCoverage = comparisonResults.wordCoverage ?? 0;
+      const comparisonMeasure = fromSnapshot
+        ? `${comparisonResults.contentRatio}x ratio`
+        : `word coverage ${wordCoverage}`;
+      const matchedWords = (
+        comparisonResults.matchedWordCount ?? 0
+      ).toLocaleString();
+      const renderedWords = (
+        comparisonResults.renderedWordCount ?? 0
+      ).toLocaleString();
+      const wordCoveragePercent = Math.round(
+        wordCoverage * 100,
+      );
       if (fromSnapshot) {
         signals.push({
           id: "comparison.parserSnapshot",
@@ -186,7 +199,9 @@ async function pageAnalyzer() {
       }
       if (comparisonResults.isLikelyCSR) {
         csrScore += config.scoring.rawVsRenderedMismatch;
-        indicators.push(`raw HTML much smaller than rendered (${comparisonResults.contentRatio}x ratio) - CSR`);
+        indicators.push(
+          `raw HTML much smaller than rendered (${comparisonMeasure}) - CSR`,
+        );
         signals.push({
           id: "comparison.mismatch",
           label: "The server sent a fraction of what you see",
@@ -194,12 +209,12 @@ async function pageAnalyzer() {
           weight: config.scoring.rawVsRenderedMismatch,
           detail: fromSnapshot
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`
-            : `${comparisonResults.rawLength.toLocaleString()} characters of text arrived in the HTML; ${comparisonResults.renderedLength.toLocaleString()} are on screen.`,
+            : `${matchedWords} of ${renderedWords} visible words (${wordCoveragePercent}%) arrived in the HTML.`,
         });
       } else if (comparisonResults.isPartialCSR) {
         csrScore += config.scoring.rawVsRenderedPartial;
         indicators.push(
-          `raw HTML holds under 40% of rendered content (${comparisonResults.contentRatio}x ratio) - partial CSR`,
+          `raw HTML holds under 40% of rendered content (${comparisonMeasure}) - partial CSR`,
         );
         signals.push({
           id: "comparison.partial",
@@ -208,24 +223,33 @@ async function pageAnalyzer() {
           weight: config.scoring.rawVsRenderedPartial,
           detail: fromSnapshot
             ? `${comparisonResults.rawLength.toLocaleString()} characters of text were on the page when the HTML finished parsing; ${comparisonResults.renderedLength.toLocaleString()} are on screen — JavaScript added the rest.`
-            : `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters (${Math.round(comparisonResults.contentRatio * 100)}%) were in the initial response; JavaScript added the rest.`,
+            : `${matchedWords} of ${renderedWords} visible words (${wordCoveragePercent}%) were in the initial response; JavaScript added the rest.`,
         });
       } else if (comparisonResults.isLikelySSR) {
         ssrScore += config.scoring.rawVsRenderedMatch;
-        indicators.push(`raw HTML matches rendered content (${comparisonResults.contentRatio}x ratio) - SSR`);
+        indicators.push(
+          `raw HTML matches rendered content (${comparisonMeasure}) - SSR`,
+        );
         signals.push({
           id: "comparison.match",
           label: "The served HTML already contained the page",
           impact: "ssr",
           weight: config.scoring.rawVsRenderedMatch,
-          detail: `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters were in the initial response.`,
+          detail: fromSnapshot
+            ? `${comparisonResults.rawLength.toLocaleString()} of ${comparisonResults.renderedLength.toLocaleString()} visible characters were in the initial response.`
+            : `${matchedWords} of ${renderedWords} visible words were in the initial response.`,
         });
       }
       detailedInfo.contentComparison = {
         rawLength: comparisonResults.rawLength,
         renderedLength: comparisonResults.renderedLength,
         ratio: comparisonResults.contentRatio,
-        source: comparisonResults.source || "fetch"
+        source: comparisonResults.source || "fetch",
+        wordCoverage: comparisonResults.wordCoverage ?? null,
+        rawWords: comparisonResults.rawWordCount ?? null,
+        renderedWords: comparisonResults.renderedWordCount ?? null,
+        matchedWords: comparisonResults.matchedWordCount ?? null,
+        measure: comparisonResults.measure ?? (fromSnapshot ? "length" : "words"),
       };
     }
 
@@ -298,7 +322,7 @@ async function pageAnalyzer() {
         impact: "ssr",
         weight: -removed,
         detail:
-          `The served HTML held under 10% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
+          `The served HTML held under 20% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
       });
     } else if (comparisonResults?.isPartialCSR) {
       const cappedFrom = ssrScore;

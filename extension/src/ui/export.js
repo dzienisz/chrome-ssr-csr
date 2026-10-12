@@ -88,6 +88,12 @@ function toCSV(result, page) {
     ["Server text share", diff.serverSharePct != null ? `${diff.serverSharePct}%` : ""],
     ["Raw HTML text", info.contentComparison ? info.contentComparison.rawLength : ""],
     ["Rendered text", info.contentComparison ? info.contentComparison.renderedLength : ""],
+    [
+      "Word coverage",
+      info.contentComparison?.wordCoverage != null
+        ? `${Math.round(info.contentComparison.wordCoverage * 100)}%`
+        : "",
+    ],
     ["Indicators", (result.indicators || []).join("; ")],
   ];
 

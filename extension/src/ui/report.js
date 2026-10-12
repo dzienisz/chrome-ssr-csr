@@ -270,6 +270,11 @@ function renderOverview(result, options = {}) {
   if (comparison) {
     stats.appendChild(stat("In HTML", num(comparison.rawLength)));
     stats.appendChild(stat("On screen", num(comparison.renderedLength)));
+    if (comparison.wordCoverage != null) {
+      stats.appendChild(
+        stat("Words from server", `${Math.round(comparison.wordCoverage * 100)}%`),
+      );
+    }
   }
   if (delivery && delivery.ttfb != null) stats.appendChild(stat("TTFB", ms(delivery.ttfb)));
   if (timing) {

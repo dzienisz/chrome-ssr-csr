@@ -27,7 +27,12 @@ function result(overrides = {}) {
       hybridScore: 0,
       frameworks: ["react"],
       generators: [],
-      contentComparison: { rawLength: 40, renderedLength: 8000, ratio: 0.01 },
+      contentComparison: {
+        rawLength: 40,
+        renderedLength: 8000,
+        ratio: 0.01,
+        wordCoverage: 0.01,
+      },
       delivery: {
         available: true,
         modeLabel: "Served from CDN cache",
@@ -117,6 +122,7 @@ describe("toCSV", () => {
     expect(rows[0]).toBe('"Field","Value"');
     expect(rows.some((row) => row.startsWith('"Render type"'))).toBe(true);
     expect(rows.some((row) => row.includes("Cloudflare"))).toBe(true);
+    expect(rows).toContain('"Word coverage","1%"');
   });
 
   it("quotes an indicator list that contains commas", () => {

@@ -46,6 +46,7 @@ function result(overrides = {}) {
         renderedLength: 2010,
         ratio: 0.99,
         source: "fetch",
+        wordCoverage: 0.99,
       },
       timing: { domContentLoaded: 12, firstContentfulPaint: 340 },
       delivery: {
@@ -238,6 +239,17 @@ describe("escaping", () => {
 });
 
 describe("renderOverview", () => {
+  it("shows the server word-coverage percentage when available", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderOverview(result()));
+
+    const stat = [...container.querySelectorAll(".stat")].find(
+      (item) => item.querySelector(".stat-label")?.textContent === "Words from server",
+    );
+
+    expect(stat.querySelector(".stat-value").textContent).toBe("99%");
+  });
+
   it("lists frameworks and generators as chips", () => {
     const container = document.createElement("div");
     container.appendChild(renderOverview(result()));

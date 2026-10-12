@@ -168,6 +168,11 @@ describe("pageAnalyzer signal aggregation", () => {
         rawLength: 900,
         renderedLength: 1000,
         contentRatio: 0.9,
+        wordCoverage: 0.9,
+        rawWordCount: 90,
+        renderedWordCount: 100,
+        matchedWordCount: 90,
+        measure: "words",
         isLikelyCSR: false,
         isLikelySSR: true,
         isDecisiveCSR: false,
@@ -180,7 +185,7 @@ describe("pageAnalyzer signal aggregation", () => {
     // Only the comparison indicator: delivery contributed a signal, not an
     // indicator, so it cannot inflate the confidence bonus.
     expect(result.indicators).toEqual([
-      "raw HTML matches rendered content (0.9x ratio) - SSR",
+      "raw HTML matches rendered content (word coverage 0.9) - SSR",
     ]);
     expect(result.signals.some((s) => s.id === "delivery.mode")).toBe(true);
   });
@@ -396,6 +401,11 @@ describe("partial-content comparison", () => {
         rawLength: 300,
         renderedLength: 1000,
         contentRatio: 0.3,
+        wordCoverage: 0.3,
+        rawWordCount: 30,
+        renderedWordCount: 100,
+        matchedWordCount: 30,
+        measure: "words",
         isLikelyCSR: false,
         isPartialCSR: true,
         isLikelySSR: false,
@@ -414,7 +424,7 @@ describe("partial-content comparison", () => {
     expect(result.renderType).not.toBe("Server-Side Rendered (SSR)");
     expect(partial).toMatchObject({ impact: "csr", weight: 40 });
     expect(partial.detail).toContain(
-      "300 of 1,000 visible characters (30%) were in the initial response",
+      "30 of 100 visible words (30%) were in the initial response",
     );
     expect(cap).toMatchObject({ impact: "ssr", weight: -40 });
     expect(cap.detail).toContain("cut from 90 to 50");
@@ -468,15 +478,20 @@ describe("partial-content comparison", () => {
     expect(result.signals.some((signal) => signal.id === "comparison.partialCap")).toBe(false);
   });
 
-  it("keeps a 0.15 ratio on the likely-CSR path without partial signals", async () => {
+  it("treats 0.2 coverage as the start of the partial band, not decisive CSR", async () => {
     stubDetectors({
       content: { ...empty, ssrScore: 80 },
       comparison: {
         rawLength: 150,
         renderedLength: 1000,
         contentRatio: 0.15,
-        isLikelyCSR: true,
-        isPartialCSR: false,
+        wordCoverage: 0.2,
+        rawWordCount: 20,
+        renderedWordCount: 100,
+        matchedWordCount: 20,
+        measure: "words",
+        isLikelyCSR: false,
+        isPartialCSR: true,
         isLikelySSR: false,
         isDecisiveCSR: false,
         rawDocument: document.implementation.createHTMLDocument(),
@@ -486,8 +501,11 @@ describe("partial-content comparison", () => {
     const result = await window.pageAnalyzer();
 
     expect(result.detailedInfo.csrScore).toBe(40);
-    expect(result.signals.some((signal) => signal.id === "comparison.mismatch")).toBe(true);
-    expect(result.signals.some((signal) => signal.id.startsWith("comparison.partial"))).toBe(false);
+    expect(result.signals.some((signal) => signal.id === "comparison.partial")).toBe(true);
+    expect(result.signals.some((signal) => signal.id === "comparison.decisiveCsr")).toBe(false);
+    expect(result.indicators).toContain(
+      "raw HTML holds under 40% of rendered - SSR signals capped (partial)",
+    );
   });
 
   it("describes parser-snapshot partial content without claiming a fetch", async () => {
