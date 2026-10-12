@@ -200,10 +200,11 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 
 ### Validating Changes
 
-Three harnesses, and they are not interchangeable (plus an optional Jev audit):
+Four harnesses, and they are not interchangeable (plus an optional Jev audit):
 
 ```bash
 npm run validate:local      # 11 offline fixtures in Chromium — deterministic, runs in CI
+npm run validate:lab        # 25 recorded framework fixtures — v4 accuracy + baseline gate
 npm run validate:extension  # installs the extension for real — runs in CI
 npm run validate:live       # 22 real sites — honest, needs the open internet
 npm run audit:jev           # same sites, second opinion from TypeSafe's Jev — needs TYPESAFE_API_KEY
@@ -213,6 +214,12 @@ npm run preview             # screenshot every UI surface from a real analysis r
 `validate:local` serves hand-written pages with known response headers and
 grades the verdict, the delivery mode and the region attribution against what
 each fixture declares (`scripts/fixtures/pages.mjs`). It has to stay green.
+
+`validate:lab` replays 25 production-built framework and rendering-mode
+snapshots from `scripts/fixtures/lab/`. It reports v4 accuracy against their
+recorded region origins, while CI gates only on bucket changes from
+`baseline.json`. The replay serves local snapshots and blocks non-local asset
+requests, so it needs neither the lab servers nor internet access.
 
 `validate:extension` is the only one that loads the extension *as* an
 extension: unpacked into a throwaway profile, so it exercises the manifest, the

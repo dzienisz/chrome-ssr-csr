@@ -1,0 +1,327 @@
+[
+  {
+    "name": "next-app-ssr",
+    "framework": "Next.js",
+    "mode": "App Router, force-dynamic",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:06.796Z"
+  },
+  {
+    "name": "next-app-static",
+    "framework": "Next.js",
+    "mode": "App Router, static SSG",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:10.895Z"
+  },
+  {
+    "name": "next-app-streaming",
+    "framework": "Next.js",
+    "mode": "App Router, streamed Suspense comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:16.971Z"
+  },
+  {
+    "name": "next-app-client-comments",
+    "framework": "Next.js",
+    "mode": "App Router, client-fetched comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "C"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:21.071Z"
+  },
+  {
+    "name": "next-app-ssr-false",
+    "framework": "Next.js",
+    "mode": "App Router, ssr:false content",
+    "origin": {
+      "shell": "S",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:25.163Z"
+  },
+  {
+    "name": "next-pages-gssp",
+    "framework": "Next.js",
+    "mode": "Pages Router, getServerSideProps",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:29.248Z"
+  },
+  {
+    "name": "next-pages-client-fetch",
+    "framework": "Next.js",
+    "mode": "Pages Router, client-fetched content",
+    "origin": {
+      "shell": "S",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "next 16.4.0",
+    "recordedAt": "2026-10-12T14:22:33.330Z"
+  },
+  {
+    "name": "nuxt-ssr",
+    "framework": "Nuxt",
+    "mode": "default SSR",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "nuxt ^4.6.1",
+    "recordedAt": "2026-10-12T14:22:37.387Z"
+  },
+  {
+    "name": "nuxt-spa",
+    "framework": "Nuxt",
+    "mode": "ssr:false SPA",
+    "origin": {
+      "shell": "C",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "nuxt ^4.6.1",
+    "recordedAt": "2026-10-12T14:22:41.447Z"
+  },
+  {
+    "name": "nuxt-clientonly-comments",
+    "framework": "Nuxt",
+    "mode": "SSR with ClientOnly comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "C"
+    },
+    "frameworkVersion": "nuxt ^4.6.1",
+    "recordedAt": "2026-10-12T14:22:45.508Z"
+  },
+  {
+    "name": "sveltekit-ssr",
+    "framework": "SvelteKit",
+    "mode": "adapter-node SSR",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "@sveltejs/kit ^3.0.0",
+    "recordedAt": "2026-10-12T14:22:49.553Z"
+  },
+  {
+    "name": "sveltekit-spa",
+    "framework": "SvelteKit",
+    "mode": "ssr:false SPA",
+    "origin": {
+      "shell": "C",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "@sveltejs/kit ^3.0.0",
+    "recordedAt": "2026-10-12T14:22:53.597Z"
+  },
+  {
+    "name": "react-router-ssr",
+    "framework": "React Router",
+    "mode": "v7 framework mode SSR loader",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "react-router ^7.18.4",
+    "recordedAt": "2026-10-12T14:22:57.673Z"
+  },
+  {
+    "name": "react-router-spa",
+    "framework": "React Router",
+    "mode": "v7 framework mode ssr:false clientLoader",
+    "origin": {
+      "shell": "C",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "react-router ^7.18.4",
+    "recordedAt": "2026-10-12T14:23:01.738Z"
+  },
+  {
+    "name": "astro-static",
+    "framework": "Astro",
+    "mode": "static",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "astro ^7.3.8",
+    "recordedAt": "2026-10-12T14:23:05.789Z"
+  },
+  {
+    "name": "astro-client-only",
+    "framework": "Astro + React",
+    "mode": "React island client:only",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "astro ^7.3.8 + @astrojs/react ^7.0.1",
+    "recordedAt": "2026-10-12T14:23:09.842Z"
+  },
+  {
+    "name": "astro-server-defer",
+    "framework": "Astro + Node",
+    "mode": "server island server:defer comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "D"
+    },
+    "frameworkVersion": "astro ^7.3.8 + @astrojs/node ^11.1.7",
+    "recordedAt": "2026-10-12T14:23:13.897Z"
+  },
+  {
+    "name": "angular-csr",
+    "framework": "Angular",
+    "mode": "CSR",
+    "origin": {
+      "shell": "C",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "@angular/core ^22.2.0",
+    "recordedAt": "2026-10-12T14:23:17.974Z"
+  },
+  {
+    "name": "angular-ssr",
+    "framework": "Angular",
+    "mode": "SSR",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "@angular/core ^22.2.0",
+    "recordedAt": "2026-10-12T14:23:22.074Z"
+  },
+  {
+    "name": "angular-ssr-defer",
+    "framework": "Angular",
+    "mode": "SSR with @defer comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "C"
+    },
+    "frameworkVersion": "@angular/core ^22.2.0",
+    "recordedAt": "2026-10-12T14:23:26.174Z"
+  },
+  {
+    "name": "qwik-city",
+    "framework": "Qwik City",
+    "mode": "SSR",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "S"
+    },
+    "frameworkVersion": "@builder.io/qwik-city ^1.20.2",
+    "recordedAt": "2026-10-12T14:23:30.252Z"
+  },
+  {
+    "name": "vite-react-spa",
+    "framework": "Vite + React",
+    "mode": "SPA",
+    "origin": {
+      "shell": "C",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "vite ^8.3.0 + react ^19.2.8",
+    "recordedAt": "2026-10-12T14:23:34.325Z"
+  },
+  {
+    "name": "htmx-load",
+    "framework": "Node + Express + htmx",
+    "mode": "server HTML with htmx-loaded comments",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "S",
+      "comments": "D"
+    },
+    "frameworkVersion": "express ^5.1.0 + htmx.org ^2.0.8",
+    "recordedAt": "2026-10-12T14:23:38.389Z"
+  },
+  {
+    "name": "skeleton-swap",
+    "framework": "Plain HTML + JavaScript",
+    "mode": "equal-length placeholder swap",
+    "origin": {
+      "shell": "S",
+      "h1": "S",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "N/A (plain HTML and JavaScript)",
+    "recordedAt": "2026-10-12T14:23:42.442Z"
+  },
+  {
+    "name": "prerendered-shell",
+    "framework": "Vite + React",
+    "mode": "prerendered shell with client-mounted content",
+    "origin": {
+      "shell": "S",
+      "h1": "C",
+      "article": "C",
+      "comments": "C"
+    },
+    "frameworkVersion": "vite ^8.3.0 + react ^19.2.8",
+    "recordedAt": "2026-10-12T14:23:46.509Z"
+  }
+]
