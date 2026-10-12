@@ -447,7 +447,10 @@ async function compareInitialVsRendered() {
       rawTitle &&
       fnv1a(rawTitle) !== snapshot.parsedTitleHash
     ) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "title",
+      });
     }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
@@ -466,7 +469,10 @@ async function compareInitialVsRendered() {
     const { matched, coverage } = wordCoverage(rawWords, renderedWords);
 
     if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "no-shared-words",
+      });
     }
 
     // Determine if CSR or SSR based on rendered-word coverage.
@@ -622,6 +628,7 @@ function compareParsedSnapshot(options = {}) {
     rawDocument: null,
     rawHTML: null,
     refetchMismatch: options.refetchMismatch === true,
+    refetchMismatchReason: options.refetchMismatchReason ?? null,
   };
 }
 
@@ -1360,7 +1367,26 @@ function collectRegions(renderedBody, rawBody) {
       const key = regionKey(child);
       const rawElement = findInRaw(rawBody, key);
       const rawChars = visibleTextLength(rawElement);
-      const ratio = renderedChars > 0 ? rawChars / renderedChars : 1;
+      let coveredChars = Math.min(rawChars, renderedChars);
+      if (
+        rawElement &&
+        typeof window !== "undefined" &&
+        typeof window.extractVisibleWords === "function" &&
+        typeof window.wordCoverage === "function"
+      ) {
+        const renderedWords = window.extractVisibleWords(child);
+        if (renderedWords.length > 0) {
+          const coverage = window.wordCoverage(
+            window.extractVisibleWords(rawElement),
+            renderedWords,
+          ).coverage;
+          coveredChars = Math.min(
+            rawChars,
+            Math.round(renderedChars * coverage),
+          );
+        }
+      }
+      const ratio = renderedChars > 0 ? coveredChars / renderedChars : 1;
 
       let origin;
       if (!rawElement) origin = "client";
@@ -1392,8 +1418,9 @@ function collectRegions(renderedBody, rawBody) {
         key,
         label: regionLabel(child, key),
         rawChars,
+        coveredChars,
         renderedChars,
-        addedChars: Math.max(0, renderedChars - rawChars),
+        addedChars: Math.max(0, renderedChars - coveredChars),
         origin,
         existedInRawHtml: Boolean(rawElement),
       });
@@ -1449,7 +1476,7 @@ function detectDomDiff(rawDocument) {
   let serverChars = 0;
   let clientChars = 0;
   for (const region of regions) {
-    serverChars += Math.min(region.rawChars, region.renderedChars);
+    serverChars += region.coveredChars;
     clientChars += region.addedChars;
   }
 
@@ -2911,9 +2938,12 @@ async function pageAnalyzer() {
           label: "Measured while the page loaded",
           impact: "info",
           weight: 0,
-          detail: comparisonResults.refetchMismatch
-            ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
-            : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+          detail:
+            comparisonResults.refetchMismatchReason === "no-shared-words"
+              ? "The second copy of the HTML shared no words with the page on screen, so it was treated as a different document and the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+              : comparisonResults.refetchMismatch
+                ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+                : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
         });
       }
       if (comparisonResults.isLikelyCSR) {

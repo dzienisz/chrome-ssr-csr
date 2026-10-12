@@ -263,7 +263,26 @@ function collectRegions(renderedBody, rawBody) {
       const key = regionKey(child);
       const rawElement = findInRaw(rawBody, key);
       const rawChars = visibleTextLength(rawElement);
-      const ratio = renderedChars > 0 ? rawChars / renderedChars : 1;
+      let coveredChars = Math.min(rawChars, renderedChars);
+      if (
+        rawElement &&
+        typeof window !== "undefined" &&
+        typeof window.extractVisibleWords === "function" &&
+        typeof window.wordCoverage === "function"
+      ) {
+        const renderedWords = window.extractVisibleWords(child);
+        if (renderedWords.length > 0) {
+          const coverage = window.wordCoverage(
+            window.extractVisibleWords(rawElement),
+            renderedWords,
+          ).coverage;
+          coveredChars = Math.min(
+            rawChars,
+            Math.round(renderedChars * coverage),
+          );
+        }
+      }
+      const ratio = renderedChars > 0 ? coveredChars / renderedChars : 1;
 
       let origin;
       if (!rawElement) origin = "client";
@@ -295,8 +314,9 @@ function collectRegions(renderedBody, rawBody) {
         key,
         label: regionLabel(child, key),
         rawChars,
+        coveredChars,
         renderedChars,
-        addedChars: Math.max(0, renderedChars - rawChars),
+        addedChars: Math.max(0, renderedChars - coveredChars),
         origin,
         existedInRawHtml: Boolean(rawElement),
       });
@@ -352,7 +372,7 @@ function detectDomDiff(rawDocument) {
   let serverChars = 0;
   let clientChars = 0;
   for (const region of regions) {
-    serverChars += Math.min(region.rawChars, region.renderedChars);
+    serverChars += region.coveredChars;
     clientChars += region.addedChars;
   }
 

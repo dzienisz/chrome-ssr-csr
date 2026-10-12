@@ -192,9 +192,12 @@ async function pageAnalyzer() {
           label: "Measured while the page loaded",
           impact: "info",
           weight: 0,
-          detail: comparisonResults.refetchMismatch
-            ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
-            : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
+          detail:
+            comparisonResults.refetchMismatchReason === "no-shared-words"
+              ? "The second copy of the HTML shared no words with the page on screen, so it was treated as a different document and the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+              : comparisonResults.refetchMismatch
+                ? "The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran."
+                : "The site refused a second copy of its HTML, so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.",
         });
       }
       if (comparisonResults.isLikelyCSR) {

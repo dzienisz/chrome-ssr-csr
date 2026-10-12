@@ -33,6 +33,7 @@ describe('parser-snapshot comparison', () => {
         rawLength: 500, renderedLength: 500, contentRatio: 1,
         isLikelyCSR: false, isLikelySSR: true, isDecisiveCSR: false,
         source: 'parser-snapshot', refetchMismatch: true,
+        refetchMismatchReason: 'title',
         responseHeaders: null, rawDocument: null, rawHTML: null
       }
     });
@@ -42,6 +43,25 @@ describe('parser-snapshot comparison', () => {
 
     expect(snapshotSignal.detail).toBe(
       'The second copy of the HTML was a different page (its title did not match), so the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.'
+    );
+  });
+
+  it('explains when a successful re-fetch shared no words with the page', async () => {
+    stubDetectors({
+      comparison: {
+        rawLength: 500, renderedLength: 500, contentRatio: 1,
+        isLikelyCSR: false, isLikelySSR: true, isDecisiveCSR: false,
+        source: 'parser-snapshot', refetchMismatch: true,
+        refetchMismatchReason: 'no-shared-words',
+        responseHeaders: null, rawDocument: null, rawHTML: null
+      }
+    });
+
+    const result = await window.pageAnalyzer();
+    const snapshotSignal = result.signals.find((s) => s.id === 'comparison.parserSnapshot');
+
+    expect(snapshotSignal.detail).toBe(
+      'The second copy of the HTML shared no words with the page on screen, so it was treated as a different document and the comparison uses the text present when the browser finished parsing it, before deferred scripts ran.'
     );
   });
 

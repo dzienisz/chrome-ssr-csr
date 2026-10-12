@@ -557,6 +557,7 @@ describe("parser snapshot fallback", () => {
 
     expect(result.source).toBe("parser-snapshot");
     expect(result.refetchMismatch).toBe(true);
+    expect(result.refetchMismatchReason).toBe("no-shared-words");
     expect(result.rawLength).toBe(160);
     expect(result.measure).toBe("length");
     expect(result.wordCoverage).toBeNull();
@@ -598,6 +599,7 @@ describe("parser snapshot fallback", () => {
 
     expect(result.source).toBe("parser-snapshot");
     expect(result.refetchMismatch).toBe(true);
+    expect(result.refetchMismatchReason).toBe("title");
     expect(result.rawLength).toBe(LONG_TEXT.trim().length);
     expect(result.rawDocument).toBeNull();
   });

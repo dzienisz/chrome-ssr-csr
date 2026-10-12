@@ -257,6 +257,7 @@ function stat(name, value) {
  */
 function renderOverview(result, options = {}) {
   const showTopSignals = options.topSignals !== false;
+  const assessable = result.assessable !== false;
   const info = result.detailedInfo || {};
   const comparison = info.contentComparison;
   const delivery = info.delivery;
@@ -270,7 +271,7 @@ function renderOverview(result, options = {}) {
   if (comparison) {
     stats.appendChild(stat("In HTML", num(comparison.rawLength)));
     stats.appendChild(stat("On screen", num(comparison.renderedLength)));
-    if (comparison.wordCoverage != null) {
+    if (assessable && comparison.wordCoverage != null) {
       stats.appendChild(
         stat("Words from server", `${Math.round(comparison.wordCoverage * 100)}%`),
       );

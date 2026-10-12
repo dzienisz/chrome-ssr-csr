@@ -201,7 +201,10 @@ async function compareInitialVsRendered() {
       rawTitle &&
       fnv1a(rawTitle) !== snapshot.parsedTitleHash
     ) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "title",
+      });
     }
     const rawBodyText = extractVisibleText(rawDoc.body);
 
@@ -220,7 +223,10 @@ async function compareInitialVsRendered() {
     const { matched, coverage } = wordCoverage(rawWords, renderedWords);
 
     if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
-      return compareParsedSnapshot({ refetchMismatch: true });
+      return compareParsedSnapshot({
+        refetchMismatch: true,
+        refetchMismatchReason: "no-shared-words",
+      });
     }
 
     // Determine if CSR or SSR based on rendered-word coverage.
@@ -376,6 +382,7 @@ function compareParsedSnapshot(options = {}) {
     rawDocument: null,
     rawHTML: null,
     refetchMismatch: options.refetchMismatch === true,
+    refetchMismatchReason: options.refetchMismatchReason ?? null,
   };
 }
 

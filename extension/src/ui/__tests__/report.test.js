@@ -250,6 +250,18 @@ describe("renderOverview", () => {
     expect(stat.querySelector(".stat-value").textContent).toBe("99%");
   });
 
+  it("omits the server word-coverage stat for unassessable results", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderOverview(result({ assessable: false })));
+
+    expect(
+      [...container.querySelectorAll(".stat")].some(
+        (item) =>
+          item.querySelector(".stat-label")?.textContent === "Words from server",
+      ),
+    ).toBe(false);
+  });
+
   it("lists frameworks and generators as chips", () => {
     const container = document.createElement("div");
     container.appendChild(renderOverview(result()));
