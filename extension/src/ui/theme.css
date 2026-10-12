@@ -319,6 +319,12 @@ a:hover {
   color: var(--dial-color);
 }
 
+.dial[data-level] .dial-value {
+  font-size: 9.5px;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
 .dial[data-level="high"] {
   --dial-color: var(--ssr);
 }
@@ -328,11 +334,7 @@ a:hover {
 }
 
 .dial[data-level="low"] {
-  --dial-color: var(--csr);
-}
-
-.dial[data-level="medium"] .dial-value {
-  font-size: 10px;
+  --dial-color: var(--neutral);
 }
 
 .dial-wrap {

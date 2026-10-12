@@ -321,7 +321,7 @@ the numeric score or a calibrated probability. First match wins:
 | Neutral comparison band | Low / `inconclusive-band` |
 | Short comparison band | Low / `few-words` |
 | Agreeing parser snapshot | Medium / `length-only` |
-| Fetch comparison has fewer than 200 visible words | Low / `few-words` |
+| Fetch comparison has fewer than 50 visible words | Low / `few-words` |
 | Agreeing partial band | Medium / `partial-band` |
 | CSR coverage is above 10%, or SSR coverage below 80% | Medium / `near-threshold` |
 | Otherwise | High / `clear-measurement` |

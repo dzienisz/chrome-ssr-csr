@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Overview and Markdown export explain the recorded decision path, and
   each analysis result carries algorithm version 2 for word-coverage semantics.
 - Confidence is now shown as High, Medium, or Low based on measurement quality;
-  the numeric score remains available in results and exports.
+  fetch comparisons need at least 50 visible words, and the numeric score
+  remains available in results and exports. The dial adds a concise, accessible
+  explanation of what its level describes.
 
 ## [4.2.0] - 2026-10-12
 

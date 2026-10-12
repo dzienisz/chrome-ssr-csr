@@ -577,7 +577,7 @@ describe('confidence level', () => {
         confidenceLevel: 'low',
         confidenceLevelReason: 'no-measurement',
         confidenceScore: result.confidence,
-        confidenceLevels: { minWords: 200, clearCsr: 0.1, clearSsr: 0.8 },
+        confidenceLevels: { minWords: 50, clearCsr: 0.1, clearSsr: 0.8 },
       },
     });
   });
@@ -649,8 +649,8 @@ describe('confidence level', () => {
   });
 
   it.each([
-    [199, 'low', 'few-words'],
-    [200, 'medium', 'near-threshold'],
+    [49, 'low', 'few-words'],
+    [50, 'medium', 'near-threshold'],
   ])('applies the %i-word fetch floor before near-threshold confidence', async (words, level, reason) => {
     stubDetectors({
       comparison: fetchBand(0.15, {
@@ -667,7 +667,7 @@ describe('confidence level', () => {
     expect(result.confidenceLevelReason).toBe(reason);
   });
 
-  it('keeps the 193-word skeleton measurement below the configured floor', async () => {
+  it('classifies the 193-word skeleton measurement as medium / near-threshold', async () => {
     stubDetectors({
       comparison: fetchBand(0.11, {
         isLikelyCSR: true,
@@ -684,8 +684,8 @@ describe('confidence level', () => {
       total: 193,
       band: 'csr',
     });
-    expect(result.confidenceLevel).toBe('low');
-    expect(result.confidenceLevelReason).toBe('few-words');
+    expect(result.confidenceLevel).toBe('medium');
+    expect(result.confidenceLevelReason).toBe('near-threshold');
   });
 
   it('uses medium / partial-band for an agreeing partial measurement with enough words', async () => {

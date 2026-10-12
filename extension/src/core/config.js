@@ -64,7 +64,7 @@ const CONFIG = {
   },
 
   confidenceLevels: {
-    minWords: 200,
+    minWords: 50,
     clearCsr: 0.1,
     clearSsr: 0.8
   },

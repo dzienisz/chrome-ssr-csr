@@ -99,7 +99,7 @@ function confidenceDetail(decision) {
     case "no-measurement":
       detail = label(
         "confidenceReasonNoMeasurement",
-        `Low — no comparison measurement was available, so confidence is limited (score ${score}).`,
+        `Low — no HTML comparison. Score ${score}.`,
         [score],
       );
       break;
@@ -112,7 +112,7 @@ function confidenceDetail(decision) {
             : "partial";
       detail = label(
         "confidenceReasonContradiction",
-        `Low — the ${band} measurement (${coverage}%) contradicts the verdict (score ${score}).`,
+        `Low — ${band} coverage (${coverage}%) conflicts with the verdict. Score ${score}.`,
         [band, coverage, score],
       );
       break;
@@ -120,7 +120,7 @@ function confidenceDetail(decision) {
     case "inconclusive-band":
       detail = label(
         "confidenceReasonInconclusive",
-        `Low — the ${coverage}% measurement is in the inconclusive ${percent(limits.partial)}–${percent(limits.ssr)}% band (score ${score}).`,
+        `Low — ${coverage}% is in the inconclusive ${percent(limits.partial)}–${percent(limits.ssr)}% range. Score ${score}.`,
         [coverage, percent(limits.partial), percent(limits.ssr), score],
       );
       break;
@@ -128,13 +128,13 @@ function confidenceDetail(decision) {
       if (measurement?.source === "parser-snapshot" || measurement?.measure === "length") {
         detail = label(
           "confidenceReasonFewCharacters",
-          `Low — the parser snapshot contained only ${num(measurement.total)} characters, too little for a reliable confidence level (score ${score}).`,
+          `Low — only ${num(measurement.total)} parser-snapshot characters. Score ${score}.`,
           [num(measurement.total), score],
         );
       } else {
         detail = label(
           "confidenceReasonFewWords",
-          `Low — only ${num(measurement?.total)} visible words were measured; at least ${num(rules.minWords)} are needed for high confidence (score ${score}).`,
+          `Low — only ${num(measurement?.total)} visible words; minimum ${num(rules.minWords)}. Score ${score}.`,
           [num(measurement?.total), num(rules.minWords), score],
         );
       }
@@ -142,14 +142,14 @@ function confidenceDetail(decision) {
     case "length-only":
       detail = label(
         "confidenceReasonLengthOnly",
-        `Medium — the parser snapshot measured ${num(measurement?.matched)} of ${num(measurement?.total)} characters, so it cannot confirm word coverage (score ${score}).`,
-        [num(measurement?.matched), num(measurement?.total), score],
+        `Medium — the parser snapshot compares text length, not words. Score ${score}.`,
+        [score],
       );
       break;
     case "partial-band":
       detail = label(
         "confidenceReasonPartialBand",
-        `Medium — ${coverage}% word coverage falls in the partial ${percent(limits.csr)}–${percent(limits.partial)}% band (score ${score}).`,
+        `Medium — ${coverage}% coverage is in the partial ${percent(limits.csr)}–${percent(limits.partial)}% range. Score ${score}.`,
         [coverage, percent(limits.csr), percent(limits.partial), score],
       );
       break;
@@ -157,7 +157,7 @@ function confidenceDetail(decision) {
       const threshold = measurement?.band === "csr" ? limits.csr : limits.ssr;
       detail = label(
         "confidenceReasonNearThreshold",
-        `Medium — the measurement is near the ${percent(threshold)}% threshold (${coverage}%; score ${score}).`,
+        `Medium — ${coverage}% is near the ${percent(threshold)}% threshold. Score ${score}.`,
         [percent(threshold), coverage, score],
       );
       break;
@@ -166,13 +166,13 @@ function confidenceDetail(decision) {
       if (measurement?.band === "csr") {
         detail = label(
           "confidenceReasonClearCsr",
-          `High — ${coverage}% word coverage is at or below the ${percent(rules.clearCsr)}% clear-CSR level (score ${score}).`,
+          `High — ${coverage}% coverage is at or below the ${percent(rules.clearCsr)}% CSR cutoff. Score ${score}.`,
           [coverage, percent(rules.clearCsr), score],
         );
       } else {
         detail = label(
           "confidenceReasonClearSsr",
-          `High — ${coverage}% word coverage is at or above the ${percent(rules.clearSsr)}% clear-SSR level (score ${score}).`,
+          `High — ${coverage}% coverage is at or above the ${percent(rules.clearSsr)}% SSR cutoff. Score ${score}.`,
           [coverage, percent(rules.clearSsr), score],
         );
       }
@@ -502,6 +502,10 @@ function renderVerdict(result) {
   const confidenceText = confidenceLevel
     ? confidenceLevelLabel(confidenceLevel)
     : `${confidence}`;
+  const confidenceTooltip = label(
+    "confidenceTooltip",
+    "How clearly the page text could be measured.",
+  );
   const color = { ssr: "var(--ssr)", csr: "var(--csr)", hybrid: "var(--hybrid)" }[kind] ||
     "var(--neutral)";
 
@@ -512,8 +516,9 @@ function renderVerdict(result) {
           attrs: {
             role: "img",
             "aria-label": confidenceLevel
-              ? `${confidenceText} ${label("confidence", "confidence")}`
+              ? `${confidenceText} ${label("confidence", "confidence")}. ${confidenceTooltip}`
               : `${confidence}% ${label("confidence", "confidence")}`,
+            title: confidenceLevel ? confidenceTooltip : null,
           },
           dataset: { level: confidenceLevel },
           children: [el("span", { className: "dial-value", text: confidenceText })],

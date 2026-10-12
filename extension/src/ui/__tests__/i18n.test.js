@@ -25,6 +25,7 @@ const ENGLISH_ONLY_KEYS = [
   "confidenceReasonNoMeasurement",
   "confidenceReasonPartialBand",
   "decisionConfidence",
+  "confidenceTooltip",
   "decisionAlgorithm",
   "decisionBandCsr",
   "decisionBandNeutral",
