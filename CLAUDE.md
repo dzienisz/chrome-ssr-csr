@@ -270,7 +270,8 @@ Cover those in the fixtures instead.
 Since v3.7.0 both sides are measured identically with `script/style/noscript`
 and ordinary-template text stripped; the walk includes open shadow roots and
 declarative shadow templates. Both the CSR and SSR branches require ~200 chars
-of real text. On the fetch path, word coverage under 20% (decisive CSR) caps
+of real text. When the server sent under 20% of the visible text (decisive
+CSR: word coverage on the fetch path, text length on the parser snapshot), the
 rendered-DOM SSR signals are capped rather than allowed to outvote the
 comparison. When the raw fetch is refused (bot protection answers it with a
 403) or throws, `probe.js` supplies the length of the text the parser produced

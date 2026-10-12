@@ -448,9 +448,9 @@ CSR — most classified as SSR. Six fixes:
   identically.
 - **Symmetric comparison guards**: the SSR branch now also requires ~200 chars
   of real raw text (previously 10 chars of raw text could count as "SSR match").
-- **Decisive-CSR override**: when the server sent too little of the visible
-  text, rendered-DOM SSR signals (which describe the post-JS DOM) are capped
-  instead of outvoting the comparison.
+- **Decisive-CSR override**: when the server sent <10% of the visible text,
+  rendered-DOM SSR signals (which describe the post-JS DOM) are capped instead
+  of outvoting the comparison.
 - **Framework markers require raw-HTML evidence**: React/Vue/Svelte/… markers
   found only in the rendered DOM no longer count as "hydration (SSR)" — that is
   exactly what a booted CSR app looks like.
