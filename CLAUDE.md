@@ -203,7 +203,7 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 Four harnesses, and they are not interchangeable (plus an optional Jev audit):
 
 ```bash
-npm run validate:local      # 11 offline fixtures in Chromium — deterministic, runs in CI
+npm run validate:local      # 14 offline fixtures in Chromium — deterministic, runs in CI
 npm run validate:lab        # 25 recorded framework fixtures — v4 accuracy + baseline gate
 npm run validate:extension  # installs the extension for real — runs in CI
 npm run validate:live       # 22 real sites — honest, needs the open internet
@@ -291,6 +291,11 @@ ground-truth harness: `node extension/scripts/validate-detection.mjs`
 When the server sent 20–40% of the visible text (the partial band), the
 comparison adds 40 CSR points and caps the rendered-DOM SSR signals at 50, so
 the verdict is Hybrid or CSR, never SSR.
+
+Before classification, a quality gate reports “Cannot assess” when fewer than
+200 visible characters remain or a short page matches a known bot-challenge
+phrase. The gate keeps the collected evidence but does not present an SSR/CSR
+verdict for a challenge page or a page with too little text.
 
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)

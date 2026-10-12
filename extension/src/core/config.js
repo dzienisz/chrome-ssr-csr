@@ -86,6 +86,12 @@ const CONFIG = {
     minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },
 
+  qualityGate: {
+    minVisibleChars: 200,
+    challengeMaxChars: 1500,
+    challengePattern: /just a moment|attention required|verify (?:that )?you(?: are|'re) (?:a )?human|checking (?:if the site connection is secure|your browser)|are you a robot|unusual traffic|access denied|pardon our interruption|captcha/i,
+  },
+
   // Script ratio thresholds
   scriptRatio: {
     high: 0.15,

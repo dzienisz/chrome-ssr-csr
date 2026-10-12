@@ -114,7 +114,7 @@ describe("describeRenderOrigin", () => {
 
 describe("pageAnalyzer signal aggregation", () => {
   beforeEach(() => {
-    document.body.innerHTML = "<p>test page</p>";
+    document.body.innerHTML = `<p>${"test page ".repeat(30)}</p>`;
   });
 
   it("collects signals from every module, strongest first", async () => {

@@ -72,6 +72,8 @@ function toCSV(result, page) {
     ["Exported", new Date().toISOString()],
     ["Render type", result.renderType],
     ["Confidence", `${result.confidence}%`],
+    ["Assessable", result.assessable !== false],
+    ["Unassessable reason", result.unassessableReason || ""],
     ["Render origin", result.renderOrigin ? result.renderOrigin.label : ""],
     ["SSR score", info.ssrScore],
     ["CSR score", info.csrScore],
@@ -111,6 +113,10 @@ function toMarkdown(result, page, version) {
   lines.push("## Verdict", "");
   lines.push(`- **Render type:** ${result.renderType}`);
   lines.push(`- **Confidence:** ${result.confidence}%`);
+  lines.push(`- **Assessable:** ${result.assessable !== false ? "Yes" : "No"}`);
+  if (result.unassessableReason) {
+    lines.push(`- **Unassessable reason:** ${result.unassessableReason}`);
+  }
   if (result.renderOrigin) {
     lines.push(`- **Rendered where:** ${result.renderOrigin.label} — ${result.renderOrigin.detail}`);
   }
@@ -176,13 +182,23 @@ function toMarkdown(result, page, version) {
  * @param {{url: string}} page
  */
 function toSummary(result, page) {
+  if (result.assessable === false) {
+    return `${page.url} → Cannot assess — ${
+      result.unassessableReason || "not enough evidence"
+    }`;
+  }
+
   const info = result.detailedInfo || {};
   const origin = result.renderOrigin ? ` · ${result.renderOrigin.label}` : "";
   const share =
     info.domDiff && info.domDiff.available
       ? ` · ${info.domDiff.serverSharePct}% of text from the server`
       : "";
-  return `${page.url} → ${result.renderType} (${result.confidence}% confidence)${origin}${share}`;
+  const assessment =
+    result.assessable === false
+      ? ` — ${result.unassessableReason || "not enough evidence"}`
+      : ` (${result.confidence}% confidence)`;
+  return `${page.url} → ${result.renderType}${assessment}${origin}${share}`;
 }
 
 /**

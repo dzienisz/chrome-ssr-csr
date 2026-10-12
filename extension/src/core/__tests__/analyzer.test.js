@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Real scoring + analyzer; detector modules are stubbed per test
 import '../scoring.js';
+import '../../detectors/comparison-detector.js';
 import '../analyzer.js';
 
 const emptyResult = { ssrScore: 0, csrScore: 0, indicators: [], details: {} };
@@ -23,7 +24,7 @@ function stubDetectors(overrides = {}) {
 
 describe('parser-snapshot comparison', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<p>test page</p>';
+    document.body.innerHTML = `<p>${'test page '.repeat(30)}</p>`;
   });
 
   it('explains when a successful re-fetch was a different page', async () => {
@@ -65,7 +66,57 @@ describe('parser-snapshot comparison', () => {
 
 describe('pageAnalyzer', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<p>test page</p>';
+    document.body.innerHTML = `<p>${'test page '.repeat(30)}</p>`;
+    document.title = 'Example page';
+  });
+
+  describe('quality gate', () => {
+    it('rejects a short page with a bot-challenge title', async () => {
+      document.title = 'Just a moment...';
+      document.body.textContent = 'Please wait while we verify your browser.';
+      stubDetectors();
+
+      const result = await window.pageAnalyzer();
+
+      expect(result).toMatchObject({
+        renderType: 'Cannot assess',
+        confidence: 0,
+        assessable: false,
+        unassessableReason: 'bot-challenge',
+      });
+      expect(result.signals[0].id).toBe('gate.botChallenge');
+    });
+
+    it('rejects 120 visible characters as too little text', async () => {
+      document.body.textContent = 'x'.repeat(120);
+      stubDetectors();
+
+      const result = await window.pageAnalyzer();
+
+      expect(result.assessable).toBe(false);
+      expect(result.unassessableReason).toBe('too-little-text');
+      expect(result.signals[0].id).toBe('gate.tooLittleText');
+    });
+
+    it('does not mistake a long page containing "captcha" for a challenge', async () => {
+      document.body.textContent = `captcha ${'A detailed article about rendering. '.repeat(150)}`;
+      stubDetectors();
+
+      const result = await window.pageAnalyzer();
+
+      expect(result.renderType).not.toBe('Cannot assess');
+      expect(result.assessable).toBe(true);
+      expect(result).not.toHaveProperty('unassessableReason');
+    });
+
+    it('marks a normal page assessable', async () => {
+      stubDetectors();
+
+      const result = await window.pageAnalyzer();
+
+      expect(result.assessable).toBe(true);
+      expect(result).not.toHaveProperty('unassessableReason');
+    });
   });
 
   describe('decisive CSR override', () => {

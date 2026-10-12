@@ -142,7 +142,15 @@ async function analyzeTab(tab) {
     });
 
     const origin = result.renderOrigin ? ` — ${result.renderOrigin.label}` : "";
-    notify(`${result.renderType} (${result.confidence}%)`, `${hostOf(url)}${origin}`);
+    if (result.assessable === false) {
+      const reason =
+        result.unassessableReason === "bot-challenge"
+          ? "bot check"
+          : "too little visible text";
+      notify(`Cannot assess — ${reason}`, hostOf(url));
+    } else {
+      notify(`${result.renderType} (${result.confidence}%)`, `${hostOf(url)}${origin}`);
+    }
   } catch (error) {
     notify("Analysis failed", String((error && error.message) || error));
   }
@@ -170,7 +178,7 @@ function hostOf(url) {
 }
 
 function setBadge(renderType, tabId) {
-  let text = "";
+  let text = renderType === "Cannot assess" ? "?" : "";
   let color = "#6b7280";
 
   if (/hybrid|mixed|islands/i.test(renderType)) {

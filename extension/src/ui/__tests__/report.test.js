@@ -132,6 +132,35 @@ describe("renderVerdict", () => {
     expect(node.querySelector(".dial").style.getPropertyValue("--value")).toBe("92");
   });
 
+  it("shows why an unassessable result has no confidence dial", () => {
+    const node = renderVerdict(
+      result({
+        renderType: "Cannot assess",
+        confidence: 0,
+        assessable: false,
+        unassessableReason: "bot-challenge",
+        signals: [
+          {
+            id: "gate.botChallenge",
+            label: "The page you are on is a bot check, not the site",
+            impact: "info",
+            weight: 0,
+            detail: "The title or visible text matches a bot challenge page.",
+          },
+        ],
+      }),
+    );
+
+    expect(node.dataset.kind).toBe("unknown");
+    expect(node.querySelector(".verdict-kind").textContent).toBe("?");
+    expect(node.querySelector(".verdict-label").textContent).toBe("Cannot assess");
+    expect(node.querySelector(".verdict-reason").textContent).toContain(
+      "bot challenge page",
+    );
+    expect(node.querySelector(".dial")).toBeNull();
+    expect(node.textContent).not.toContain("%");
+  });
+
   it("keeps the split bar out of the verdict row so it cannot steal its width", () => {
     const node = renderVerdict(result());
 

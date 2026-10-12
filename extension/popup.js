@@ -207,7 +207,7 @@ async function analyze() {
     updateBadge(result.renderType, tab.id);
     saveToHistory(page, result);
 
-    if (state.settings.shareData) {
+    if (state.settings.shareData && result.assessable !== false) {
       collectAndSendTelemetry(tab.id, result, page, injection.documentId);
     }
   } catch (error) {
@@ -623,7 +623,11 @@ function renderHistoryPanel() {
                 attrs: { title: entry.results.renderType },
               }),
               window.SSRReport.el("span", {
-                text: `${entry.results.confidence}% · ${new Date(entry.timestamp).toLocaleString()}`,
+                text: `${
+                  entry.results.assessable === false
+                    ? ""
+                    : `${entry.results.confidence}% · `
+                }${new Date(entry.timestamp).toLocaleString()}`,
               }),
             ],
           }),

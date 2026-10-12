@@ -473,4 +473,41 @@ export const FIXTURES = [
   </body>
 </html>`,
   },
+
+  {
+    name: "too-little-text",
+    note: "Page with too little visible text to assess rendering",
+    bucket: "UNKNOWN",
+    headers: {
+      "cache-control": "private, no-store",
+    },
+    html: `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Brief page</title></head>
+  <body>
+    <main><h1>Brief page</h1><p>This page has only a short amount of visible text for its visitors.</p></main>
+  </body>
+</html>`,
+  },
+
+  {
+    name: "bot-challenge",
+    note: "Short Cloudflare-style challenge page whose raw re-fetch is forbidden",
+    bucket: "UNKNOWN",
+    refuseRefetch: true,
+    headers: {
+      "cache-control": "private, no-store",
+      server: "cloudflare",
+    },
+    html: `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Just a moment...</title></head>
+  <body>
+    <main>
+      <h1>Just a moment...</h1>
+      <p>We are checking your browser before accessing this site. This process is automatic. Your request is being reviewed to make sure it is safe. Please enable cookies and JavaScript, then wait while we verify that you are human. Reference ID: 1234567890. Cloudflare Ray ID: 8a1b2c3d4e5f6789.</p>
+    </main>
+  </body>
+</html>`,
+  },
 ];

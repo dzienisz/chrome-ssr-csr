@@ -193,4 +193,17 @@ describe("toSummary", () => {
       "https://example.com/docs → Client-Side Rendered (CSR) (88% confidence)",
     );
   });
+
+  it("omits origin and server share for unassessable results", () => {
+    const unassessable = result({
+      renderType: "Cannot assess",
+      confidence: 0,
+      assessable: false,
+      unassessableReason: "bot-challenge",
+    });
+
+    expect(toSummary(unassessable, PAGE)).toBe(
+      "https://example.com/docs → Cannot assess — bot-challenge",
+    );
+  });
 });

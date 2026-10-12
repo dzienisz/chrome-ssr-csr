@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline `validate:lab` report for 25 recorded framework fixtures, with a
   baseline gate for future v4 bucket changes.
 
+### Changed
+
+- Pages with fewer than 200 visible characters or short bot-challenge pages
+  report “Cannot assess” instead of an SSR/CSR verdict.
+
 ## [4.1.1] - 2026-10-12
 
 ### Fixed
