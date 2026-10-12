@@ -233,6 +233,11 @@ a:hover {
   border-color: color-mix(in srgb, var(--hybrid) 25%, transparent);
 }
 
+.verdict[data-kind="unknown"] {
+  background: var(--neutral-soft);
+  border-color: color-mix(in srgb, var(--neutral) 25%, transparent);
+}
+
 .verdict-body {
   flex: 1;
   min-width: 0;
@@ -258,6 +263,12 @@ a:hover {
   margin-top: 5px;
 }
 
+.verdict-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
 .verdict[data-kind="ssr"] .verdict-kind {
   color: var(--ssr);
 }
@@ -268,6 +279,10 @@ a:hover {
 
 .verdict[data-kind="hybrid"] .verdict-kind {
   color: var(--hybrid);
+}
+
+.verdict[data-kind="unknown"] .verdict-kind {
+  color: var(--neutral);
 }
 
 /* Confidence dial: a conic gradient ring, no canvas, no library. */

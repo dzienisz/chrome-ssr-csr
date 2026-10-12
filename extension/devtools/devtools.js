@@ -5,7 +5,7 @@
 chrome.devtools.panels.create(
   "Rendering",
   "../icon48.png",
-  "panel.html",
+  "devtools/panel.html",
   () => {
     // Panel created. Errors here are surfaced by DevTools itself.
   },

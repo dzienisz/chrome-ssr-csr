@@ -87,6 +87,7 @@ function verdictKind(renderType) {
 
 /** Three-letter badge text for the toolbar icon and the hero. */
 function verdictBadge(renderType) {
+  if (renderType === "Cannot assess") return "?";
   return { ssr: "SSR", csr: "CSR", hybrid: "MIX", unknown: "" }[
     verdictKind(renderType)
   ];
@@ -100,39 +101,59 @@ function verdictBadge(renderType) {
  * @returns {HTMLElement}
  */
 function renderVerdict(result) {
-  const kind = verdictKind(result.renderType);
+  const assessable = result.assessable !== false;
+  const renderType = assessable ? result.renderType : "Cannot assess";
+  const kind = verdictKind(renderType);
   const confidence = Math.round(result.confidence || 0);
   const color = { ssr: "var(--ssr)", csr: "var(--csr)", hybrid: "var(--hybrid)" }[kind] ||
     "var(--neutral)";
 
-  const dial = el("div", {
-    className: "dial",
-    attrs: {
-      role: "img",
-      "aria-label": `${confidence}% ${label("confidence", "confidence")}`,
-    },
-    children: [el("span", { className: "dial-value", text: `${confidence}` })],
-  });
-  dial.style.setProperty("--value", String(confidence));
-  dial.style.setProperty("--dial-color", color);
+  const dialWrap = assessable
+    ? (() => {
+        const dial = el("div", {
+          className: "dial",
+          attrs: {
+            role: "img",
+            "aria-label": `${confidence}% ${label("confidence", "confidence")}`,
+          },
+          children: [el("span", { className: "dial-value", text: `${confidence}` })],
+        });
+        dial.style.setProperty("--value", String(confidence));
+        dial.style.setProperty("--dial-color", color);
 
-  const dialWrap = el("div", {
-    className: "dial-wrap",
-    children: [
-      dial,
-      el("div", {
-        className: "dial-caption",
-        text: label("confidence", "confidence"),
-      }),
-    ],
-  });
+        return el("div", {
+          className: "dial-wrap",
+          children: [
+            dial,
+            el("div", {
+              className: "dial-caption",
+              text: label("confidence", "confidence"),
+            }),
+          ],
+        });
+      })()
+    : null;
+
+  const gateSignal = assessable
+    ? null
+    : result.signals?.find((signal) =>
+        ["gate.botChallenge", "gate.tooLittleText"].includes(signal.id),
+      );
+  const reason =
+    gateSignal?.detail ||
+    (result.unassessableReason === "bot-challenge"
+      ? "The page appears to be a bot check, not the site."
+      : "There is too little visible text to tell how this page was built.");
 
   const body = el("div", {
     className: "verdict-body",
     children: [
-      el("div", { className: "verdict-kind", text: verdictBadge(result.renderType) }),
-      el("div", { className: "verdict-label", text: result.renderType }),
-      result.renderOrigin
+      el("div", { className: "verdict-kind", text: verdictBadge(renderType) }),
+      el("div", { className: "verdict-label", text: renderType }),
+      !assessable
+        ? el("div", { className: "verdict-reason", text: reason })
+        : null,
+      assessable && result.renderOrigin
         ? el("div", {
             className: "verdict-origin",
             children: [
@@ -155,7 +176,12 @@ function renderVerdict(result) {
   });
 
   const diff = result.detailedInfo && result.detailedInfo.domDiff;
-  if (diff && diff.available && diff.serverChars + diff.clientChars > 0) {
+  if (
+    assessable &&
+    diff &&
+    diff.available &&
+    diff.serverChars + diff.clientChars > 0
+  ) {
     hero.appendChild(renderSplit(diff));
   }
 

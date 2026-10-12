@@ -94,6 +94,12 @@ const CONFIG = {
     minRenderedLength: 200  // Minimum text (either side) to trust the comparison
   },
 
+  qualityGate: {
+    minVisibleChars: 200,
+    challengeMaxChars: 1500,
+    challengePattern: /just a moment|attention required|verify (?:that )?you(?: are|'re) (?:a )?human|checking (?:if the site connection is secure|your browser)|are you a robot|unusual traffic|access denied|pardon our interruption|captcha/i,
+  },
+
   // Script ratio thresholds
   scriptRatio: {
     high: 0.15,
@@ -2921,6 +2927,35 @@ async function pageAnalyzer() {
       });
     }
 
+    const visible = window.extractVisibleText(document.body);
+    const visibleLength = comparisonResults?.renderedLength ?? visible.length;
+    let unassessableReason = null;
+    let gateSignal = null;
+
+    if (
+      visibleLength < config.qualityGate.challengeMaxChars &&
+      config.qualityGate.challengePattern.test(
+        `${document.title} ${visible.slice(0, 500)}`,
+      )
+    ) {
+      unassessableReason = "bot-challenge";
+      gateSignal = {
+        id: "gate.botChallenge",
+        label: "The page you are on is a bot check, not the site",
+        impact: "info",
+        weight: 0,
+        detail: `The title or visible text matches a bot challenge page; only ${visibleLength} characters of text are visible.`,
+      };
+    } else if (visibleLength < config.qualityGate.minVisibleChars) {
+      unassessableReason = "too-little-text";
+      gateSignal = {
+        id: "gate.tooLittleText",
+        label: "There is too little text to tell how this page was built",
+        impact: "info",
+        weight: 0,
+        detail: `Only ${visibleLength} characters of text are visible — too little to tell how this page was built.`,
+      };
+    }
     // Calculate final classification
     const classification = window.calculateClassification(ssrScore, csrScore, hybridScore, indicators);
     let renderType = classification.renderType;
@@ -2944,6 +2979,11 @@ async function pageAnalyzer() {
       diffResults.details && diffResults.details.domDiff,
     );
 
+    if (unassessableReason) {
+      renderType = "Cannot assess";
+      confidence = 0;
+    }
+
     // Strongest first, so a reader sees the evidence that decided the verdict
     // before the supporting detail. By magnitude, not by value: a signal that
     // removed 80 points is one of the most important facts about the verdict,
@@ -2958,10 +2998,14 @@ async function pageAnalyzer() {
     const orderedSignals = signals
       .slice()
       .sort((a, b) => Math.abs(b.weight || 0) - Math.abs(a.weight || 0));
+    if (gateSignal) orderedSignals.unshift(gateSignal);
 
     return {
       renderType,
       confidence,
+      ...(unassessableReason
+        ? { assessable: false, unassessableReason }
+        : { assessable: true }),
       indicators: indicators.length > 0 ? indicators : ["basic analysis"],
       signals: orderedSignals,
       renderOrigin,

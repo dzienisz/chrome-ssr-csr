@@ -30,6 +30,7 @@ const BUNDLE = readFileSync(
 
 
 function bucket(renderType) {
+  if (renderType === 'Cannot assess') return 'UNKNOWN';
   if (/hybrid|mixed/i.test(renderType)) return 'HYBRID';
   if (/ssr/i.test(renderType)) return 'SSR';
   if (/csr/i.test(renderType)) return 'CSR';
