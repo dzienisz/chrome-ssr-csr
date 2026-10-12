@@ -353,6 +353,7 @@ async function sendAnalysisData(results, page) {
       domain: location.domain,
       renderType: results.renderType,
       confidence: results.confidence,
+      algorithmVersion: results.algorithmVersion ?? null,
       frameworks: results.detailedInfo?.frameworks || [],
       coreWebVitals: results.coreWebVitals || null,
       pageType: results.pageType || null,

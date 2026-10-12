@@ -304,6 +304,12 @@ Before classification, a quality gate reports “Cannot assess” when fewer tha
 phrase. The gate keeps the collected evidence but does not present an SSR/CSR
 verdict for a challenge page or a page with too little text.
 
+Analysis results carry `algorithmVersion` (currently 2 for word coverage) and
+a `decision` object with the quality gate, measurement band, comparison
+points/cap, final scores, and classification rule/threshold. The Overview's
+“Why this verdict” card and Markdown export describe that recorded path; older
+history entries without it retain the top-signals card.
+
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
 - Framework hydration markers (30 points; since v3.7.0 they require raw-HTML

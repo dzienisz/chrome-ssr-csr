@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import "../report.js";
 import { toJSON, toCSV, toMarkdown, toSummary, csvCell } from "../export.js";
 
 const PAGE = { url: "https://example.com/docs", title: "Docs — Example" };
@@ -55,6 +56,30 @@ function result(overrides = {}) {
   };
 }
 
+function sampleDecision() {
+  return {
+    algorithmVersion: 2,
+    gate: { passed: true, reason: null, visibleChars: 4210 },
+    measurement: {
+      source: "fetch",
+      measure: "words",
+      value: 0.11,
+      matched: 22,
+      total: 193,
+      snapshotReason: null,
+      band: "csr",
+      bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+      points: { side: "csr", value: 40 },
+    },
+    cap: { kind: "decisive", from: 45, to: 10 },
+    score: { ssr: 10, csr: 40, ssrPercentage: 20, hybridScore: 0 },
+    rule: "csr",
+    threshold: 25,
+    downgraded: false,
+    confidenceCap: null,
+  };
+}
+
 describe("toJSON", () => {
   it("wraps the analysis with the page it describes", () => {
     const parsed = JSON.parse(toJSON(result(), PAGE));
@@ -63,6 +88,18 @@ describe("toJSON", () => {
     expect(parsed.title).toBe(PAGE.title);
     expect(parsed.analysis.renderType).toBe("Client-Side Rendered (CSR)");
     expect(typeof parsed.exportedAt).toBe("string");
+  });
+
+  it("includes algorithmVersion and decision in the wrapped analysis", () => {
+    const parsed = JSON.parse(
+      toJSON(
+        result({ algorithmVersion: 2, decision: sampleDecision() }),
+        PAGE,
+      ),
+    );
+
+    expect(parsed.analysis.algorithmVersion).toBe(2);
+    expect(parsed.analysis.decision.rule).toBe("csr");
   });
 });
 
@@ -125,6 +162,12 @@ describe("toCSV", () => {
     expect(rows).toContain('"Word coverage","1%"');
   });
 
+  it("emits the algorithm version", () => {
+    const rows = toCSV(result({ algorithmVersion: 2 }), PAGE).split("\n");
+
+    expect(rows).toContain('"Algorithm version","2"');
+  });
+
   it("quotes an indicator list that contains commas", () => {
     const csv = toCSV(result(), PAGE);
     const line = csv.split("\n").find((row) => row.startsWith('"Indicators"'));
@@ -157,6 +200,25 @@ describe("toMarkdown", () => {
     expect(markdown).toContain("**Rendered where:** Built in the browser");
     expect(markdown).toContain("_(CSR +40)_");
     expect(markdown).toContain("v4.0.0");
+  });
+
+  it("exports the shared decision description", () => {
+    const markdown = toMarkdown(
+      result({ algorithmVersion: 2, decision: sampleDecision() }),
+      PAGE,
+      "4.0.0",
+    );
+
+    expect(markdown).toContain("## Why this verdict");
+    expect(markdown).toContain(
+      "- **Page check:** Passed: 4,210 characters of visible text.",
+    );
+    expect(markdown).toContain(
+      "- **Measurement:** 22 of 193 visible words (11%) were in the HTML the server sent.",
+    );
+    expect(markdown).toContain(
+      "- **Verdict:** SSR share 20% ≤ 25% → Client-Side Rendered (CSR).",
+    );
   });
 
   it("renders the region breakdown as a table", () => {
@@ -204,6 +266,16 @@ describe("toSummary", () => {
       "https://example.com/docs → Client-Side Rendered (CSR) (88% confidence) · Built in the browser · 1% of text from the server",
     );
     expect(summary).not.toContain("\n");
+  });
+
+  it("does not add decision details to the copy summary", () => {
+    const baseline = toSummary(result(), PAGE);
+    const withDecision = toSummary(
+      result({ algorithmVersion: 2, decision: sampleDecision() }),
+      PAGE,
+    );
+
+    expect(withDecision).toBe(baseline);
   });
 
   it("drops the parts it has no data for", () => {

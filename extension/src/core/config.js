@@ -4,6 +4,9 @@
  */
 
 const CONFIG = {
+  // Bump whenever verdict semantics change: 1 = text-length ratio (≤4.2), 2 = word coverage (#47).
+  algorithmVersion: 2,
+
   // Scoring weights for different indicators
   scoring: {
     richContent: 20,           // Reduced from 35 - rendered DOM is misleading
@@ -40,6 +43,7 @@ const CONFIG = {
 
   // Classification thresholds
   thresholds: {
+    strongHybrid: 30,
     ssr: 75,              // >= 75% = Pure SSR
     likelySsr: 60,        // 60-74% = Likely SSR with Hydration
     hybrid: {min: 41, max: 59},  // 41-59% = Hybrid

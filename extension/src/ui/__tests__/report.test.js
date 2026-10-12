@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import "../jev.js";
 import "../report.js";
 
-const { verdictKind, verdictBadge, renderVerdict, renderOverview, renderSignals, renderDelivery, renderDiff } =
+const { verdictKind, verdictBadge, renderVerdict, renderOverview, renderSignals, renderDelivery, renderDiff, describeDecision } =
   window.SSRReport;
 
 /** A complete, realistic result — the renderer must not need every field. */
@@ -98,6 +98,31 @@ function result(overrides = {}) {
   };
 }
 
+function sampleDecision(overrides = {}) {
+  return {
+    algorithmVersion: 2,
+    gate: { passed: true, reason: null, visibleChars: 4210 },
+    measurement: {
+      source: "fetch",
+      measure: "words",
+      value: 0.11,
+      matched: 22,
+      total: 193,
+      snapshotReason: null,
+      band: "csr",
+      bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+      points: { side: "csr", value: 40 },
+    },
+    cap: null,
+    score: { ssr: 85, csr: 20, ssrPercentage: 81, hybridScore: 0 },
+    rule: "ssr",
+    threshold: 75,
+    downgraded: false,
+    confidenceCap: null,
+    ...overrides,
+  };
+}
+
 describe("verdictKind", () => {
   it.each([
     ["Server-Side Rendered (SSR)", "ssr"],
@@ -115,6 +140,235 @@ describe("verdictKind", () => {
   it("classifies hybrid before SSR, because both strings contain a verdict word", () => {
     expect(verdictKind("Hybrid/Islands Architecture")).toBe("hybrid");
     expect(verdictBadge("Hybrid/Islands Architecture")).toBe("MIX");
+  });
+});
+
+describe("describeDecision", () => {
+  it("describes the fetch CSR path and decisive cap with the recorded values", () => {
+    expect(
+      describeDecision(
+        sampleDecision({
+          cap: { kind: "decisive", from: 45, to: 10 },
+          score: { ssr: 10, csr: 40, ssrPercentage: 20, hybridScore: 0 },
+          rule: "csr",
+          threshold: 25,
+        }),
+      ),
+    ).toEqual([
+      {
+        id: "gate",
+        label: "Page check",
+        detail: "Passed: 4,210 characters of visible text.",
+      },
+      {
+        id: "measurement",
+        label: "Measurement",
+        detail: "22 of 193 visible words (11%) were in the HTML the server sent.",
+      },
+      {
+        id: "rule",
+        label: "Comparison rule",
+        detail:
+          "Under 20% → client-rendered evidence: CSR +40. Server-side signals read after JavaScript were capped from 45 to 10.",
+      },
+      {
+        id: "score",
+        label: "Score",
+        detail: "SSR 10 vs CSR 40 → 20% SSR · hybrid score 0.",
+      },
+      {
+        id: "verdict",
+        label: "Verdict",
+        detail: "SSR share 20% ≤ 25% → Client-Side Rendered (CSR).",
+      },
+      {
+        id: "algorithm",
+        label: "Algorithm",
+        detail: "Algorithm v2 · every signal is in the Evidence tab",
+      },
+    ]);
+  });
+
+  it("describes partial coverage and the partial cap", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "fetch",
+          measure: "words",
+          value: 0.39,
+          matched: 75,
+          total: 193,
+          snapshotReason: null,
+          band: "partial",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: { side: "csr", value: 40 },
+        },
+        cap: { kind: "partial", from: 85, to: 50 },
+        score: { ssr: 50, csr: 40, ssrPercentage: 56, hybridScore: 0 },
+        rule: "balancedHybrid",
+        threshold: { min: 41, max: 59 },
+      }),
+    );
+
+    expect(steps[2].detail).toBe(
+      "20–40% → partly client-rendered: CSR +40. Server-side signals read after JavaScript were capped from 85 to 50.",
+    );
+    expect(steps[4].detail).toBe(
+      "SSR share 56% with SSR 50 and CSR 40 fell in the 41–59% hybrid band → Hybrid.",
+    );
+  });
+
+  it("describes the neutral comparison band without comparison points", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "fetch",
+          measure: "words",
+          value: 0.55,
+          matched: 106,
+          total: 193,
+          snapshotReason: null,
+          band: "neutral",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: null,
+        },
+      }),
+    );
+
+    expect(steps[2].detail).toBe("40–70% → inconclusive, no points either way.");
+  });
+
+  it("describes the SSR band and its comparison points", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "fetch",
+          measure: "words",
+          value: 0.8,
+          matched: 154,
+          total: 193,
+          snapshotReason: null,
+          band: "ssr",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: { side: "ssr", value: 30 },
+        },
+      }),
+    );
+
+    expect(steps[2].detail).toBe(
+      "Over 70% → server-rendered evidence: SSR +30.",
+    );
+  });
+
+  it("describes short text when no comparison flag fired", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "fetch",
+          measure: "words",
+          value: 0.5,
+          matched: 8,
+          total: 16,
+          snapshotReason: null,
+          band: "short",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: null,
+        },
+      }),
+    );
+
+    expect(steps[2].detail).toBe("Too little text for the comparison to count.");
+  });
+
+  it.each([
+    [
+      "title",
+      "1,200 of 5,400 characters were on the page when the HTML finished parsing. The second HTML copy had a different title, so it was treated as a different page.",
+    ],
+    [
+      "no-shared-words",
+      "1,200 of 5,400 characters were on the page when the HTML finished parsing. The second HTML copy shared no words with the page on screen, so it was treated as a different document.",
+    ],
+    [
+      "refused",
+      "1,200 of 5,400 characters were on the page when the HTML finished parsing. The site refused a second copy of its HTML.",
+    ],
+  ])("explains parser-snapshot reason %s", (snapshotReason, detail) => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: {
+          source: "parser-snapshot",
+          measure: "length",
+          value: 0.22,
+          matched: 1200,
+          total: 5400,
+          snapshotReason,
+          band: "partial",
+          bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
+          points: { side: "csr", value: 40 },
+        },
+      }),
+    );
+
+    expect(steps[1].detail).toBe(detail);
+  });
+
+  it("explains missing comparison, the downgrade, and its confidence cap", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        measurement: null,
+        score: { ssr: 85, csr: 20, ssrPercentage: 81, hybridScore: 0 },
+        rule: "ssr",
+        threshold: 75,
+        downgraded: true,
+        confidenceCap: 60,
+      }),
+    );
+
+    expect(steps[1].detail).toBe(
+      "The page HTML could not be fetched again, so nothing was measured.",
+    );
+    expect(steps[2].detail).toBe(
+      "No content-comparison rule could be applied.",
+    );
+    expect(steps[4].detail).toBe(
+      "SSR share 81% ≥ 75% → Server-Side Rendered (SSR). Without a comparison, the definitive verdict was downgraded to Likely and confidence was capped at 60%.",
+    );
+  });
+
+  it("states that strong hybrid markers win regardless of measurement", () => {
+    const steps = describeDecision(
+      sampleDecision({
+        score: { ssr: 85, csr: 20, ssrPercentage: 81, hybridScore: 35 },
+        rule: "strongHybrid",
+        threshold: 30,
+      }),
+    );
+
+    expect(steps[4].detail).toBe(
+      "Hybrid score ≥ 30 (island/partial-hydration markers) → Hybrid, regardless of the measurement.",
+    );
+  });
+
+  it("returns only the gate step when the quality check failed", () => {
+    expect(
+      describeDecision(
+        sampleDecision({
+          gate: {
+            passed: false,
+            reason: "too-little-text",
+            visibleChars: 120,
+          },
+        }),
+      ),
+    ).toEqual([
+      {
+        id: "gate",
+        label: "Page check",
+        detail:
+          "Only 120 visible characters were available, so the page could not be assessed.",
+      },
+    ]);
   });
 });
 
@@ -276,6 +530,19 @@ describe("renderOverview", () => {
     container.appendChild(renderOverview(result()));
 
     expect(container.textContent).toContain("The served HTML already contained the page");
+  });
+
+  it("renders the decision path in place of the top signals", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderOverview(result({ decision: sampleDecision() })));
+
+    expect(container.textContent).toContain("Passed: 4,210 characters of visible text.");
+    expect(container.textContent).toContain(
+      "22 of 193 visible words (11%) were in the HTML the server sent.",
+    );
+    expect(container.textContent).not.toContain(
+      "The served HTML already contained the page",
+    );
   });
 
   it("omits them when the caller renders the full list elsewhere", () => {
