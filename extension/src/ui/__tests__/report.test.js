@@ -568,7 +568,8 @@ describe("renderVerdict", () => {
     expect(node.querySelector(".dial-value").textContent).toBe("92");
     expect(dial.style.getPropertyValue("--value")).toBe("92");
     expect(dial.getAttribute("aria-label")).toBe("92% confidence");
-    expect(dial.title).toBe("");
+    expect(dial.getAttribute("tabindex")).toBeNull();
+    expect(dial.getAttribute("aria-describedby")).toBeNull();
   });
 
   it("shows the qualitative confidence level with an accessible label and styling data", () => {
@@ -577,10 +578,16 @@ describe("renderVerdict", () => {
 
     expect(node.querySelector(".dial-value").textContent).toBe("Medium");
     expect(dial.dataset.level).toBe("medium");
+    expect(dial.getAttribute("tabindex")).toBe("0");
     expect(dial.getAttribute("aria-label")).toBe(
       "Medium confidence. How clearly the page text could be measured.",
     );
-    expect(dial.title).toBe("How clearly the page text could be measured.");
+    const tooltipId = dial.getAttribute("aria-describedby");
+    const tooltip = [...node.querySelectorAll('[role="tooltip"]')].find(
+      (element) => element.id === tooltipId,
+    );
+    expect(tooltip).not.toBeNull();
+    expect(tooltip.textContent).toBe("How clearly the page text could be measured.");
     expect(dial.style.getPropertyValue("--value")).toBe("100");
   });
 

@@ -71,6 +71,8 @@ function percent(value) {
     : "—";
 }
 
+let confidenceTooltipSequence = 0;
+
 function confidenceLevelLabel(level) {
   const labels = {
     high: ["confidenceLevelHigh", "High"],
@@ -506,6 +508,9 @@ function renderVerdict(result) {
     "confidenceTooltip",
     "How clearly the page text could be measured.",
   );
+  const confidenceTooltipId = confidenceLevel
+    ? `confidence-tooltip-${++confidenceTooltipSequence}`
+    : null;
   const color = { ssr: "var(--ssr)", csr: "var(--csr)", hybrid: "var(--hybrid)" }[kind] ||
     "var(--neutral)";
 
@@ -515,10 +520,11 @@ function renderVerdict(result) {
           className: "dial",
           attrs: {
             role: "img",
+            tabindex: confidenceLevel ? 0 : null,
+            "aria-describedby": confidenceTooltipId,
             "aria-label": confidenceLevel
               ? `${confidenceText} ${label("confidence", "confidence")}. ${confidenceTooltip}`
               : `${confidence}% ${label("confidence", "confidence")}`,
-            title: confidenceLevel ? confidenceTooltip : null,
           },
           dataset: { level: confidenceLevel },
           children: [el("span", { className: "dial-value", text: confidenceText })],
@@ -527,9 +533,16 @@ function renderVerdict(result) {
         if (!confidenceLevel) dial.style.setProperty("--dial-color", color);
 
         return el("div", {
-          className: "dial-wrap",
+          className: confidenceLevel ? "dial-wrap dial-wrap--level" : "dial-wrap",
           children: [
             dial,
+            confidenceLevel
+              ? el("span", {
+                  className: "dial-tooltip",
+                  attrs: { id: confidenceTooltipId, role: "tooltip" },
+                  text: confidenceTooltip,
+                })
+              : null,
             el("div", {
               className: "dial-caption",
               text: label("confidence", "confidence"),

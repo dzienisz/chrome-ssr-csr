@@ -320,9 +320,26 @@ a:hover {
 }
 
 .dial[data-level] .dial-value {
-  font-size: 9.5px;
+  font-size: 11px;
+  font-weight: 650;
   letter-spacing: -0.04em;
   white-space: nowrap;
+}
+
+.dial[data-level] {
+  width: 60px;
+  height: 60px;
+  flex-basis: 60px;
+}
+
+.dial[data-level]::after {
+  inset: 4px;
+}
+
+.dial[data-level]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 50%;
 }
 
 .dial[data-level="high"] {
@@ -341,10 +358,45 @@ a:hover {
   flex: 0 0 52px;
 }
 
+.dial-wrap--level {
+  position: relative;
+  flex-basis: 60px;
+}
+
+.dial-tooltip {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 32px));
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.dial[data-level]:hover + .dial-tooltip,
+.dial[data-level]:focus-visible + .dial-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 .dial-caption {
   font-size: 9px;
   text-align: center;
-  color: var(--text-faint);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 3px;
