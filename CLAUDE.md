@@ -525,6 +525,7 @@ One-off flags in `chrome.storage.local`: `pinHintDismissed` (popup pin banner),
 
 ## Version History
 
+- **v4.3.0**: Word-coverage comparison excluding hidden elements (algorithm v3), "Why this verdict" decision path in popup and DevTools, High/Medium/Low confidence levels
 - **v4.2.0**: Offline framework lab, Cannot assess quality gate, and reliable DevTools navigation reruns
 - **v4.1.1**: Skip telemetry for localhost/private hosts; ignore hidden-tab LCP paints and rebase prerender activation
 - **v4.1.0**: Partial-content and re-fetch identity fixes, shadow-DOM text extraction, optional Ask Jev second opinion
