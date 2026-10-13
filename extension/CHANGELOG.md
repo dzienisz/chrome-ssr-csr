@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-10-13
+
 ### Changed
 
 - Fetch-path raw HTML comparisons now use multiset word coverage, so same-length
