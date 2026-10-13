@@ -143,6 +143,10 @@
     "message": "$1 of $2 visible words ($3%) were in the HTML the server sent.",
     "description": "Decision-path measurement using matching visible words from the fetched HTML"
   },
+  "decisionHiddenWords": {
+    "message": "$1 words in hidden elements were not counted.",
+    "description": "Decision-path audit note showing how many words in hidden rendered elements were excluded from the comparison"
+  },
   "decisionSnapshotTitle": {
     "message": "The second HTML copy had a different title, so it was treated as a different page.",
     "description": "Reason a fetched HTML document was rejected in favor of the parser snapshot"

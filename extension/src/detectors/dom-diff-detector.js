@@ -140,17 +140,34 @@ function regionLabel(el, key) {
 }
 
 /**
- * Per-analysis memo, so a region's text is measured once, not once per depth.
- *
- * Reset at the start of every analysis. The keys are live DOM elements that
- * stay reachable after a run ends, so nothing here is ever collected on its
- * own — and the popup's re-run button and the panel's re-run-on-navigation
- * both analyze the same document twice. Without the reset, the second run
- * reports the first run's text lengths and every number downstream of them
- * (region origins, serverSharePct, the diff signals) describes a DOM that has
- * already changed.
+ * Per-analysis memos for region lengths and hidden-state checks. Reset before
+ * each run because the popup and panel can analyze a changing document again.
  */
 let textLengthCache = new WeakMap();
+let hiddenStateCache = new WeakMap();
+
+function cachedHiddenState(el) {
+  if (
+    !el ||
+    typeof window === "undefined" ||
+    typeof window.isHiddenSubtree !== "function"
+  ) {
+    return false;
+  }
+  if (hiddenStateCache.has(el)) return hiddenStateCache.get(el);
+
+  const hidden = window.isHiddenSubtree(el);
+  hiddenStateCache.set(el, hidden);
+  return hidden;
+}
+
+function shouldFilterHidden(root) {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.shouldSkipHidden === "function" &&
+    window.shouldSkipHidden(root)
+  );
+}
 
 /**
  * Visible text length of an element, counting the same characters
@@ -171,11 +188,15 @@ function visibleTextLength(el) {
 
   let text = "";
   const doc = el.ownerDocument || document;
+  const skipHidden = shouldFilterHidden(el);
   const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       let parent = node.parentElement;
       while (parent) {
         if (REGION_SKIP.has(parent.tagName) || parent.id === "ssr-detector-probe-data") {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (skipHidden && cachedHiddenState(parent)) {
           return NodeFilter.FILTER_REJECT;
         }
         if (parent === el) break;
@@ -204,9 +225,12 @@ function visibleTextLength(el) {
  * @returns {Array<Element>}
  */
 function structuralChildren(el) {
+  const skipHidden = shouldFilterHidden(el);
   return Array.from(el.children).filter(
     (child) =>
-      !REGION_SKIP.has(child.tagName) && child.id !== "ssr-detector-probe-data",
+      !REGION_SKIP.has(child.tagName) &&
+      child.id !== "ssr-detector-probe-data" &&
+      (!skipHidden || !cachedHiddenState(child)),
   );
 }
 
@@ -356,6 +380,7 @@ function detectDomDiff(rawDocument) {
   const signals = [];
 
   textLengthCache = new WeakMap();
+  hiddenStateCache = new WeakMap();
 
   if (!rawDocument || !rawDocument.body || !document.body) {
     return {

@@ -97,6 +97,7 @@ function toCSV(result, page) {
     ["Server text share", diff.serverSharePct != null ? `${diff.serverSharePct}%` : ""],
     ["Raw HTML text", info.contentComparison ? info.contentComparison.rawLength : ""],
     ["Rendered text", info.contentComparison ? info.contentComparison.renderedLength : ""],
+    ["Hidden words not counted", info.contentComparison?.hiddenWordCount ?? ""],
     [
       "Word coverage",
       info.contentComparison?.wordCoverage != null

@@ -305,6 +305,7 @@ async function pageAnalyzer() {
         rawWords: comparisonResults.rawWordCount ?? null,
         renderedWords: comparisonResults.renderedWordCount ?? null,
         matchedWords: comparisonResults.matchedWordCount ?? null,
+        hiddenWordCount: comparisonResults.hiddenWordCount ?? null,
         measure: comparisonResults.measure ?? (fromSnapshot ? "length" : "words"),
       };
     }
@@ -522,6 +523,9 @@ async function pageAnalyzer() {
         total: fromSnapshot
           ? comparisonResults.renderedLength
           : comparisonResults.renderedWordCount,
+        hiddenWordCount: fromSnapshot
+          ? null
+          : comparisonResults.hiddenWordCount ?? null,
         snapshotReason: fromSnapshot
           ? comparisonResults.refetchMismatchReason || "refused"
           : null,

@@ -203,7 +203,7 @@ Located in `extension/src/collectors/` — telemetry only, moved out of
 Four harnesses, and they are not interchangeable (plus an optional Jev audit):
 
 ```bash
-npm run validate:local      # 14 offline fixtures in Chromium — deterministic, runs in CI
+npm run validate:local      # 15 offline fixtures in Chromium — deterministic, runs in CI
 npm run validate:lab        # 25 recorded framework fixtures — v4 accuracy + baseline gate
 npm run validate:extension  # installs the extension for real — runs in CI
 npm run validate:live       # 22 real sites — honest, needs the open internet
@@ -304,8 +304,13 @@ Before classification, a quality gate reports “Cannot assess” when fewer tha
 phrase. The gate keeps the collected evidence but does not present an SSR/CSR
 verdict for a challenge page or a page with too little text.
 
-Analysis results carry `algorithmVersion` (currently 2 for word coverage) and
-a `decision` object with the quality gate, measurement band, comparison
+Rendered live text excludes subtrees hidden by the browser's default
+`checkVisibility()` result; `display: contents` wrappers are still traversed,
+and raw HTML is never visibility-filtered.
+
+Analysis results carry `algorithmVersion` (currently 3 for word coverage
+excluding hidden elements) and a `decision` object with the quality gate,
+measurement band, comparison
 points/cap, final scores, and classification rule/threshold. The Overview's
 “Why this verdict” card and Markdown export describe that recorded path; older
 history entries without it retain the top-signals card.

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import "../comparison-detector.js";
 import "../dom-diff-detector.js";
@@ -13,6 +13,58 @@ function rawDocumentFrom(html) {
 
 const PROSE =
   "Server-side rendering means the HTML that reaches the browser already contains the text a reader came for, which is what search crawlers and slow devices actually need.";
+
+let restoreVisibility;
+
+function stubVisibility(hiddenElements) {
+  const checkVisibilityDescriptor = Object.getOwnPropertyDescriptor(
+    Element.prototype,
+    "checkVisibility",
+  );
+  const getComputedStyleDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "getComputedStyle",
+  );
+  const hidden = new Set(hiddenElements);
+
+  Object.defineProperty(Element.prototype, "checkVisibility", {
+    configurable: true,
+    value: function () {
+      return !hidden.has(this);
+    },
+  });
+  Object.defineProperty(globalThis, "getComputedStyle", {
+    configurable: true,
+    writable: true,
+    value: () => ({ display: "block" }),
+  });
+
+  restoreVisibility = () => {
+    if (checkVisibilityDescriptor) {
+      Object.defineProperty(
+        Element.prototype,
+        "checkVisibility",
+        checkVisibilityDescriptor,
+      );
+    } else {
+      delete Element.prototype.checkVisibility;
+    }
+    if (getComputedStyleDescriptor) {
+      Object.defineProperty(
+        globalThis,
+        "getComputedStyle",
+        getComputedStyleDescriptor,
+      );
+    } else {
+      delete globalThis.getComputedStyle;
+    }
+  };
+}
+
+afterEach(() => {
+  restoreVisibility?.();
+  restoreVisibility = null;
+});
 
 describe("detectDomDiff", () => {
   beforeEach(() => {
@@ -35,6 +87,24 @@ describe("detectDomDiff", () => {
     expect(details.domDiff.serverSharePct).toBe(100);
     expect(details.domDiff.clientChars).toBe(0);
     expect(details.domDiff.regions.every((r) => r.origin === "server")).toBe(true);
+  });
+
+  it("excludes hidden live text from region chars and server share", () => {
+    const raw = rawDocumentFrom(
+      `<body><main id="article"><p>${PROSE}</p></main></body>`,
+    );
+    document.body.innerHTML =
+      `<main id="article"><p>${PROSE}</p></main>` +
+      `<aside id="notice">${"Hidden donation dialog text. ".repeat(12)}</aside>`;
+    stubVisibility([document.querySelector("#notice")]);
+
+    const { details } = window.detectDomDiff(raw);
+
+    expect(details.domDiff.regions.map((region) => region.key)).toEqual([
+      "#article",
+    ]);
+    expect(details.domDiff.regions[0].renderedChars).toBe(PROSE.length);
+    expect(details.domDiff.serverSharePct).toBe(100);
   });
 
   it("names the container JavaScript filled in", () => {

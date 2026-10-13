@@ -81,6 +81,8 @@ describe('parser-snapshot comparison', () => {
     expect(result.detailedInfo.contentComparison.source).toBe('parser-snapshot');
     expect(result.detailedInfo.contentComparison.measure).toBe('length');
     expect(result.detailedInfo.contentComparison.wordCoverage).toBeNull();
+    expect(result.detailedInfo.contentComparison.hiddenWordCount).toBeNull();
+    expect(result.decision.measurement.hiddenWordCount).toBeNull();
     expect(result.signals.some((s) => s.id === 'comparison.parserSnapshot')).toBe(true);
     expect(result.indicators.some((i) => i.includes('comparison unavailable'))).toBe(false);
   });
@@ -301,6 +303,7 @@ describe('pageAnalyzer', () => {
       rawWords: 50,
       renderedWords: 60,
       matchedWords: 50,
+      hiddenWordCount: null,
       measure: 'words',
     });
     expect(JSON.stringify(result)).not.toContain('<html>');
@@ -325,6 +328,7 @@ describe('decision metadata', () => {
       rawWordCount: 100,
       renderedWordCount: 100,
       matchedWordCount: 50,
+      hiddenWordCount: 0,
       isLikelyCSR: false,
       isPartialCSR: false,
       isLikelySSR: false,
@@ -347,6 +351,7 @@ describe('decision metadata', () => {
         wordCoverage: 0.11,
         matchedWordCount: 22,
         renderedWordCount: 193,
+        hiddenWordCount: 7,
         isLikelyCSR: true,
         isDecisiveCSR: true,
       }),
@@ -354,9 +359,9 @@ describe('decision metadata', () => {
 
     const result = await window.pageAnalyzer();
 
-    expect(result.algorithmVersion).toBe(2);
+    expect(result.algorithmVersion).toBe(3);
     expect(result.decision).toMatchObject({
-      algorithmVersion: 2,
+      algorithmVersion: 3,
       gate: { passed: true, reason: null, visibleChars: 1600 },
       measurement: {
         source: 'fetch',
@@ -364,6 +369,7 @@ describe('decision metadata', () => {
         value: 0.11,
         matched: 22,
         total: 193,
+        hiddenWordCount: 7,
         snapshotReason: null,
         band: 'csr',
         bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
@@ -376,6 +382,7 @@ describe('decision metadata', () => {
       downgraded: false,
       confidenceCap: null,
     });
+    expect(result.detailedInfo.contentComparison.hiddenWordCount).toBe(7);
   });
 
   it('records partial-band points and the partial SSR cap', async () => {
@@ -520,7 +527,7 @@ describe('decision metadata', () => {
 
     const result = await window.pageAnalyzer();
 
-    expect(result.algorithmVersion).toBe(2);
+    expect(result.algorithmVersion).toBe(3);
     expect(result.decision).toBeNull();
     expect(result.confidenceLevel).toBeNull();
     expect(result.confidenceLevelReason).toBeNull();

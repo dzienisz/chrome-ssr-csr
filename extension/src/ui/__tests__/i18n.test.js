@@ -37,6 +37,7 @@ const ENGLISH_ONLY_KEYS = [
   "decisionCap",
   "decisionDowngraded",
   "decisionFetchMeasurement",
+  "decisionHiddenWords",
   "decisionFooter",
   "decisionGateBotChallenge",
   "decisionGatePassed",

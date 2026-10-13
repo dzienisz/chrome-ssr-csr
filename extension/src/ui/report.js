@@ -240,14 +240,23 @@ function describeDecision(decision) {
     });
   } else if (measurement.source === "fetch") {
     const coverage = percent(measurement.value);
+    const detail = label(
+      "decisionFetchMeasurement",
+      `${num(measurement.matched)} of ${num(measurement.total)} visible words (${coverage}%) were in the HTML the server sent.`,
+      [num(measurement.matched), num(measurement.total), coverage],
+    );
+    const hiddenWords =
+      measurement.hiddenWordCount > 0
+        ? label(
+            "decisionHiddenWords",
+            `${num(measurement.hiddenWordCount)} words in hidden elements were not counted.`,
+            [num(measurement.hiddenWordCount)],
+          )
+        : null;
     steps.push({
       id: "measurement",
       label: label("decisionMeasurement", "Measurement"),
-      detail: label(
-        "decisionFetchMeasurement",
-        `${num(measurement.matched)} of ${num(measurement.total)} visible words (${coverage}%) were in the HTML the server sent.`,
-        [num(measurement.matched), num(measurement.total), coverage],
-      ),
+      detail: hiddenWords ? `${detail} ${hiddenWords}` : detail,
     });
   } else {
     const why =

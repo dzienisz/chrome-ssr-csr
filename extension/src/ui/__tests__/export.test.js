@@ -33,6 +33,7 @@ function result(overrides = {}) {
         renderedLength: 8000,
         ratio: 0.01,
         wordCoverage: 0.01,
+        hiddenWordCount: 1712,
       },
       delivery: {
         available: true,
@@ -56,9 +57,9 @@ function result(overrides = {}) {
   };
 }
 
-function sampleDecision() {
+function sampleDecision(hiddenWordCount = 0) {
   return {
-    algorithmVersion: 2,
+    algorithmVersion: 3,
     gate: { passed: true, reason: null, visibleChars: 4210 },
     measurement: {
       source: "fetch",
@@ -66,6 +67,7 @@ function sampleDecision() {
       value: 0.11,
       matched: 22,
       total: 193,
+      hiddenWordCount,
       snapshotReason: null,
       band: "csr",
       bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
@@ -94,8 +96,8 @@ describe("toJSON", () => {
     const parsed = JSON.parse(
       toJSON(
         result({
-          algorithmVersion: 2,
-          decision: sampleDecision(),
+          algorithmVersion: 3,
+          decision: sampleDecision(1712),
           confidenceLevel: "medium",
           confidenceLevelReason: "near-threshold",
         }),
@@ -103,10 +105,14 @@ describe("toJSON", () => {
       ),
     );
 
-    expect(parsed.analysis.algorithmVersion).toBe(2);
+    expect(parsed.analysis.algorithmVersion).toBe(3);
     expect(parsed.analysis.decision.rule).toBe("csr");
     expect(parsed.analysis.confidence).toBe(88);
     expect(parsed.analysis.confidenceLevel).toBe("medium");
+    expect(parsed.analysis.decision.measurement.hiddenWordCount).toBe(1712);
+    expect(
+      parsed.analysis.detailedInfo.contentComparison.hiddenWordCount,
+    ).toBe(1712);
   });
 });
 
@@ -167,12 +173,13 @@ describe("toCSV", () => {
     expect(rows.some((row) => row.startsWith('"Render type"'))).toBe(true);
     expect(rows.some((row) => row.includes("Cloudflare"))).toBe(true);
     expect(rows).toContain('"Word coverage","1%"');
+    expect(rows).toContain('"Hidden words not counted","1712"');
   });
 
   it("emits the algorithm version", () => {
-    const rows = toCSV(result({ algorithmVersion: 2 }), PAGE).split("\n");
+    const rows = toCSV(result({ algorithmVersion: 3 }), PAGE).split("\n");
 
-    expect(rows).toContain('"Algorithm version","2"');
+    expect(rows).toContain('"Algorithm version","3"');
   });
 
   it("keeps numeric confidence and adds the qualitative confidence level", () => {
@@ -221,7 +228,7 @@ describe("toMarkdown", () => {
 
   it("exports the shared decision description", () => {
     const markdown = toMarkdown(
-      result({ algorithmVersion: 2, decision: sampleDecision() }),
+      result({ algorithmVersion: 3, decision: sampleDecision(1712) }),
       PAGE,
       "4.0.0",
     );
@@ -234,10 +241,13 @@ describe("toMarkdown", () => {
       "- **Measurement:** 22 of 193 visible words (11%) were in the HTML the server sent.",
     );
     expect(markdown).toContain(
+      "- **Measurement:** 22 of 193 visible words (11%) were in the HTML the server sent. 1,712 words in hidden elements were not counted.",
+    );
+    expect(markdown).toContain(
       "- **Verdict:** SSR share 20% ≤ 25% → Client-Side Rendered (CSR).",
     );
     expect(markdown).toContain(
-      "- **Algorithm:** Algorithm v2 · every signal is in the Evidence section",
+      "- **Algorithm:** Algorithm v3 · every signal is in the Evidence section",
     );
   });
 
@@ -308,7 +318,7 @@ describe("toSummary", () => {
   it("does not add decision details to the copy summary", () => {
     const baseline = toSummary(result(), PAGE);
     const withDecision = toSummary(
-      result({ algorithmVersion: 2, decision: sampleDecision() }),
+      result({ algorithmVersion: 3, decision: sampleDecision() }),
       PAGE,
     );
 
