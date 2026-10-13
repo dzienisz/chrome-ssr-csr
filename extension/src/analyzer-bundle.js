@@ -71,6 +71,12 @@ const CONFIG = {
     maxConfidenceNoComparison: 60 // Maximum when raw HTML comparison unavailable
   },
 
+  confidenceLevels: {
+    minWords: 50,
+    clearCsr: 0.1,
+    clearSsr: 0.8
+  },
+
   // Content analysis thresholds
   content: {
     minChildren: 3,
@@ -2892,6 +2898,58 @@ function describeRenderOrigin(renderType, delivery, diff) {
   }
 }
 
+function confidenceVerdictFamily(renderType) {
+  if (/hybrid|mixed|islands/i.test(renderType || "")) return "hybrid";
+  if (/csr|client/i.test(renderType || "")) return "csr";
+  if (/ssr|server/i.test(renderType || "")) return "ssr";
+  return "unknown";
+}
+
+function classifyConfidenceLevel(renderType, assessable, measurement, rules) {
+  if (!assessable || renderType === "Cannot assess") {
+    return { confidenceLevel: null, confidenceLevelReason: null };
+  }
+  if (!measurement) {
+    return { confidenceLevel: "low", confidenceLevelReason: "no-measurement" };
+  }
+
+  const { band, source, value, total } = measurement;
+  const family = confidenceVerdictFamily(renderType);
+  const agrees =
+    (band === "csr" && family === "csr") ||
+    (band === "ssr" && family === "ssr") ||
+    (band === "partial" && ["hybrid", "csr"].includes(family));
+
+  if (["csr", "ssr", "partial"].includes(band) && !agrees) {
+    return {
+      confidenceLevel: "low",
+      confidenceLevelReason: "verdict-contradicts-measurement",
+    };
+  }
+  if (band === "neutral") {
+    return { confidenceLevel: "low", confidenceLevelReason: "inconclusive-band" };
+  }
+  if (band === "short") {
+    return { confidenceLevel: "low", confidenceLevelReason: "few-words" };
+  }
+  if (source === "parser-snapshot") {
+    return { confidenceLevel: "medium", confidenceLevelReason: "length-only" };
+  }
+  if (source === "fetch" && total < rules.minWords) {
+    return { confidenceLevel: "low", confidenceLevelReason: "few-words" };
+  }
+  if (band === "partial") {
+    return { confidenceLevel: "medium", confidenceLevelReason: "partial-band" };
+  }
+  if (
+    (band === "csr" && value > rules.clearCsr) ||
+    (band === "ssr" && value < rules.clearSsr)
+  ) {
+    return { confidenceLevel: "medium", confidenceLevelReason: "near-threshold" };
+  }
+  return { confidenceLevel: "high", confidenceLevelReason: "clear-measurement" };
+}
+
 /**
  * Main analysis function - coordinates all detectors
  * Now async to support raw HTML comparison
@@ -3272,7 +3330,17 @@ async function pageAnalyzer() {
       confidenceCap: comparisonResults
         ? null
         : config.confidence.maxConfidenceNoComparison,
+      confidenceScore: confidence,
+      confidenceLevels: { ...config.confidenceLevels },
     };
+    const confidenceAssessment = classifyConfidenceLevel(
+      renderType,
+      !unassessableReason,
+      measurement,
+      config.confidenceLevels,
+    );
+    decision.confidenceLevel = confidenceAssessment.confidenceLevel;
+    decision.confidenceLevelReason = confidenceAssessment.confidenceLevelReason;
 
     // Strongest first, so a reader sees the evidence that decided the verdict
     // before the supporting detail. By magnitude, not by value: a signal that
@@ -3293,6 +3361,8 @@ async function pageAnalyzer() {
     return {
       renderType,
       confidence,
+      confidenceLevel: confidenceAssessment.confidenceLevel,
+      confidenceLevelReason: confidenceAssessment.confidenceLevelReason,
       algorithmVersion: config.algorithmVersion,
       decision,
       ...(unassessableReason
@@ -3321,6 +3391,8 @@ async function pageAnalyzer() {
     return {
       renderType: "Analysis Error",
       confidence: 0,
+      confidenceLevel: null,
+      confidenceLevelReason: null,
       algorithmVersion: config.algorithmVersion,
       decision: null,
       indicators: ["analysis failed - " + error.message],

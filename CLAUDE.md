@@ -310,6 +310,22 @@ points/cap, final scores, and classification rule/threshold. The Overview's
 “Why this verdict” card and Markdown export describe that recorded path; older
 history entries without it retain the top-signals card.
 
+The separate qualitative confidence level describes measurement quality, not
+the numeric score or a calibrated probability. First match wins:
+
+| Condition | Level / reason |
+| --- | --- |
+| Cannot assess / Analysis Error | null |
+| No comparison measurement | Low / `no-measurement` |
+| CSR, SSR, or partial band contradicts the verdict | Low / `verdict-contradicts-measurement` |
+| Neutral comparison band | Low / `inconclusive-band` |
+| Short comparison band | Low / `few-words` |
+| Agreeing parser snapshot | Medium / `length-only` |
+| Fetch comparison has fewer than 50 visible words | Low / `few-words` |
+| Agreeing partial band | Medium / `partial-band` |
+| CSR coverage is above 10%, or SSR coverage below 80% | Medium / `near-threshold` |
+| Otherwise | High / `clear-measurement` |
+
 Weighted scoring system analyzing:
 - **Raw vs Rendered comparison** (40 points for CSR mismatch, 30 for SSR match)
 - Framework hydration markers (30 points; since v3.7.0 they require raw-HTML

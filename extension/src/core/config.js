@@ -63,6 +63,12 @@ const CONFIG = {
     maxConfidenceNoComparison: 60 // Maximum when raw HTML comparison unavailable
   },
 
+  confidenceLevels: {
+    minWords: 50,
+    clearCsr: 0.1,
+    clearSsr: 0.8
+  },
+
   // Content analysis thresholds
   content: {
     minChildren: 3,

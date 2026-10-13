@@ -51,6 +51,9 @@ const PROMO_SHOTS = [
  */
 const PROMO_VIEWPORT = { width: 400, height: 640 };
 const PROMO_SCALE = 2;
+const PREVIEW_POPUP_WIDTH = Number(process.env.UI_PREVIEW_POPUP_WIDTH) || 400;
+const PREVIEW_PANEL_WIDTH = Number(process.env.UI_PREVIEW_PANEL_WIDTH) || 1280;
+const FOCUS_DIAL = process.env.UI_PREVIEW_FOCUS_DIAL === "1";
 
 /** Width and height of a PNG, straight out of its IHDR chunk. */
 function pngSize(file) {
@@ -204,6 +207,16 @@ async function shoot({
   await page.addInitScript(chromeStub, { result, page: pageInfo, history, version: VERSION });
   await page.goto(`file://${join(EXTENSION_DIR, file)}`);
   await page.waitForTimeout(350);
+  if (FOCUS_DIAL && file === "popup.html") {
+    const dial = page.locator(".dial[data-level]");
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press("Tab");
+      if (await dial.evaluate((node) => node === document.activeElement)) break;
+    }
+    if (!(await dial.evaluate((node) => node === document.activeElement))) {
+      throw new Error("The confidence dial was not reachable with the keyboard.");
+    }
+  }
   if (tab) {
     await page.click(`[data-panel="${tab}"]`);
     await page.waitForTimeout(120);
@@ -222,7 +235,7 @@ for (const fixture of selected) {
   for (const theme of ["light", "dark"]) {
     await shoot({
       file: "popup.html",
-      width: 400,
+      width: PREVIEW_POPUP_WIDTH,
       height: 720,
       theme,
       result,
@@ -243,7 +256,7 @@ const showcasePage = { url: `https://example.com/${showcase.name}`, title: showc
 for (const tab of ["signals", "delivery", "diff", "history"]) {
   await shoot({
     file: "popup.html",
-    width: 400,
+    width: PREVIEW_POPUP_WIDTH,
     height: 760,
     theme: "light",
     result: showcaseResult,
@@ -257,7 +270,7 @@ for (const tab of ["signals", "delivery", "diff", "history"]) {
 for (const theme of ["light", "dark"]) {
   await shoot({
     file: "devtools/panel.html",
-    width: 1280,
+    width: PREVIEW_PANEL_WIDTH,
     height: 820,
     theme,
     result: showcaseResult,

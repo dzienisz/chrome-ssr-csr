@@ -522,6 +522,206 @@ describe('decision metadata', () => {
 
     expect(result.algorithmVersion).toBe(2);
     expect(result.decision).toBeNull();
+    expect(result.confidenceLevel).toBeNull();
+    expect(result.confidenceLevelReason).toBeNull();
     errorLog.mockRestore();
+  });
+});
+
+describe('confidence level', () => {
+  beforeEach(() => {
+    document.title = 'Example page';
+    document.body.innerHTML = `<p>${'visible text '.repeat(80)}</p>`;
+  });
+
+  function fetchBand(wordCoverage, overrides = {}) {
+    return {
+      source: 'fetch',
+      measure: 'words',
+      rawLength: 1000,
+      renderedLength: 5000,
+      contentRatio: 0.2,
+      wordCoverage,
+      rawWordCount: Math.round(wordCoverage * 250),
+      renderedWordCount: 250,
+      matchedWordCount: Math.round(wordCoverage * 250),
+      isLikelyCSR: false,
+      isPartialCSR: false,
+      isLikelySSR: false,
+      isDecisiveCSR: false,
+      ...overrides,
+    };
+  }
+
+  it('returns null for Cannot assess', async () => {
+    document.body.textContent = 'x'.repeat(120);
+    stubDetectors({ comparison: null });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.confidenceLevel).toBeNull();
+    expect(result.confidenceLevelReason).toBeNull();
+    expect(result.decision.confidenceLevel).toBeNull();
+    expect(result.decision.confidenceLevelReason).toBeNull();
+  });
+
+  it('uses low / no-measurement when the HTML cannot be compared', async () => {
+    stubDetectors({ comparison: null });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result).toMatchObject({
+      confidenceLevel: 'low',
+      confidenceLevelReason: 'no-measurement',
+      decision: {
+        confidenceLevel: 'low',
+        confidenceLevelReason: 'no-measurement',
+        confidenceScore: result.confidence,
+        confidenceLevels: { minWords: 50, clearCsr: 0.1, clearSsr: 0.8 },
+      },
+    });
+  });
+
+  it('uses low / verdict-contradicts-measurement for a strong-hybrid verdict against CSR coverage', async () => {
+    stubDetectors({
+      hybrid: { hybridScore: 35, indicators: ['islands'], details: {} },
+      comparison: fetchBand(0.15, {
+        isLikelyCSR: true,
+        isDecisiveCSR: true,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toMatch(/Hybrid/);
+    expect(result.decision.measurement.band).toBe('csr');
+    expect(result.confidenceLevel).toBe('low');
+    expect(result.confidenceLevelReason).toBe('verdict-contradicts-measurement');
+  });
+
+  it('uses low / inconclusive-band for neutral measurements', async () => {
+    stubDetectors({ comparison: fetchBand(0.55) });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement.band).toBe('neutral');
+    expect(result.confidenceLevel).toBe('low');
+    expect(result.confidenceLevelReason).toBe('inconclusive-band');
+  });
+
+  it('uses low / few-words for the short band', async () => {
+    stubDetectors({
+      comparison: fetchBand(0.5, {
+        renderedLength: 200,
+        renderedWordCount: 50,
+        matchedWordCount: 25,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.gate.passed).toBe(true);
+    expect(result.decision.measurement.band).toBe('short');
+    expect(result.confidenceLevel).toBe('low');
+    expect(result.confidenceLevelReason).toBe('few-words');
+  });
+
+  it('uses medium / length-only for an agreeing parser snapshot', async () => {
+    stubDetectors({
+      comparison: {
+        source: 'parser-snapshot',
+        measure: 'length',
+        rawLength: 4500,
+        renderedLength: 5000,
+        contentRatio: 0.9,
+        isLikelyCSR: false,
+        isPartialCSR: false,
+        isLikelySSR: true,
+        isDecisiveCSR: false,
+      },
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement.band).toBe('ssr');
+    expect(result.confidenceLevel).toBe('medium');
+    expect(result.confidenceLevelReason).toBe('length-only');
+  });
+
+  it.each([
+    [49, 'low', 'few-words'],
+    [50, 'medium', 'near-threshold'],
+  ])('applies the %i-word fetch floor before near-threshold confidence', async (words, level, reason) => {
+    stubDetectors({
+      comparison: fetchBand(0.15, {
+        isLikelyCSR: true,
+        isDecisiveCSR: true,
+        renderedWordCount: words,
+        matchedWordCount: Math.round(words * 0.15),
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.confidenceLevel).toBe(level);
+    expect(result.confidenceLevelReason).toBe(reason);
+  });
+
+  it('classifies the 193-word skeleton measurement as medium / near-threshold', async () => {
+    stubDetectors({
+      comparison: fetchBand(0.11, {
+        isLikelyCSR: true,
+        isDecisiveCSR: true,
+        renderedWordCount: 193,
+        matchedWordCount: 22,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement).toMatchObject({
+      value: 0.11,
+      total: 193,
+      band: 'csr',
+    });
+    expect(result.confidenceLevel).toBe('medium');
+    expect(result.confidenceLevelReason).toBe('near-threshold');
+  });
+
+  it('uses medium / partial-band for an agreeing partial measurement with enough words', async () => {
+    stubDetectors({
+      comparison: fetchBand(0.3, {
+        isPartialCSR: true,
+        matchedWordCount: 75,
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement.band).toBe('partial');
+    expect(result.confidenceLevel).toBe('medium');
+    expect(result.confidenceLevelReason).toBe('partial-band');
+  });
+
+  it.each([
+    [0.15, 'csr', 'medium', 'near-threshold'],
+    [0.1, 'csr', 'high', 'clear-measurement'],
+    [0.75, 'ssr', 'medium', 'near-threshold'],
+    [0.8, 'ssr', 'high', 'clear-measurement'],
+    [1, 'ssr', 'high', 'clear-measurement'],
+  ])('classifies %s coverage in the %s band as %s / %s', async (coverage, band, level, reason) => {
+    stubDetectors({
+      comparison: fetchBand(coverage, {
+        isLikelyCSR: band === 'csr',
+        isDecisiveCSR: band === 'csr',
+        isLikelySSR: band === 'ssr',
+      }),
+    });
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.decision.measurement.band).toBe(band);
+    expect(result.confidenceLevel).toBe(level);
+    expect(result.confidenceLevelReason).toBe(reason);
   });
 });
