@@ -194,7 +194,7 @@ describe("describeDecision", () => {
       {
         id: "algorithm",
         label: "Algorithm",
-        detail: "Algorithm v2 · every signal is in the Evidence tab",
+        detail: "Algorithm v2 · every signal is in the Evidence section",
       },
     ]);
   });
@@ -768,24 +768,35 @@ describe("renderOverview", () => {
     expect(container.textContent).toContain("The served HTML already contained the page");
   });
 
-  it("renders the decision path in place of the top signals", () => {
+  it("renders the decision path when legacy top signals are disabled", () => {
     const container = document.createElement("div");
-    container.appendChild(renderOverview(result({ decision: sampleDecision() })));
+    container.appendChild(
+      renderOverview(result({ decision: sampleDecision() }), { topSignals: false }),
+    );
 
-    expect(container.textContent).toContain("Passed: 4,210 characters of visible text.");
-    expect(container.textContent).toContain(
+    const whyCard = [...container.querySelectorAll(".card")].find(
+      (card) => card.querySelector(".card-title")?.textContent === "Why this verdict",
+    );
+    expect(whyCard).toBeDefined();
+    expect(whyCard.textContent).toContain("Passed: 4,210 characters of visible text.");
+    expect(whyCard.textContent).toContain(
       "22 of 193 visible words (11%) were in the HTML the server sent.",
     );
-    expect(container.textContent).not.toContain(
+    expect(whyCard.textContent).not.toContain(
       "The served HTML already contained the page",
     );
   });
 
-  it("omits them when the caller renders the full list elsewhere", () => {
+  it("omits the legacy top signals and decision card for old results when disabled", () => {
     const container = document.createElement("div");
     container.appendChild(renderOverview(result(), { topSignals: false }));
 
     expect(container.textContent).not.toContain("The served HTML already contained the page");
+    expect(
+      [...container.querySelectorAll(".card-title")].some(
+        (title) => title.textContent === "Why this verdict",
+      ),
+    ).toBe(false);
   });
 
   it("survives a result with no comparison, timing or delivery data", () => {

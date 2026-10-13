@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fetch comparisons need at least 50 visible words, and the numeric score
   remains available in results and exports. The dial adds a concise, accessible
   explanation of what its level describes.
+- The DevTools Rendering panel now shows the "Why this verdict" decision path
+  while keeping its full Evidence list separate.
 
 ## [4.2.0] - 2026-10-12
 

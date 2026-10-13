@@ -449,7 +449,7 @@ function describeDecision(decision) {
     label: label("decisionAlgorithm", "Algorithm"),
     detail: label(
       "decisionFooter",
-      `Algorithm v${num(decision.algorithmVersion)} · every signal is in the Evidence tab`,
+      `Algorithm v${num(decision.algorithmVersion)} · every signal is in the Evidence section`,
       [num(decision.algorithmVersion)],
     ),
   });
@@ -668,10 +668,9 @@ function stat(name, value) {
  * Overview tab: the numbers a developer reads first, plus detected stacks.
  *
  * @param {Object} result
- * @param {{topSignals?: boolean}} [options] - The popup shows the three
- *   strongest signals here because the full list is a tab away; the panel
- *   shows that list in the next column, so it turns them off rather than
- *   printing the same three findings twice on one screen.
+ * @param {{topSignals?: boolean}} [options] - Whether to show the legacy
+ *   top-three signals. The panel disables them because the full evidence list
+ *   is in the next column; decision-path cards are shown independently.
  */
 function renderOverview(result, options = {}) {
   const showTopSignals = options.topSignals !== false;
@@ -728,9 +727,7 @@ function renderOverview(result, options = {}) {
     );
   }
 
-  const decisionSteps = showTopSignals && result.decision
-    ? describeDecision(result.decision)
-    : null;
+  const decisionSteps = result.decision ? describeDecision(result.decision) : null;
   const top = showTopSignals && !result.decision
     ? (result.signals || []).filter((s) => s.weight).slice(0, 3)
     : [];
