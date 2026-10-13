@@ -449,7 +449,7 @@ function describeDecision(decision) {
     label: label("decisionAlgorithm", "Algorithm"),
     detail: label(
       "decisionFooter",
-      `Algorithm v${num(decision.algorithmVersion)} · every signal is in the Evidence tab`,
+      `Algorithm v${num(decision.algorithmVersion)} · every signal is in the Evidence section`,
       [num(decision.algorithmVersion)],
     ),
   });

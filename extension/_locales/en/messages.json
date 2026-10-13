@@ -244,8 +244,8 @@
     "description": "Step heading for the algorithm version footer"
   },
   "decisionFooter": {
-    "message": "Algorithm v$1 · every signal is in the Evidence tab",
-    "description": "Decision-path footer with version and pointer to the Evidence tab"
+    "message": "Algorithm v$1 · every signal is in the Evidence section",
+    "description": "Decision-path footer with version and pointer to the Evidence section"
   },
   "scoredEvidence": {
     "message": "Scored evidence",

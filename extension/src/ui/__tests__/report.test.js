@@ -194,7 +194,7 @@ describe("describeDecision", () => {
       {
         id: "algorithm",
         label: "Algorithm",
-        detail: "Algorithm v2 · every signal is in the Evidence tab",
+        detail: "Algorithm v2 · every signal is in the Evidence section",
       },
     ]);
   });

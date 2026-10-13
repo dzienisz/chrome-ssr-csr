@@ -236,6 +236,9 @@ describe("toMarkdown", () => {
     expect(markdown).toContain(
       "- **Verdict:** SSR share 20% ≤ 25% → Client-Side Rendered (CSR).",
     );
+    expect(markdown).toContain(
+      "- **Algorithm:** Algorithm v2 · every signal is in the Evidence section",
+    );
   });
 
   it("exports the confidence level and reason", () => {
