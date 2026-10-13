@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fetch-path raw HTML comparisons now use multiset word coverage, so same-length
   skeleton placeholders no longer count as server-rendered content.
+- Fetch comparisons and region attribution now exclude hidden rendered text and
+  report how many hidden words were ignored.
 - The fetch-path decisive-CSR cap now covers the full under-20% word-coverage
   band; parser snapshots remain length-based.
 - The Overview and Markdown export explain the recorded decision path, and
-  each analysis result carries algorithm version 2 for word-coverage semantics.
+  each analysis result carries algorithm version 3 for word-coverage semantics
+  excluding hidden elements.
 - Confidence is now shown as High, Medium, or Low based on measurement quality;
   fetch comparisons need at least 50 visible words, and the numeric score
   remains available in results and exports. The dial adds a concise, accessible

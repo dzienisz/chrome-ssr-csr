@@ -33,6 +33,17 @@ function paragraphs(count, prefix = "") {
 
 const WEB_COMPONENT_TEXT = paragraphs(6, "Component card ");
 const DECLARATIVE_SHADOW_TEXT = paragraphs(6, "Article paragraph ");
+const CENTRALNOTICE_DIALOG =
+  "Support the independent encyclopedia today by making a contribution to its reader-funded annual campaign. Volunteer editors collect reliable sources, compare accounts, and explain complex topics in language people can understand. Donations pay for secure servers, accessible reading tools, preservation of historic records, moderation, translation, and help for new contributors. The campaign keeps information free of advertisements and available to students, teachers, researchers, families, and curious readers around the world. Choose a one-time gift or a recurring contribution at any amount. Every donation protects the public knowledge commons and helps the next generation discover trustworthy answers. Thank you for keeping this resource open.";
+const CENTRALNOTICE_PANEL =
+  "Your support keeps this global reference available without subscriptions. Independent volunteers write, fact-check, and update articles using published evidence and transparent discussion. Reader contributions help maintain data centers, improve mobile access, strengthen privacy safeguards, and make educational materials easier to use. A gift also supports multilingual communities, accessibility improvements, and the tools that help newcomers participate. If this site has answered a question or helped you teach a lesson, consider joining the campaign. Contributions are voluntary, secure, and used to preserve a dependable public resource. Together, readers can ensure that accurate knowledge remains freely available today and in the future.";
+
+function centralNoticeParagraphs(text) {
+  return Array.from(
+    { length: 3 },
+    (_, i) => `<p>Campaign message ${i + 1}. ${text}</p>`,
+  ).join("");
+}
 
 export const FIXTURES = [
   {
@@ -66,6 +77,64 @@ export const FIXTURES = [
       </article>
     </main>
     <footer><p>© The Daily Record. All rights reserved. Contact the newsroom for corrections.</p></footer>
+  </body>
+</html>`,
+  },
+
+  {
+    name: "ssr-hidden-banner",
+    note: "Server-rendered article with a large hidden CentralNotice-style campaign",
+    bucket: "SSR",
+    delivery: "dynamic",
+    headers: {
+      "cache-control": "private, no-store",
+      server: "nginx/1.25.3",
+    },
+    expect: (r) => [
+      [
+        r.detailedInfo.contentComparison.wordCoverage >= 0.9,
+        `visible word coverage should be at least 0.9, got ${r.detailedInfo.contentComparison.wordCoverage}`,
+      ],
+      [
+        r.detailedInfo.domDiff.serverSharePct >= 90,
+        `server should own at least 90% of visible text, got ${r.detailedInfo.domDiff.serverSharePct}%`,
+      ],
+      [
+        r.detailedInfo.contentComparison.hiddenWordCount > 0,
+        "hidden words should be reported",
+      ],
+    ],
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>The Daily Record — Rendering strategies</title>
+    <meta name="description" content="A long-form article about how web pages are rendered and why it matters.">
+  </head>
+  <body>
+    <header><h1>The Daily Record</h1><nav><a href="/">Home</a> <a href="/tech">Tech</a></nav></header>
+    <main>
+      <article>
+        <h2>How pages are rendered</h2>
+        ${paragraphs(6)}
+      </article>
+    </main>
+    <footer><p>© The Daily Record. All rights reserved. Contact the newsroom for corrections.</p></footer>
+    <script>
+      window.addEventListener("load", () => {
+        const dialog = document.createElement("div");
+        dialog.id = "centralnotice-dialog";
+        dialog.setAttribute("role", "dialog");
+        dialog.style.display = "none";
+        dialog.innerHTML = '${centralNoticeParagraphs(CENTRALNOTICE_DIALOG)}';
+
+        const panel = document.createElement("aside");
+        panel.id = "centralnotice-panel";
+        panel.hidden = true;
+        panel.innerHTML = '${centralNoticeParagraphs(CENTRALNOTICE_PANEL)}';
+        document.body.append(dialog, panel);
+      });
+    </script>
   </body>
 </html>`,
   },

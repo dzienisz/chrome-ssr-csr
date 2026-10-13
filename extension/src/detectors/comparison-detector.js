@@ -4,17 +4,55 @@
  */
 
 /**
+ * Whether hidden subtrees should be skipped for this root. Parsed documents
+ * have no layout, and a hidden live body invalidates per-element visibility.
+ * @param {HTMLElement|null} root
+ * @returns {boolean}
+ */
+function shouldSkipHidden(root) {
+  return Boolean(
+    typeof document !== "undefined" &&
+      root &&
+      root.ownerDocument === document &&
+      document.body &&
+      typeof document.body.checkVisibility === "function" &&
+      document.body.checkVisibility() !== false,
+  );
+}
+
+/**
+ * Whether an element's subtree is hidden according to the browser's default
+ * visibility checks. `display: contents` wrappers remain traversable.
+ * @param {Element} el
+ * @returns {boolean}
+ */
+function isHiddenSubtree(el) {
+  if (
+    !el ||
+    typeof el.checkVisibility !== "function" ||
+    el.checkVisibility() !== false ||
+    typeof getComputedStyle !== "function"
+  ) {
+    return false;
+  }
+  return getComputedStyle(el).display !== "contents";
+}
+
+/**
  * Extract user-visible text from a body element.
  * Strips script/style/noscript/template so inline JS/CSS never counts as
- * content. Works on a detached clone (textContent semantics), so the raw
- * and rendered sides are measured identically.
+ * content. Hidden subtrees are skipped only for the live document; parsed
+ * documents have no layout and remain unfiltered.
  * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @param {{includeHidden?: boolean}} [options]
  * @returns {string} Normalized visible text
  */
-function extractVisibleText(body) {
+function extractVisibleText(body, options = {}) {
   if (!body) return "";
   const parts = [];
   const stack = [body];
+  const skipHidden =
+    options.includeHidden !== true && shouldSkipHidden(body);
 
   function pushChildren(node) {
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -30,6 +68,7 @@ function extractVisibleText(body) {
     }
 
     if (node.nodeType === 1) {
+      if (skipHidden && isHiddenSubtree(node)) continue;
       if (
         node.id === "ssr-detector-probe-data" ||
         node.tagName === "SCRIPT" ||
@@ -57,12 +96,15 @@ function extractVisibleText(body) {
 /**
  * Extract visible words with element boundaries preserved.
  * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @param {{includeHidden?: boolean}} [options]
  * @returns {string[]} Normalized word tokens
  */
-function extractVisibleWords(body) {
+function extractVisibleWords(body, options = {}) {
   if (!body) return [];
   const parts = [];
   const stack = [body];
+  const skipHidden =
+    options.includeHidden !== true && shouldSkipHidden(body);
 
   function pushChildren(node) {
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -83,6 +125,7 @@ function extractVisibleWords(body) {
     }
 
     if (node.nodeType === 1) {
+      if (skipHidden && isHiddenSubtree(node)) continue;
       if (
         node.id === "ssr-detector-probe-data" ||
         node.tagName === "SCRIPT" ||
@@ -220,6 +263,11 @@ async function compareInitialVsRendered() {
     const minLength = config.contentComparison.minRenderedLength;
     const rawWords = extractVisibleWords(rawDoc.body);
     const renderedWords = extractVisibleWords(document.body);
+    const hiddenWordCount = Math.max(
+      0,
+      extractVisibleWords(document.body, { includeHidden: true }).length -
+        renderedWords.length,
+    );
     const { matched, coverage } = wordCoverage(rawWords, renderedWords);
 
     if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
@@ -254,6 +302,7 @@ async function compareInitialVsRendered() {
       rawWordCount: rawWords.length,
       renderedWordCount: renderedWords.length,
       matchedWordCount: matched,
+      hiddenWordCount,
       measure: "words",
       isLikelyCSR,
       isPartialCSR,
@@ -363,6 +412,7 @@ function compareParsedSnapshot(options = {}) {
     rawWordCount: null,
     renderedWordCount: null,
     matchedWordCount: null,
+    hiddenWordCount: null,
     measure: "length",
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
@@ -400,6 +450,8 @@ function getDetectionBodyHTML() {
 // Export for use in other modules
 if (typeof window !== "undefined") {
   window.getDetectionBodyHTML = getDetectionBodyHTML;
+  window.isHiddenSubtree = isHiddenSubtree;
+  window.shouldSkipHidden = shouldSkipHidden;
   window.extractVisibleText = extractVisibleText;
   window.extractVisibleWords = extractVisibleWords;
   window.wordCoverage = wordCoverage;

@@ -4,8 +4,10 @@
  */
 
 const CONFIG = {
-  // Bump whenever verdict semantics change: 1 = text-length ratio (≤4.2), 2 = word coverage (#47).
-  algorithmVersion: 2,
+  // Bump whenever measurement semantics change:
+  // 1 = text-length ratio (≤4.2), 2 = word coverage (#47),
+  // 3 = word coverage excluding hidden elements.
+  algorithmVersion: 3,
 
   // Scoring weights for different indicators
   scoring: {

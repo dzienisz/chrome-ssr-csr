@@ -12,8 +12,10 @@ if (typeof window.__SSR_CSR_ANALYZER_LOADED__ === 'undefined') {
  */
 
 const CONFIG = {
-  // Bump whenever verdict semantics change: 1 = text-length ratio (≤4.2), 2 = word coverage (#47).
-  algorithmVersion: 2,
+  // Bump whenever measurement semantics change:
+  // 1 = text-length ratio (≤4.2), 2 = word coverage (#47),
+  // 3 = word coverage excluding hidden elements.
+  algorithmVersion: 3,
 
   // Scoring weights for different indicators
   scoring: {
@@ -260,17 +262,55 @@ if (typeof module !== 'undefined' && module.exports) {
  */
 
 /**
+ * Whether hidden subtrees should be skipped for this root. Parsed documents
+ * have no layout, and a hidden live body invalidates per-element visibility.
+ * @param {HTMLElement|null} root
+ * @returns {boolean}
+ */
+function shouldSkipHidden(root) {
+  return Boolean(
+    typeof document !== "undefined" &&
+      root &&
+      root.ownerDocument === document &&
+      document.body &&
+      typeof document.body.checkVisibility === "function" &&
+      document.body.checkVisibility() !== false,
+  );
+}
+
+/**
+ * Whether an element's subtree is hidden according to the browser's default
+ * visibility checks. `display: contents` wrappers remain traversable.
+ * @param {Element} el
+ * @returns {boolean}
+ */
+function isHiddenSubtree(el) {
+  if (
+    !el ||
+    typeof el.checkVisibility !== "function" ||
+    el.checkVisibility() !== false ||
+    typeof getComputedStyle !== "function"
+  ) {
+    return false;
+  }
+  return getComputedStyle(el).display !== "contents";
+}
+
+/**
  * Extract user-visible text from a body element.
  * Strips script/style/noscript/template so inline JS/CSS never counts as
- * content. Works on a detached clone (textContent semantics), so the raw
- * and rendered sides are measured identically.
+ * content. Hidden subtrees are skipped only for the live document; parsed
+ * documents have no layout and remain unfiltered.
  * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @param {{includeHidden?: boolean}} [options]
  * @returns {string} Normalized visible text
  */
-function extractVisibleText(body) {
+function extractVisibleText(body, options = {}) {
   if (!body) return "";
   const parts = [];
   const stack = [body];
+  const skipHidden =
+    options.includeHidden !== true && shouldSkipHidden(body);
 
   function pushChildren(node) {
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -286,6 +326,7 @@ function extractVisibleText(body) {
     }
 
     if (node.nodeType === 1) {
+      if (skipHidden && isHiddenSubtree(node)) continue;
       if (
         node.id === "ssr-detector-probe-data" ||
         node.tagName === "SCRIPT" ||
@@ -313,12 +354,15 @@ function extractVisibleText(body) {
 /**
  * Extract visible words with element boundaries preserved.
  * @param {HTMLElement|null} body - Body element (live or from a parsed document)
+ * @param {{includeHidden?: boolean}} [options]
  * @returns {string[]} Normalized word tokens
  */
-function extractVisibleWords(body) {
+function extractVisibleWords(body, options = {}) {
   if (!body) return [];
   const parts = [];
   const stack = [body];
+  const skipHidden =
+    options.includeHidden !== true && shouldSkipHidden(body);
 
   function pushChildren(node) {
     for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -339,6 +383,7 @@ function extractVisibleWords(body) {
     }
 
     if (node.nodeType === 1) {
+      if (skipHidden && isHiddenSubtree(node)) continue;
       if (
         node.id === "ssr-detector-probe-data" ||
         node.tagName === "SCRIPT" ||
@@ -476,6 +521,11 @@ async function compareInitialVsRendered() {
     const minLength = config.contentComparison.minRenderedLength;
     const rawWords = extractVisibleWords(rawDoc.body);
     const renderedWords = extractVisibleWords(document.body);
+    const hiddenWordCount = Math.max(
+      0,
+      extractVisibleWords(document.body, { includeHidden: true }).length -
+        renderedWords.length,
+    );
     const { matched, coverage } = wordCoverage(rawWords, renderedWords);
 
     if (rawLength > minLength && renderedWords.length > 0 && matched === 0) {
@@ -510,6 +560,7 @@ async function compareInitialVsRendered() {
       rawWordCount: rawWords.length,
       renderedWordCount: renderedWords.length,
       matchedWordCount: matched,
+      hiddenWordCount,
       measure: "words",
       isLikelyCSR,
       isPartialCSR,
@@ -619,6 +670,7 @@ function compareParsedSnapshot(options = {}) {
     rawWordCount: null,
     renderedWordCount: null,
     matchedWordCount: null,
+    hiddenWordCount: null,
     measure: "length",
     isLikelyCSR:
       contentRatio < config.contentComparison.csrRatio &&
@@ -656,6 +708,8 @@ function getDetectionBodyHTML() {
 // Export for use in other modules
 if (typeof window !== "undefined") {
   window.getDetectionBodyHTML = getDetectionBodyHTML;
+  window.isHiddenSubtree = isHiddenSubtree;
+  window.shouldSkipHidden = shouldSkipHidden;
   window.extractVisibleText = extractVisibleText;
   window.extractVisibleWords = extractVisibleWords;
   window.wordCoverage = wordCoverage;
@@ -1254,17 +1308,34 @@ function regionLabel(el, key) {
 }
 
 /**
- * Per-analysis memo, so a region's text is measured once, not once per depth.
- *
- * Reset at the start of every analysis. The keys are live DOM elements that
- * stay reachable after a run ends, so nothing here is ever collected on its
- * own — and the popup's re-run button and the panel's re-run-on-navigation
- * both analyze the same document twice. Without the reset, the second run
- * reports the first run's text lengths and every number downstream of them
- * (region origins, serverSharePct, the diff signals) describes a DOM that has
- * already changed.
+ * Per-analysis memos for region lengths and hidden-state checks. Reset before
+ * each run because the popup and panel can analyze a changing document again.
  */
 let textLengthCache = new WeakMap();
+let hiddenStateCache = new WeakMap();
+
+function cachedHiddenState(el) {
+  if (
+    !el ||
+    typeof window === "undefined" ||
+    typeof window.isHiddenSubtree !== "function"
+  ) {
+    return false;
+  }
+  if (hiddenStateCache.has(el)) return hiddenStateCache.get(el);
+
+  const hidden = window.isHiddenSubtree(el);
+  hiddenStateCache.set(el, hidden);
+  return hidden;
+}
+
+function shouldFilterHidden(root) {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.shouldSkipHidden === "function" &&
+    window.shouldSkipHidden(root)
+  );
+}
 
 /**
  * Visible text length of an element, counting the same characters
@@ -1285,11 +1356,15 @@ function visibleTextLength(el) {
 
   let text = "";
   const doc = el.ownerDocument || document;
+  const skipHidden = shouldFilterHidden(el);
   const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       let parent = node.parentElement;
       while (parent) {
         if (REGION_SKIP.has(parent.tagName) || parent.id === "ssr-detector-probe-data") {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (skipHidden && cachedHiddenState(parent)) {
           return NodeFilter.FILTER_REJECT;
         }
         if (parent === el) break;
@@ -1318,9 +1393,12 @@ function visibleTextLength(el) {
  * @returns {Array<Element>}
  */
 function structuralChildren(el) {
+  const skipHidden = shouldFilterHidden(el);
   return Array.from(el.children).filter(
     (child) =>
-      !REGION_SKIP.has(child.tagName) && child.id !== "ssr-detector-probe-data",
+      !REGION_SKIP.has(child.tagName) &&
+      child.id !== "ssr-detector-probe-data" &&
+      (!skipHidden || !cachedHiddenState(child)),
   );
 }
 
@@ -1470,6 +1548,7 @@ function detectDomDiff(rawDocument) {
   const signals = [];
 
   textLengthCache = new WeakMap();
+  hiddenStateCache = new WeakMap();
 
   if (!rawDocument || !rawDocument.body || !document.body) {
     return {
@@ -3083,6 +3162,7 @@ async function pageAnalyzer() {
         rawWords: comparisonResults.rawWordCount ?? null,
         renderedWords: comparisonResults.renderedWordCount ?? null,
         matchedWords: comparisonResults.matchedWordCount ?? null,
+        hiddenWordCount: comparisonResults.hiddenWordCount ?? null,
         measure: comparisonResults.measure ?? (fromSnapshot ? "length" : "words"),
       };
     }
@@ -3300,6 +3380,9 @@ async function pageAnalyzer() {
         total: fromSnapshot
           ? comparisonResults.renderedLength
           : comparisonResults.renderedWordCount,
+        hiddenWordCount: fromSnapshot
+          ? null
+          : comparisonResults.hiddenWordCount ?? null,
         snapshotReason: fromSnapshot
           ? comparisonResults.refetchMismatchReason || "refused"
           : null,

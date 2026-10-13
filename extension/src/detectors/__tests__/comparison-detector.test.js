@@ -17,6 +17,71 @@ function wordText(count) {
   return WORDS.slice(0, count).join(" ");
 }
 
+let restoreVisibility;
+
+function stubVisibility({
+  hiddenElements = [],
+  displayContents = [],
+  withCheckVisibility = true,
+} = {}) {
+  const checkVisibilityDescriptor = Object.getOwnPropertyDescriptor(
+    Element.prototype,
+    "checkVisibility",
+  );
+  const getComputedStyleDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "getComputedStyle",
+  );
+  const hidden = new Set(hiddenElements);
+  const contents = new Set(displayContents);
+  const checkVisibility = vi.fn(function () {
+    return !hidden.has(this);
+  });
+
+  if (withCheckVisibility) {
+    Object.defineProperty(Element.prototype, "checkVisibility", {
+      configurable: true,
+      value: checkVisibility,
+    });
+  } else {
+    delete Element.prototype.checkVisibility;
+  }
+  Object.defineProperty(globalThis, "getComputedStyle", {
+    configurable: true,
+    writable: true,
+    value: vi.fn((el) => ({
+      display: contents.has(el) ? "contents" : "block",
+    })),
+  });
+
+  restoreVisibility = () => {
+    if (checkVisibilityDescriptor) {
+      Object.defineProperty(
+        Element.prototype,
+        "checkVisibility",
+        checkVisibilityDescriptor,
+      );
+    } else {
+      delete Element.prototype.checkVisibility;
+    }
+    if (getComputedStyleDescriptor) {
+      Object.defineProperty(
+        globalThis,
+        "getComputedStyle",
+        getComputedStyleDescriptor,
+      );
+    } else {
+      delete globalThis.getComputedStyle;
+    }
+  };
+  return checkVisibility;
+}
+
+afterEach(() => {
+  restoreVisibility?.();
+  restoreVisibility = null;
+});
+
 function oldExtractVisibleText(body) {
   if (!body) return "";
   const clone = body.cloneNode(true);
@@ -98,6 +163,97 @@ describe("extractVisibleText", () => {
     );
 
     expect(window.extractVisibleText(doc.body)).toBe("Visible");
+  });
+
+  it("never filters DOMParser text even when visibility checks say false", () => {
+    const doc = new DOMParser().parseFromString(
+      "<body><p>Visible server text.</p><div>Hidden parser text.</div></body>",
+      "text/html",
+    );
+    stubVisibility({
+      hiddenElements: [doc.body, ...doc.body.querySelectorAll("*")],
+    });
+
+    expect(window.extractVisibleText(doc.body)).toBe(
+      "Visible server text.Hidden parser text.",
+    );
+    expect(window.extractVisibleWords(doc.body)).toEqual([
+      "visible",
+      "server",
+      "text",
+      "hidden",
+      "parser",
+      "text",
+    ]);
+  });
+
+  it("keeps display:contents wrapper children visible", () => {
+    document.body.innerHTML =
+      "<div id='wrapper'><p>Visible wrapper children.</p></div>";
+    const wrapper = document.querySelector("#wrapper");
+    stubVisibility({ hiddenElements: [wrapper], displayContents: [wrapper] });
+
+    expect(window.extractVisibleText(document.body)).toBe(
+      "Visible wrapper children.",
+    );
+    expect(window.extractVisibleWords(document.body)).toEqual([
+      "visible",
+      "wrapper",
+      "children",
+    ]);
+  });
+
+  it("does not filter when the live body is hidden", () => {
+    document.body.innerHTML =
+      "<p>Visible words.</p><aside>Hidden words.</aside>";
+    const aside = document.querySelector("aside");
+    stubVisibility({ hiddenElements: [document.body, aside] });
+
+    expect(window.extractVisibleText(document.body)).toBe(
+      "Visible words.Hidden words.",
+    );
+    expect(window.extractVisibleWords(document.body)).toEqual([
+      "visible",
+      "words",
+      "hidden",
+      "words",
+    ]);
+  });
+
+  it("does not filter when checkVisibility is unavailable", () => {
+    document.body.innerHTML =
+      "<p>Visible words.</p><aside>Hidden words.</aside>";
+    stubVisibility({ withCheckVisibility: false });
+
+    expect(window.extractVisibleText(document.body)).toBe(
+      "Visible words.Hidden words.",
+    );
+    expect(window.extractVisibleWords(document.body)).toEqual([
+      "visible",
+      "words",
+      "hidden",
+      "words",
+    ]);
+  });
+
+  it("skips hidden text inside open shadow roots", () => {
+    const host = document.createElement("article");
+    const shadowRoot = host.attachShadow({ mode: "open" });
+    shadowRoot.innerHTML =
+      "<p id='hidden'>Hidden shadow text.</p><p>Visible shadow text.</p>";
+    document.body.replaceChildren(host);
+    stubVisibility({
+      hiddenElements: [shadowRoot.querySelector("#hidden")],
+    });
+
+    expect(window.extractVisibleText(document.body)).toBe(
+      "Visible shadow text.",
+    );
+    expect(window.extractVisibleWords(document.body)).toEqual([
+      "visible",
+      "shadow",
+      "text",
+    ]);
   });
 
   it("should normalize whitespace", () => {
@@ -272,6 +428,35 @@ describe("wordCoverage", () => {
 });
 
 describe("compareInitialVsRendered", () => {
+  it("excludes and reports hidden rendered words", async () => {
+    const hiddenText = "Donation campaign words are hidden and ignored.";
+    document.body.innerHTML =
+      `<article>${LONG_TEXT}</article><div id="banner">${hiddenText}</div>`;
+    const banner = document.querySelector("#banner");
+    const checkVisibility = stubVisibility({ hiddenElements: [banner] });
+    mockFetchedHTML(
+      `<html><body><article>${LONG_TEXT}</article><div>${hiddenText}</div></body></html>`,
+    );
+
+    expect(window.extractVisibleText(document.body)).toBe(LONG_TEXT.trim());
+    expect(window.extractVisibleWords(document.body)).not.toContain("donation");
+
+    const result = await window.compareInitialVsRendered();
+
+    expect(result.renderedLength).toBe(LONG_TEXT.trim().length);
+    expect(result.renderedWordCount).toBe(
+      window.extractVisibleWords(document.body).length,
+    );
+    expect(result.hiddenWordCount).toBe(7);
+    expect(
+      window.extractVisibleWords(document.body, { includeHidden: true }).length -
+        result.renderedWordCount,
+    ).toBe(result.hiddenWordCount);
+    expect(checkVisibility.mock.calls.every((args) => args.length === 0)).toBe(
+      true,
+    );
+  });
+
   it("should flag decisive CSR when raw HTML is script-only", async () => {
     // A CSR app shell: big inline bundle, no real text (the old code counted
     // the script text as content and called this SSR)
@@ -497,6 +682,7 @@ describe("parser snapshot fallback", () => {
     expect(result.rawWordCount).toBeNull();
     expect(result.renderedWordCount).toBeNull();
     expect(result.matchedWordCount).toBeNull();
+    expect(result.hiddenWordCount).toBeNull();
     expect(result.measure).toBe("length");
   });
 

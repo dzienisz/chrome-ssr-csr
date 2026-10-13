@@ -110,7 +110,7 @@ function result(overrides = {}) {
 
 function sampleDecision(overrides = {}) {
   return {
-    algorithmVersion: 2,
+    algorithmVersion: 3,
     gate: { passed: true, reason: null, visibleChars: 4210 },
     measurement: {
       source: "fetch",
@@ -118,6 +118,7 @@ function sampleDecision(overrides = {}) {
       value: 0.11,
       matched: 22,
       total: 193,
+      hiddenWordCount: 0,
       snapshotReason: null,
       band: "csr",
       bandLimits: { csr: 0.2, partial: 0.4, ssr: 0.7 },
@@ -194,7 +195,7 @@ describe("describeDecision", () => {
       {
         id: "algorithm",
         label: "Algorithm",
-        detail: "Algorithm v2 · every signal is in the Evidence section",
+        detail: "Algorithm v3 · every signal is in the Evidence section",
       },
     ]);
   });
@@ -231,6 +232,25 @@ describe("describeDecision", () => {
     });
     expect(steps.findIndex((step) => step.id === "confidence")).toBeLessThan(
       steps.findIndex((step) => step.id === "algorithm"),
+    );
+  });
+
+  it("reports hidden words only when the omitted count is positive", () => {
+    const measurementFor = (hiddenWordCount) =>
+      describeDecision(
+        sampleDecision({
+          measurement: {
+            ...sampleDecision().measurement,
+            hiddenWordCount,
+          },
+        }),
+      ).find((step) => step.id === "measurement").detail;
+
+    expect(measurementFor(0)).toBe(
+      "22 of 193 visible words (11%) were in the HTML the server sent.",
+    );
+    expect(measurementFor(1712)).toBe(
+      "22 of 193 visible words (11%) were in the HTML the server sent. 1,712 words in hidden elements were not counted.",
     );
   });
 
