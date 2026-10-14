@@ -1,7 +1,7 @@
 /* Popup-only layout. Everything visual lives in src/ui/theme.css. */
 
 body {
-  width: min(400px, 100vw);
+  width: 400px;
   min-height: 220px;
   padding: 12px 14px 10px;
 }

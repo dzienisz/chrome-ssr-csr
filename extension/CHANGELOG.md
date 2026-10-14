@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Release workflow submits the Chrome zip to Microsoft Edge Add-ons through
+  the Edge Add-ons API (`scripts/publish-edge.mjs`) once `EDGE_PRODUCT_ID`,
+  `EDGE_CLIENT_ID` and `EDGE_API_KEY` are set; `edge-listing.md` and a
+  300×300 store logo cover the first, manual Partner Center submission.
+- README and landing page mention Microsoft Edge support next to Chrome and
+  Firefox; Edge users are pointed at the Chrome Web Store until the Edge
+  Add-ons listing passes review.
+
+### Fixed
+
+- The popup is 400px wide again. 4.3.0 sized it with `min(400px, 100vw)`,
+  but a browser popup takes its width from the page, so `100vw` resolved
+  against the popup's initial, narrow viewport and squeezed the layout.
+
 ## [4.3.0] - 2026-10-13
 
 ### Changed
