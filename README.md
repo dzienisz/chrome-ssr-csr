@@ -4,7 +4,7 @@
 [![Mozilla Add-on](https://img.shields.io/amo/v/csr-vs-ssr-detector)](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A browser extension (Chrome and Firefox) that detects whether a webpage uses **Server-Side Rendering (SSR)** or **Client-Side Rendering (CSR)**. Helps developers and SEO specialists understand page rendering strategies.
+A browser extension (Chrome, Edge and Firefox) that detects whether a webpage uses **Server-Side Rendering (SSR)** or **Client-Side Rendering (CSR)**. Helps developers and SEO specialists understand page rendering strategies.
 
 ## Projects
 
@@ -12,7 +12,7 @@ This monorepo contains two projects:
 
 | Project | Description | Links |
 |---------|-------------|-------|
-| **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome & Firefox) | [Chrome](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Firefox](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) · [Docs](./extension/README.md) |
+| **[Browser Extension](./extension)** | Detects SSR/CSR rendering on any webpage (Chrome, Edge & Firefox) | [Chrome](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) · [Firefox](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) · [Docs](./extension/README.md) |
 | **[Analytics Dashboard](./backend)** | Real-time usage analytics | [Live](https://backend-mauve-beta-88.vercel.app/dashboard) · [Docs](./backend/README.md) |
 | **[Landing page](./site)** | Product site (GitHub Pages) | [dzienko.dev/chrome-ssr-csr](https://dzienko.dev/chrome-ssr-csr/) |
 
@@ -20,6 +20,7 @@ This monorepo contains two projects:
 
 ### Install Extension
 - **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome"
+- **Microsoft Edge**: the Edge Add-ons listing is in Microsoft review. Until it is live, install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) (Edge asks to "Allow extensions from other stores")
 - **Firefox (128+)**: [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) → "Add to Firefox"
 
 Then click the extension icon on any webpage to analyze it.
