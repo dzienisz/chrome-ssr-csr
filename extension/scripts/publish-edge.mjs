@@ -38,9 +38,20 @@ async function expectAccepted(response, step) {
   throw new Error(`Edge ${step} request returned HTTP ${response.status}${text ? `: ${text}` : ""}`);
 }
 
-async function poll({ url, headers, step, fetchImpl, sleep, intervalMs, maxPolls }) {
+async function request(fetchImpl, url, init, { step, timeoutMs }) {
+  try {
+    return await fetchImpl(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    if (error?.name === "TimeoutError") {
+      throw new Error(`Edge ${step} request timed out after ${timeoutMs / 1000}s`);
+    }
+    throw error;
+  }
+}
+
+async function poll({ url, headers, step, fetchImpl, sleep, intervalMs, maxPolls, timeoutMs }) {
   for (let attempt = 1; attempt <= maxPolls; attempt++) {
-    const response = await fetchImpl(url, { headers });
+    const response = await request(fetchImpl, url, { headers }, { step, timeoutMs });
     if (!response.ok) {
       throw new Error(`Edge ${step} status check returned HTTP ${response.status}`);
     }
@@ -62,6 +73,7 @@ export async function publishToEdge({
   sleep = sleepMs,
   intervalMs = 5000,
   maxPolls = 60,
+  timeoutMs = 60000,
   log = console.log,
 }) {
   if (!productId || !clientId || !apiKey) {
@@ -69,14 +81,15 @@ export async function publishToEdge({
   }
   const auth = { Authorization: `ApiKey ${apiKey}`, "X-ClientID": clientId };
   const product = `${API_ROOT}/v1/products/${encodeURIComponent(productId)}`;
-  const pollOptions = { headers: auth, fetchImpl, sleep, intervalMs, maxPolls };
+  const pollOptions = { headers: auth, fetchImpl, sleep, intervalMs, maxPolls, timeoutMs };
 
   const uploadOperation = await expectAccepted(
-    await fetchImpl(`${product}/submissions/draft/package`, {
-      method: "POST",
-      headers: { ...auth, "Content-Type": "application/zip" },
-      body: zip,
-    }),
+    await request(
+      fetchImpl,
+      `${product}/submissions/draft/package`,
+      { method: "POST", headers: { ...auth, "Content-Type": "application/zip" }, body: zip },
+      { step: "upload", timeoutMs },
+    ),
     "upload",
   );
   log(`Edge: package uploaded, validating (operation ${uploadOperation})`);
@@ -87,11 +100,12 @@ export async function publishToEdge({
   });
 
   const publishOperation = await expectAccepted(
-    await fetchImpl(`${product}/submissions`, {
-      method: "POST",
-      headers: { ...auth, "Content-Type": "application/json" },
-      body: JSON.stringify({ notes }),
-    }),
+    await request(
+      fetchImpl,
+      `${product}/submissions`,
+      { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ notes }) },
+      { step: "publish", timeoutMs },
+    ),
     "publish",
   );
   log(`Edge: draft submitted (operation ${publishOperation})`);

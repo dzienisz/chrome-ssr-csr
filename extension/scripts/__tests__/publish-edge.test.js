@@ -73,6 +73,7 @@ describe('publishToEdge', () => {
       expect(call.headers.Authorization).toBe('ApiKey api-key');
       expect(call.headers['X-ClientID']).toBe('client-id');
     }
+    for (const call of calls) expect(call.signal).toBeInstanceOf(AbortSignal);
     expect(calls[0].headers['Content-Type']).toBe('application/zip');
     expect(JSON.parse(calls[3].body)).toEqual({ notes: 'v4.3.0' });
   });
@@ -127,6 +128,16 @@ describe('publishToEdge', () => {
       ],
     });
     await expect(run(fetchImpl, { maxPolls: 2 })).rejects.toThrow(/still in progress after 2 checks/);
+  });
+
+  it('times out a request that never answers', async () => {
+    const fetchImpl = vi.fn(
+      (url, { signal }) =>
+        new Promise((resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason));
+        }),
+    );
+    await expect(run(fetchImpl, { timeoutMs: 20 })).rejects.toThrow('Edge upload request timed out after 0.02s');
   });
 
   it('requires all three credentials', async () => {
