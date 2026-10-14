@@ -28,5 +28,6 @@ const page = await browser.newPage({
 });
 await page.goto(`file://${join(HERE, "src", `${name}.html`)}`);
 await page.waitForTimeout(150);
-await page.screenshot({ path: join(HERE, out) });
+// omitBackground keeps the rounded icon corners transparent; tiles are opaque.
+await page.screenshot({ path: join(HERE, out), omitBackground: true });
 await browser.close();
