@@ -9,7 +9,8 @@ This is a monorepo containing:
 - **Analytics Backend** (`/backend`): Next.js dashboard for anonymous telemetry
 
 The extension is published on the Chrome Web Store and on addons.mozilla.org
-(Firefox, since v3.10.0; AMO slug `csr-vs-ssr-detector`) and helps developers
+(Firefox, since v3.10.0; AMO slug `csr-vs-ssr-detector`); Microsoft Edge Add-ons
+takes the Chrome zip unchanged (`edge-listing.md`). It helps developers
 and SEO specialists understand page rendering strategies.
 
 ## Repository Structure
@@ -38,6 +39,7 @@ and SEO specialists understand page rendering strategies.
 │   ├── store-listing.md    # Chrome Web Store listing copy (source of truth)
 │   ├── store-listings.md   # Chrome Web Store listing translations (8 languages)
 │   ├── amo-listing.md      # Firefox/AMO listing copy + submission-form answers
+│   ├── edge-listing.md     # Edge Add-ons listing copy + Partner Center answers
 │   ├── privacy-policy.md   # Privacy policy
 │   └── CHANGELOG.md        # Extension version history
 │
@@ -450,8 +452,12 @@ Release, and then submits them:
   the store reviews and rolls out.
 - **addons.mozilla.org** — `web-ext sign --channel listed --approval-timeout 0`
   uploads and validates without waiting for the (multi-day) human review.
+- **Microsoft Edge Add-ons** — `scripts/publish-edge.mjs` uploads the Chrome
+  zip through the Edge Add-ons API v1.1, waits for package validation, then
+  submits it for certification. The API only updates an existing product, so
+  the first Edge version is submitted by hand in Partner Center.
 
-Both steps skip themselves with a warning when their secrets are absent, so a
+All three steps skip themselves with a warning when their secrets are absent, so a
 tag never fails over missing credentials. Required repository secrets:
 
 | Secret | Where it comes from |
@@ -460,6 +466,8 @@ tag never fails over missing credentials. Required repository secrets:
 | `CWS_EXTENSION_ID` | the id in the CWS dashboard URL |
 | `CWS_PUBLISHER_ID` | the id after `/devconsole/` in the CWS dashboard URL — required by the v2 API that `chrome-webstore-upload-cli@4` uses |
 | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` | addons.mozilla.org → Manage API Keys |
+| `EDGE_CLIENT_ID`, `EDGE_API_KEY` | Partner Center → Microsoft Edge → Publish API (v1.1; the key expires, renew it there) |
+| `EDGE_PRODUCT_ID` | Product ID on the Edge extension overview in Partner Center |
 
 `web-ext lint` already ran on the pull request, so a package that would fail
 AMO validation cannot reach a tag.
@@ -467,9 +475,9 @@ AMO validation cannot reach a tag.
 **Listing copy is still edited by hand** — the APIs ship the package, not the
 store page. `store-listing.md` (+ `store-listings.md` translations) and the
 "What's new" field from the CHANGELOG entry for Chrome; `amo-listing.md` for
-AMO.
+AMO; `edge-listing.md` for Edge.
 
-Keep privacy wording consistent across `privacy-policy.md`, both listing files,
+Keep privacy wording consistent across `privacy-policy.md`, the listing files,
 and the manifest's `data_collection_permissions` (AMO cross-checks them).
 
 Manual fallback (build the zips locally):

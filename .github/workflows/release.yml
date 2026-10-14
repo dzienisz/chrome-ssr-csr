@@ -2,7 +2,8 @@ name: Extension Release
 
 # Push a tag like v3.8.0 (matching extension/manifest.json) to build the
 # Chrome Web Store and Firefox (AMO) zips, attach them to a GitHub Release,
-# and submit both to their stores.
+# and submit them to the Chrome Web Store, addons.mozilla.org and Microsoft
+# Edge Add-ons (which takes the Chrome zip unchanged).
 #
 # Store submission needs these repository secrets. When they are absent the
 # workflow still builds and releases, and only skips the upload steps — so a
@@ -15,6 +16,11 @@ name: Extension Release
 #     talks to the v2 API, which refuses to run without it).
 #   AMO_JWT_ISSUER / AMO_JWT_SECRET
 #     addons.mozilla.org -> Manage API Keys.
+#   EDGE_PRODUCT_ID / EDGE_CLIENT_ID / EDGE_API_KEY
+#     Partner Center -> Microsoft Edge -> Publish API (v1.1 API key) plus the
+#     product id from the extension overview. The API only updates an existing
+#     product, so the first Edge version is submitted by hand (edge-listing.md).
+#     API keys expire; renew them on the same page.
 
 on:
   push:
@@ -127,3 +133,21 @@ jobs:
             --source-dir extension/dist/firefox \
             --channel listed \
             --approval-timeout 0
+
+      # Same zip as the Chrome Web Store: Edge runs Chrome MV3 packages as-is.
+      # The script returns once Edge has accepted the submission; certification
+      # itself takes up to a week and is not waited on.
+      - name: Submit to Microsoft Edge Add-ons
+        if: ${{ !cancelled() }}
+        env:
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+        run: |
+          if [ -z "$EDGE_PRODUCT_ID" ] || [ -z "$EDGE_CLIENT_ID" ] || [ -z "$EDGE_API_KEY" ]; then
+            echo "::warning::Edge Add-ons secrets not configured - skipping submission"
+            exit 0
+          fi
+          node extension/scripts/publish-edge.mjs \
+            "csr-ssr-detector-${GITHUB_REF_NAME}.zip" \
+            "Release ${GITHUB_REF_NAME}: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"

@@ -25,6 +25,9 @@ shoot marquee 1400 560 marquee-1400x560.png
 shoot firefox-hero 1400 560 firefox-hero-1400x560.png
 shoot firefox-tile 440 280 firefox-tile-440x280.png
 
+# Microsoft Edge Add-ons store logo (1:1, 300x300 recommended)
+shoot icon 300 300 edge-logo-300x300.png
+
 # Social media cards (X/Twitter, LinkedIn, Mastodon, feed square)
 shoot social-landscape 1600 900 social-landscape-1600x900.png
 shoot social-square 1080 1080 social-square-1080x1080.png

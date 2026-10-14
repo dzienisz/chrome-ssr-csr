@@ -1,4 +1,4 @@
-# Marketing Assets (Chrome Web Store + Firefox / AMO)
+# Marketing Assets (Chrome Web Store + Firefox / AMO + Edge Add-ons)
 
 All assets are generated from HTML/CSS sources in `src/` — edit the source,
 re-run the build, get pixel-exact PNGs. No image editor required.
@@ -33,6 +33,7 @@ product.
 | `screenshot-2-hybrid-1280x800.png` | 1280×800 | Screenshot 2 — delivery: where the HTML was produced |
 | `screenshot-3-learn-1280x800.png` | 1280×800 | Screenshot 3 — regions: what JavaScript built |
 | `screenshot-4-evidence-1280x800.png` | 1280×800 | Screenshot 4 — evidence: scored signals on a hybrid page |
+| `edge-logo-300x300.png` | 300×300 | Edge Add-ons extension logo (required) |
 | `firefox-hero-1400x560.png` | 1400×560 | Firefox "now on Firefox" hero (GitHub release / social) |
 | `firefox-tile-440x280.png` | 440×280 | Firefox compact social tile |
 | `social-landscape-1600x900.png` | 1600×900 | Social card — X/LinkedIn/Mastodon landscape |
@@ -44,6 +45,11 @@ screenshots show in the listing. The four `screenshot-*-1280x800.png` files are
 browser-neutral popup crops, so they double as the Firefox screenshots. The
 `firefox-*` images are for the GitHub release and social posts, not required by
 AMO. Listing copy lives in `../amo-listing.md`.
+
+**Edge note:** Edge Add-ons takes a 300×300 logo (`edge-logo-300x300.png`),
+the same 440×280 small tile and up to six 1280×800 screenshots as Chrome. Its
+optional large tile is 1400×560, so use `marquee-1400x560.png`. Listing copy
+lives in `../edge-listing.md`.
 
 ## Sources (`src/`)
 
