@@ -53,11 +53,12 @@ for a description and a logo for **every** locale in `_locales/`.
 
 ## Search terms
 
-SSR, CSR, server-side rendering, client-side rendering, hydration, SEO,
-JavaScript SEO, rendering, web developer tools, Core Web Vitals
+SSR, CSR, server-side rendering, client-side rendering, hydration,
+JavaScript SEO, Core Web Vitals
 
-(Not shown to users. Keep it to capabilities, not a list of framework brand
-names — the same rule that got 4.0.0 rejected on the Chrome Web Store.)
+(Partner Center accepts at most seven. Not shown to users. Keep it to
+capabilities, not a list of framework brand names — the same rule that got
+4.0.0 rejected on the Chrome Web Store.)
 
 ## Images (`promo-images/`)
 
