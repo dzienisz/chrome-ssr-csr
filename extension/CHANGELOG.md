@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The popup is 400px wide again. 4.3.0 sized it with `min(400px, 100vw)`,
   but a browser popup takes its width from the page, so `100vw` resolved
   against the popup's initial, narrow viewport and squeezed the layout.
+- Ask Jev is now offered for results labeled Low confidence, even when their
+  numeric confidence score is high.
 
 ## [4.3.0] - 2026-10-13
 

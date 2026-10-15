@@ -123,6 +123,7 @@
     if (!settings?.jevEnabled || !hasKey) return false;
     const renderType = String(result?.renderType || "");
     return (
+      result?.confidenceLevel === "low" ||
       /hybrid|mixed|likely/i.test(renderType) ||
       (typeof result?.confidence === "number" && result.confidence < 65)
     );

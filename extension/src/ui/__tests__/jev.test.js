@@ -154,6 +154,9 @@ describe("jevVerdict", () => {
 describe("shouldOfferJev", () => {
   it.each([
     ["SSR at high confidence", { renderType: "Server-Side Rendered (SSR)", confidence: 95 }, true, true, false],
+    ["SSR at low confidence level", { renderType: "Server-Side Rendered (SSR)", confidence: 95, confidenceLevel: "low" }, true, true, true],
+    ["SSR at high confidence level", { renderType: "Server-Side Rendered (SSR)", confidence: 95, confidenceLevel: "high" }, true, true, false],
+    ["low confidence level when disabled", { renderType: "Server-Side Rendered (SSR)", confidence: 95, confidenceLevel: "low" }, false, true, false],
     ["Hybrid", { renderType: "Hybrid/Islands Architecture", confidence: 70 }, true, true, true],
     ["CSR at high confidence", { renderType: "Client-Side Rendered (CSR)", confidence: 80 }, true, true, false],
     ["Likely CSR at low confidence", { renderType: "Likely CSR/SPA", confidence: 60 }, true, true, true],
