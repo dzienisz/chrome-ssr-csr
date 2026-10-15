@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the Edge Add-ons API (`scripts/publish-edge.mjs`) once `EDGE_PRODUCT_ID`,
   `EDGE_CLIENT_ID` and `EDGE_API_KEY` are set; `edge-listing.md` and a
   300×300 store logo cover the first, manual Partner Center submission.
-- README and landing page mention Microsoft Edge support next to Chrome and
-  Firefox; Edge users are pointed at the Chrome Web Store until the Edge
-  Add-ons listing passes review.
+- README and landing page link the live Microsoft Edge Add-ons listing
+  (badge, install link and "Get it for Edge" buttons) next to Chrome and
+  Firefox.
 
 ### Fixed
 

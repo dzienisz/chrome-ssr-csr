@@ -2,6 +2,7 @@
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/fhiopdjeekafnhmfbcfoolhejdgjpkgg)](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg)
 [![Mozilla Add-on](https://img.shields.io/amo/v/csr-vs-ssr-detector)](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/)
+[![Microsoft Edge Add-ons](https://img.shields.io/badge/Microsoft%20Edge-Add--ons-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/ffnkjnckfaboknffjlfenkbjfhmoahih)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue.svg)](./CHANGELOG.md)
 
 A browser extension (Chrome, Edge and Firefox 128+) that detects whether a webpage uses Server-Side Rendering (SSR) or Client-Side Rendering (CSR).
@@ -9,7 +10,7 @@ A browser extension (Chrome, Edge and Firefox 128+) that detects whether a webpa
 ## Installation
 
 ### From a store
-- **Microsoft Edge** — the Edge Add-ons listing is in Microsoft review. Until it is live, install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) (Edge asks to "Allow extensions from other stores"); it is the same package.
+- **Microsoft Edge** — install from [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/ffnkjnckfaboknffjlfenkbjfhmoahih) → "Get" (same package as the Chrome Web Store).
 - **Chrome / Brave** — install from the [Chrome Web Store](https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg) → "Add to Chrome".
 - **Firefox (128+)** — install from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/csr-vs-ssr-detector/) → "Add to Firefox".
 
