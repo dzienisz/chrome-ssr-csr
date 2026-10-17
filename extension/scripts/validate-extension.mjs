@@ -129,6 +129,13 @@ if (!worker) {
 
 const extensionId = worker.url().split("/")[2];
 notes.push(`  ok   installed as ${extensionId}`);
+const linkAnalysisAvailable = await worker.evaluate(
+  () => typeof SSRLinkAnalysis?.waitForTabReady === "function",
+);
+check(
+  linkAnalysisAvailable,
+  "the service worker loads the link-analysis helper",
+);
 
 const telemetryDisabled = await worker.evaluate(
   () =>

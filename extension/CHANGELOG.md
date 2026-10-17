@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Right-click a link and choose “Analyze link rendering” to open it in a
+  background tab, wait for it to load and settle for 1.5 seconds, and analyze it
+  through the same history and badge path. A “host: verdict” notification
+  includes the confidence level; clicking it switches to the tab.
+
 ## [4.4.0] - 2026-10-15
 
 ### Added

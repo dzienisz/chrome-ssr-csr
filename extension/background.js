@@ -1,3 +1,5 @@
+if (typeof importScripts === "function") importScripts("src/background/link-analysis.js");
+
 /**
  * Background service worker (event page on Firefox).
  *
@@ -12,6 +14,7 @@
  */
 
 const MENU_ID = "analyze-rendering";
+const LINK_MENU_ID = "analyze-link-rendering";
 
 const RESTRICTED_PROTOCOLS = [
   "chrome:",
@@ -31,6 +34,14 @@ chrome.runtime.onInstalled.addListener((details) => {
       title: chrome.i18n.getMessage("contextMenuAnalyze") || "Analyze page rendering",
       contexts: ["page"],
     });
+    chrome.contextMenus.create({
+      id: LINK_MENU_ID,
+      title:
+        chrome.i18n.getMessage("contextMenuAnalyzeLink") ||
+        "Analyze link rendering (opens in background tab)",
+      contexts: ["link"],
+      targetUrlPatterns: ["http://*/*", "https://*/*"],
+    });
   });
 
   if (details.reason === "install") {
@@ -40,6 +51,31 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === MENU_ID && tab) analyzeTab(tab);
+  if (info.menuItemId === LINK_MENU_ID && info.linkUrl) analyzeLink(info.linkUrl, tab);
+});
+
+chrome.notifications.onClicked.addListener((notificationId) => {
+  const match = /^link-analysis:(\d+):\d+$/.exec(notificationId);
+  if (!match) return;
+
+  const tabId = Number(match[1]);
+  chrome.tabs.update(tabId, { active: true }, (tab) => {
+    void chrome.runtime.lastError;
+    if (!tab) {
+      chrome.notifications.clear(notificationId);
+      return;
+    }
+
+    if (!chrome.windows || typeof chrome.windows.update !== "function") {
+      chrome.notifications.clear(notificationId);
+      return;
+    }
+
+    chrome.windows.update(tab.windowId, { focused: true }, () => {
+      void chrome.runtime.lastError;
+      chrome.notifications.clear(notificationId);
+    });
+  });
 });
 
 /**
@@ -86,13 +122,14 @@ function executeScript(options) {
  * Run the analyzer in a tab and report the verdict as a notification.
  * @param {chrome.tabs.Tab} tab
  */
-async function analyzeTab(tab) {
+async function analyzeTab(tab, options = {}) {
   const url = tab.url || "";
   if (RESTRICTED_PROTOCOLS.some((protocol) => url.startsWith(protocol))) {
     notify(
       chrome.i18n.getMessage("restrictedTitle") || "This page cannot be analyzed",
       chrome.i18n.getMessage("restrictedBody") ||
         "Browsers do not let extensions read their own internal pages.",
+      options.activateTabId,
     );
     return;
   }
@@ -110,7 +147,7 @@ async function analyzeTab(tab) {
 
     const result = injection && injection.result;
     if (!result) {
-      notify("Analysis failed", "The page did not return a result.");
+      notify("Analysis failed", "The page did not return a result.", options.activateTabId);
       return;
     }
 
@@ -129,6 +166,7 @@ async function analyzeTab(tab) {
       notify(
         "Analysis discarded",
         "The page navigated while it was being analyzed.",
+        options.activateTabId,
       );
       return;
     }
@@ -141,19 +179,81 @@ async function analyzeTab(tab) {
       results: result,
     });
 
-    const origin = result.renderOrigin ? ` — ${result.renderOrigin.label}` : "";
-    if (result.assessable === false) {
-      const reason =
-        result.unassessableReason === "bot-challenge"
-          ? "bot check"
-          : "too little visible text";
-      notify(`Cannot assess — ${reason}`, hostOf(url));
+    if (options.link) {
+      const verdict = SSRLinkAnalysis.formatLinkVerdict(result, hostOf(url), t);
+      notify(verdict.title, verdict.message, options.activateTabId);
     } else {
-      notify(`${result.renderType} (${result.confidence}%)`, `${hostOf(url)}${origin}`);
+      const origin = result.renderOrigin ? ` — ${result.renderOrigin.label}` : "";
+      if (result.assessable === false) {
+        const reason =
+          result.unassessableReason === "bot-challenge"
+            ? "bot check"
+            : "too little visible text";
+        notify(`Cannot assess — ${reason}`, hostOf(url), options.activateTabId);
+      } else {
+        notify(
+          `${result.renderType} (${result.confidence}%)`,
+          `${hostOf(url)}${origin}`,
+          options.activateTabId,
+        );
+      }
     }
   } catch (error) {
-    notify("Analysis failed", String((error && error.message) || error));
+    notify(
+      "Analysis failed",
+      String((error && error.message) || error),
+      options.activateTabId,
+    );
   }
+}
+
+async function analyzeLink(url, sourceTab) {
+  let newTab;
+  try {
+    newTab = await new Promise((resolve, reject) => {
+      chrome.tabs.create(
+        {
+          url,
+          active: false,
+          index: sourceTab ? sourceTab.index + 1 : undefined,
+          openerTabId: sourceTab?.id,
+        },
+        (createdTab) => {
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            reject(new Error(lastError.message));
+            return;
+          }
+          if (!createdTab) {
+            reject(new Error("The link tab could not be opened."));
+            return;
+          }
+          resolve(createdTab);
+        },
+      );
+    });
+  } catch (error) {
+    notify(
+      t("analysisFailed", "Analysis failed"),
+      String((error && error.message) || error),
+    );
+    return;
+  }
+
+  let readyTab;
+  try {
+    readyTab = await SSRLinkAnalysis.waitForTabReady(chrome.tabs, newTab.id);
+  } catch (error) {
+    const reason = error && error.reason;
+    notify(
+      t("analysisFailed", "Analysis failed"),
+      SSRLinkAnalysis.linkFailureMessage(reason, hostOf(url), t),
+      reason === "closed" ? undefined : newTab.id,
+    );
+    return;
+  }
+
+  await analyzeTab(readyTab, { activateTabId: readyTab.id, link: true });
 }
 
 /**
@@ -197,16 +297,40 @@ function setBadge(renderType, tabId) {
 }
 
 /** Notifications are opt-out; respect the setting before creating one. */
-function notify(title, message) {
+function notify(title, message, activateTabId) {
   chrome.storage.sync.get({ notifications: true }, (settings) => {
     if (!settings.notifications) return;
-    chrome.notifications.create({
+    const options = {
       type: "basic",
       iconUrl: chrome.runtime.getURL("icon48.png"),
       title,
       message,
       priority: 1,
-    });
+    };
+    if (typeof activateTabId === "number") {
+      chrome.notifications.create(
+        `link-analysis:${activateTabId}:${Date.now()}`,
+        options,
+      );
+    } else {
+      chrome.notifications.create(options);
+    }
+  });
+}
+
+function t(key, fallback, substitutions) {
+  const translated = chrome.i18n.getMessage(key, substitutions);
+  if (translated) return translated;
+
+  const values =
+    substitutions === undefined
+      ? []
+      : Array.isArray(substitutions)
+        ? substitutions
+        : [substitutions];
+  return fallback.replace(/\$HOST\$|\$(\d+)/g, (placeholder, index) => {
+    const value = placeholder === "$HOST$" ? values[0] : values[Number(index) - 1];
+    return value === undefined ? placeholder : String(value);
   });
 }
 
