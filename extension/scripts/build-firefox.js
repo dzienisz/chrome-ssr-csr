@@ -6,7 +6,8 @@
  * files into dist/firefox/ (loadable via about:debugging as a temporary
  * add-on) with a transformed manifest:
  *   - background.service_worker -> background.scripts (Firefox MV3 runs
- *     event pages, not service workers)
+ *     event pages, not service workers), with the link-analysis helper loaded
+ *     before background.js
  *   - browser_specific_settings.gecko added: AMO add-on id, minimum
  *     Firefox version (128 — first release supporting content_scripts
  *     world: "MAIN", which probe.js requires), and the data collection
@@ -51,7 +52,7 @@ function buildFirefoxManifest() {
     fs.readFileSync(path.join(EXTENSION_DIR, 'manifest.json'), 'utf8')
   );
 
-  manifest.background = { scripts: ['background.js'] };
+  manifest.background = { scripts: ['src/background/link-analysis.js', 'background.js'] };
   manifest.browser_specific_settings = GECKO_SETTINGS;
 
   return manifest;
