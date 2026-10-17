@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Right-click a link and choose “Analyze link rendering” to open it in a
   background tab, wait for it to load and settle for 1.5 seconds, and analyze it
   through the same history and badge path. A “host: verdict” notification
-  includes the confidence level; clicking it switches to the tab.
+  includes the confidence level; clicking it switches to the tab. The first use
+  on a site asks for access to that site only, as an optional permission without
+  a new install-time warning.
 
 ## [4.4.0] - 2026-10-15
 

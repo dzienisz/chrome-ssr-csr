@@ -27,6 +27,7 @@ const ENGLISH_ONLY_KEYS = [
   "contextMenuAnalyzeLink",
   "linkAnalysisClosed",
   "linkAnalysisNavigated",
+  "linkAnalysisPermissionDenied",
   "linkAnalysisTimeout",
   "decisionConfidence",
   "confidenceTooltip",

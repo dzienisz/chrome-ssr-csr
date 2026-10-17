@@ -365,6 +365,16 @@
       }
     }
   },
+  "linkAnalysisPermissionDenied": {
+    "message": "Site access to $HOST$ was not granted, so the link was not opened.",
+    "description": "Notification body when site access for a linked page is denied",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
   "rerunOnNavigation": {
     "message": "Re-run on navigation",
     "description": "Checkbox in the DevTools panel"

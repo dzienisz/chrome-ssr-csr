@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatLinkVerdict,
   linkFailureMessage,
+  linkOriginPattern,
   waitForTabReady,
 } from "../link-analysis.js";
 
@@ -45,6 +46,27 @@ function expectClean(tabs) {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe("linkOriginPattern", () => {
+  it("uses only the origin for HTTPS links with paths and queries", () => {
+    expect(linkOriginPattern("https://example.com/path?query=1")).toBe(
+      "https://example.com/*",
+    );
+  });
+
+  it("preserves the port for HTTP links", () => {
+    expect(linkOriginPattern("http://example.com:8443/path")).toBe(
+      "http://example.com:8443/*",
+    );
+  });
+
+  it.each(["javascript:alert(1)", "mailto:user@example.com", "not a URL"])(
+    "rejects unsupported URL %s",
+    (url) => {
+      expect(linkOriginPattern(url)).toBeNull();
+    },
+  );
 });
 
 describe("waitForTabReady", () => {
@@ -284,6 +306,20 @@ describe("linkFailureMessage", () => {
     expect(translate).toHaveBeenCalledWith(
       "linkAnalysisTimeout",
       "$HOST$ did not finish loading within 30 seconds. The tab was left open.",
+      ["example.com"],
+    );
+  });
+
+  it("formats the permission-denied message with the host", () => {
+    const translate = vi.fn((key, fallback, substitutions) =>
+      fallback.replace("$HOST$", substitutions[0]).replace("$1", substitutions[0]));
+
+    expect(linkFailureMessage("permission", "example.com", translate)).toBe(
+      "Site access to example.com was not granted, so the link was not opened.",
+    );
+    expect(translate).toHaveBeenCalledWith(
+      "linkAnalysisPermissionDenied",
+      "Site access to $HOST$ was not granted, so the link was not opened.",
       ["example.com"],
     );
   });

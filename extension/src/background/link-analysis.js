@@ -1,6 +1,16 @@
 const LINK_LOAD_TIMEOUT_MS = 30000;
 const LINK_SETTLE_MS = 1500;
 
+function linkOriginPattern(url) {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") return null;
+    return `${parsedUrl.origin}/*`;
+  } catch (error) {
+    return null;
+  }
+}
+
 function waitForTabReady(tabs, tabId, options = {}) {
   const { timeoutMs = LINK_LOAD_TIMEOUT_MS, settleMs = LINK_SETTLE_MS } = options;
 
@@ -171,6 +181,7 @@ function formatLinkVerdict(result, host, t) {
 
 function linkFailureMessage(reason, host, t) {
   const messages = {
+    unsupported: [null, "Only HTTP and HTTPS links can be analyzed."],
     timeout: [
       "linkAnalysisTimeout",
       "$HOST$ did not finish loading within 30 seconds. The tab was left open.",
@@ -183,12 +194,17 @@ function linkFailureMessage(reason, host, t) {
       "linkAnalysisNavigated",
       "The tab left $HOST$ before it could be analyzed. The tab was left open.",
     ],
+    permission: [
+      "linkAnalysisPermissionDenied",
+      "Site access to $HOST$ was not granted, so the link was not opened.",
+    ],
   };
   const [key, fallback] = messages[reason] || messages.timeout;
-  return t(key, fallback, [host]);
+  return key ? t(key, fallback, [host]) : fallback;
 }
 
 const SSRLinkAnalysis = {
+  linkOriginPattern,
   waitForTabReady,
   formatLinkVerdict,
   linkFailureMessage,

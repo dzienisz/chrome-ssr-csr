@@ -51,7 +51,31 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === MENU_ID && tab) analyzeTab(tab);
-  if (info.menuItemId === LINK_MENU_ID && info.linkUrl) analyzeLink(info.linkUrl, tab);
+  if (info.menuItemId === LINK_MENU_ID && info.linkUrl) {
+    const pattern = SSRLinkAnalysis.linkOriginPattern(info.linkUrl);
+    if (!pattern) {
+      notify(
+        t("analysisFailed", "Analysis failed"),
+        SSRLinkAnalysis.linkFailureMessage("unsupported", hostOf(info.linkUrl), t),
+      );
+      return;
+    }
+
+    // activeTab covers only the clicked tab. The browser remembers
+    // this site-specific request.
+    chrome.permissions.request({ origins: [pattern] }, (granted) => {
+      const lastError = chrome.runtime.lastError;
+      if (granted && !lastError) {
+        analyzeLink(info.linkUrl, tab);
+        return;
+      }
+
+      notify(
+        t("analysisFailed", "Analysis failed"),
+        SSRLinkAnalysis.linkFailureMessage("permission", hostOf(info.linkUrl), t),
+      );
+    });
+  }
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {
