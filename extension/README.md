@@ -39,6 +39,7 @@ Firefox loads the copy in `dist/firefox/`, not your live `src/` edits — re-run
   Server-Timing, read from the document's own response headers
 - **Regions** — which parts of the page the server sent and which ones
   JavaScript filled in, with character counts per region
+- **Server view** — compare the server HTML, with JavaScript off in a sandboxed frame, beside the live page screenshot
 - **DevTools panel** ("Rendering") — the same report at full width, re-running
   on every navigation
 
