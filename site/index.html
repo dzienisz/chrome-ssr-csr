@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CSR vs SSR Detector — see how any page really renders (Chrome, Edge &amp; Firefox)</title>
-<meta name="description" content="Free browser extension that diffs the raw HTML your server sent against the rendered DOM — and tells you SSR, CSR or hybrid, with the evidence. Plus framework, tech stack and Core Web Vitals.">
+<title>CSR vs SSR Detector — real content, or an empty shell? (Chrome, Edge &amp; Firefox)</title>
+<meta name="description" content="Many modern apps send an empty HTML shell and build the page with JavaScript. This free extension re-fetches the server HTML, compares it with what you see, and shows SSR, CSR or hybrid with the evidence.">
 <link rel="canonical" href="https://dzienko.dev/chrome-ssr-csr/">
-<meta property="og:title" content="CSR vs SSR Detector — does Google see your content, or an empty div?">
-<meta property="og:description" content="One click diffs raw HTML vs rendered DOM and returns a verdict with confidence and every indicator behind it. Chrome, Edge &amp; Firefox.">
+<meta property="og:title" content="CSR vs SSR Detector — real content, or an empty shell?">
+<meta property="og:description" content="Re-fetches the page's server HTML, compares it with the rendered page, and shows the verdict, a confidence level and how much of the visible text came from the server. Chrome, Edge &amp; Firefox.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dzienko.dev/chrome-ssr-csr/">
 <meta property="og:image" content="https://dzienko.dev/chrome-ssr-csr/og-image.png">
@@ -17,8 +17,8 @@
 <meta property="og:site_name" content="CSR vs SSR Detector">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CSR vs SSR Detector — does Google see your content, or an empty div?">
-<meta name="twitter:description" content="One click diffs raw HTML vs rendered DOM and returns a verdict with confidence and every indicator behind it.">
+<meta name="twitter:title" content="CSR vs SSR Detector — real content, or an empty shell?">
+<meta name="twitter:description" content="Re-fetches the page's server HTML, compares it with the rendered page, and shows how much of the visible text came from the server.">
 <meta name="twitter:image" content="https://dzienko.dev/chrome-ssr-csr/og-image.png">
 <meta name="theme-color" content="#0a0f1a">
 <link rel="icon" href="icon128.png" type="image/png">
@@ -309,6 +309,45 @@
     border-radius: 6px; padding: 8px 16px; color: var(--ink); background: var(--panel2);
   }
 
+  /* empty-shell comparison */
+  .shell-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 40px; }
+  @media (max-width: 860px) { .shell-compare { grid-template-columns: minmax(0, 1fr); } }
+  .shell { border: 1px solid; border-radius: 12px; background: var(--panel); padding: 22px 22px 20px; display: flex; flex-direction: column; min-width: 0; }
+  .shell.sh-csr { border-color: var(--csr-line); } .shell.sh-ssr { border-color: var(--ssr-line); }
+  .shell .vtag { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .08em; }
+  .shell.sh-csr .vtag { color: var(--csr); } .shell.sh-ssr .vtag { color: var(--ssr); }
+  .shell h3 { font-size: 18px; margin-top: 8px; }
+  .shell pre {
+    margin-top: 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+    background: #080d17; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+    overflow-x: auto; color: var(--dim); flex: 1; tab-size: 2;
+  }
+  .shell pre:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .shell pre .k { color: var(--ink); }
+  .shell pre .c-csr { color: var(--csr); font-weight: 700; }
+  .shell pre .c-ssr { color: var(--ssr); font-weight: 700; }
+  .shell p { font-size: 14.5px; color: var(--dim); margin-top: 14px; }
+  .shell p b { color: var(--ink); font-weight: 600; }
+  .shell-note { margin-top: 22px; color: var(--dim); font-size: 15px; max-width: 70ch; }
+  .shell-note code { font-family: var(--mono); font-size: 0.85em; background: var(--panel); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+
+  /* who only sees your server HTML */
+  .readers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 40px; }
+  @media (max-width: 900px) { .readers { grid-template-columns: minmax(0, 1fr); } }
+  .reader { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; }
+  .reader .rtag { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--acc); }
+  .reader h3 { font-size: 18px; margin-top: 10px; line-height: 1.3; }
+  .reader p { font-size: 14.5px; color: var(--dim); margin-top: 10px; }
+  .reader p q { color: var(--ink); }
+  .reader .src { margin-top: auto; padding-top: 16px; font-size: 13.5px; color: var(--dim); }
+  .reader .src a, .caveat a { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; }
+  .reader .src a:hover, .caveat a:hover { color: var(--ink); }
+  .caveat {
+    margin-top: 20px; border: 1px dashed var(--line2); border-radius: 12px; padding: 20px 24px;
+    color: var(--dim); font-size: 15px; background: rgba(16,26,46,0.6);
+  }
+  .caveat b { color: var(--ink); }
+
   /* faq */
   .faq { margin-top: 36px; display: grid; gap: 12px; max-width: 780px; }
   details {
@@ -355,6 +394,7 @@
       CSR vs SSR Detector
     </a>
     <div class="nav-links">
+      <a href="#problem">The problem</a>
       <a href="#how">How it works</a>
       <a href="#features">What you get</a>
       <a href="#privacy">Privacy</a>
@@ -364,8 +404,8 @@
 
   <header class="hero">
     <span class="eyebrow"><span class="dot"></span> free extension · Chrome + Edge + Firefox · MIT</span>
-    <h1>Does Google see your content — or an <span class="w-csr">empty&nbsp;div</span>?<span class="cursor"></span></h1>
-    <p class="hero-sub">One click and the extension <strong>diffs the raw HTML your server sent against the rendered DOM</strong>, then tells you how the page is built: <strong>SSR</strong>, <strong>CSR</strong> or hybrid — with a confidence score and every indicator behind it.</p>
+    <h1>Real content, or an <span class="w-csr">empty&nbsp;shell</span>?<span class="cursor"></span></h1>
+    <p class="hero-sub">Many modern apps send <code>&lt;div id="root"&gt;&lt;/div&gt;</code> and a script bundle, then build the page in the browser. Anything that reads only the server's HTML gets that shell. One click <strong>re-fetches the page's server HTML and compares it with what you see</strong>, then tells you whether it is <strong>server-rendered</strong>, <strong>client-rendered</strong> or hybrid, and how much of the visible text the server actually sent.</p>
     <div class="cta-row">
       <a class="btn btn-ink" href="https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg">Add to Chrome</a>
       <a class="btn btn-line" href="https://microsoftedge.microsoft.com/addons/detail/ffnkjnckfaboknffjlfenkbjfhmoahih">Get it for Edge</a>
@@ -410,14 +450,85 @@
     <div class="ticker" id="ticker"></div>
   </div>
 
+  <section id="problem">
+    <span class="sec-eyebrow">The empty-shell problem</span>
+    <h2>Your browser shows a page. The server may have sent a shell.</h2>
+    <p class="sec-sub">A client-rendered app answers the first request with a near-empty document and a script bundle. JavaScript then fetches the data and builds the page in the browser. You see the finished page; anything that reads only the HTML response sees the shell. A server-rendered page puts the content in that response.</p>
+    <div class="shell-compare reveal">
+      <div class="shell sh-csr">
+        <span class="vtag">● EMPTY SHELL</span>
+        <h3>Client-rendered: the HTML response</h3>
+        <pre tabindex="0" aria-label="Example HTML response of a client-rendered app"><span class="k">&lt;!DOCTYPE html&gt;</span>
+<span class="k">&lt;html lang="en"&gt;</span>
+<span class="k">&lt;head&gt;</span>
+  &lt;title&gt;Acme Store&lt;/title&gt;
+  &lt;script type="module" src="/assets/index.js"&gt;&lt;/script&gt;
+<span class="k">&lt;/head&gt;</span>
+<span class="k">&lt;body&gt;</span>
+  <span class="c-csr">&lt;div id="root"&gt;&lt;/div&gt;</span>
+<span class="k">&lt;/body&gt;</span>
+<span class="k">&lt;/html&gt;</span></pre>
+        <p><b>No headings, text or links.</b> The product title, description and prices exist only after <code style="font-family:var(--mono);font-size:.85em;">index.js</code> runs.</p>
+      </div>
+      <div class="shell sh-ssr">
+        <span class="vtag">● SERVER-RENDERED</span>
+        <h3>The same page, rendered on the server</h3>
+        <pre tabindex="0" aria-label="Example HTML response of a server-rendered page"><span class="k">&lt;!DOCTYPE html&gt;</span>
+<span class="k">&lt;html lang="en"&gt;</span>
+<span class="k">&lt;head&gt;</span>
+  &lt;title&gt;Trail Running Shoes · Acme Store&lt;/title&gt;
+  &lt;meta property="og:image" content="/og/shoes.jpg"&gt;
+<span class="k">&lt;/head&gt;</span>
+<span class="k">&lt;body&gt;</span>
+  &lt;div id="root"&gt;
+    <span class="c-ssr">&lt;h1&gt;Trail Running Shoes&lt;/h1&gt;</span>
+    <span class="c-ssr">&lt;p&gt;Light, grippy, waterproof.&lt;/p&gt;</span>
+    <span class="c-ssr">&lt;a href="/shoes/trail-2"&gt;Trail 2: $129&lt;/a&gt;</span>
+  &lt;/div&gt;
+  &lt;script type="module" src="/assets/index.js"&gt;&lt;/script&gt;
+<span class="k">&lt;/body&gt;</span>
+<span class="k">&lt;/html&gt;</span></pre>
+        <p><b>The content is in the response.</b> JavaScript can still hydrate it to make it interactive.</p>
+      </div>
+    </div>
+    <p class="shell-note">You can check this by hand with <code>view-source:</code> or <code>curl</code>. The extension does it for you on any page: it measures how much of the visible text was in the server HTML, and which regions JavaScript filled in.</p>
+  </section>
+
+  <section id="readers">
+    <span class="sec-eyebrow">Why it matters</span>
+    <h2>Who only sees your server HTML?</h2>
+    <p class="sec-sub">Your visitors' browsers run JavaScript. Many of the programs that read your pages run it later, or not at all.</p>
+    <div class="readers reveal">
+      <div class="reader">
+        <span class="rtag">Search engines</span>
+        <h3>Googlebot renders JavaScript, in a later pass</h3>
+        <p>Google crawls the HTML first and queues the page for rendering in headless Chromium. Google says a page <q>may stay on this queue for a few seconds, but it can take longer than that</q>. Text that only appears after JavaScript waits for that pass and depends on your scripts running correctly in Google's renderer. Google still calls server-side or pre-rendering <q>a great idea</q>, because <q>not all bots can run JavaScript</q>.</p>
+        <p class="src">Source: <a href="https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics">Google Search Central, JavaScript SEO basics</a></p>
+      </div>
+      <div class="reader">
+        <span class="rtag">Link previews</span>
+        <h3>Many unfurlers read only the HTML response</h3>
+        <p>When a link is pasted into a chat app or a social network, a bot fetches the URL and reads the title, description and image from the meta tags. Many of these preview bots don't run JavaScript, so tags your app sets in the browser may never reach them. Slack, for example, documents that its link expander fetches <q>as little of the page as it can</q> to extract the meta tags.</p>
+        <p class="src">Source: <a href="https://api.slack.com/robots">Slack, Slack Robots</a></p>
+      </div>
+      <div class="reader">
+        <span class="rtag">AI crawlers</span>
+        <h3>Many AI crawlers don't execute JavaScript</h3>
+        <p>In Vercel and MERJ's December 2024 analysis of crawler traffic, none of the major AI crawlers they measured (from OpenAI, Anthropic, Meta, ByteDance and Perplexity) rendered JavaScript. ChatGPT's and Claude's crawlers downloaded script files but didn't run them. Gemini, which uses Googlebot's infrastructure, and Applebot did render pages.</p>
+        <p class="src">Source: <a href="https://vercel.com/blog/the-rise-of-the-ai-crawler">Vercel, The rise of the AI crawler</a></p>
+      </div>
+    </div>
+    <p class="caveat"><b>What the extension can and can't tell you.</b> It re-fetches the page from your browser, with your cookies, so it shows the HTML your server sends to a browser. Some sites serve bots different HTML, and crawlers change over time, so read the result as a strong hint about what a reader without JavaScript gets, not as a replay of any particular bot.</p>
+  </section>
+
   <section id="how">
     <span class="sec-eyebrow">How it works</span>
     <h2>Direct evidence, not guesswork.</h2>
-    <p class="sec-sub">Most detectors sniff for framework markers and call it a day. This one goes straight to the source: it re-fetches the page's raw HTML and compares it, byte for byte, with what the browser actually built.</p>
+    <p class="sec-sub">Most detectors sniff for framework markers and call it a day. This one goes to the source: it re-fetches the page's server HTML and compares its text, word by word, with what the browser actually built.</p>
     <div class="steps reveal">
-      <div class="step"><span class="num">$ 01</span><b>Click the icon</b><p>On any page. The extension fetches the same URL again — exactly what a crawler receives — and snapshots the live DOM next to it.</p></div>
-      <div class="step"><span class="num">$ 02</span><b>Diff raw vs rendered</b><p>Both sides are measured identically — <code>script/style/noscript</code> stripped, real text counted. If the server sent 4% of the visible text, that's decisive CSR evidence.</p></div>
-      <div class="step"><span class="num">$ 03</span><b>Get the verdict</b><p>15+ weighted signals — hydration markers, serialized state, timing, meta — refine the diff into SSR / CSR / hybrid with a confidence score you can inspect.</p></div>
+      <div class="step"><span class="num">$ 01</span><b>Click the icon</b><p>On any page. The extension fetches the same URL again, which returns the server's HTML before any JavaScript runs, and reads the live page next to it. If the site refuses that second request, it falls back to a text measurement taken while the page was parsing, and lowers the confidence level.</p></div>
+      <div class="step"><span class="num">$ 02</span><b>Compare server HTML with the page</b><p>Both sides are measured the same way: <code>script/style/noscript</code> and hidden elements are left out, and visible words are counted. If the server sent only a small share of the visible words, that's strong client-rendered evidence.</p></div>
+      <div class="step"><span class="num">$ 03</span><b>Get the verdict</b><p>15+ weighted signals (hydration markers, serialized state, timing, meta) refine the comparison into SSR, CSR or hybrid, with a High, Medium or Low confidence level and a “Why this verdict” path you can inspect.</p></div>
     </div>
   </section>
 
@@ -457,9 +568,9 @@
     <span class="sec-eyebrow">What you get</span>
     <h2>A verdict plus the whole stack behind it.</h2>
     <div class="features reveal">
-      <div class="feat"><span class="ic">%</span><div><b>Confidence + evidence</b><p>Every verdict lists the signals that drove it, with the points each contributed and what it actually observed — no black box.</p></div></div>
+      <div class="feat"><span class="ic">%</span><div><b>Confidence level + evidence</b><p>High, Medium or Low, depending on how clearly the text could be measured. “Why this verdict” walks through the decision, and every signal is listed with its points and what it observed. No black box.</p></div></div>
       <div class="feat"><span class="ic">◎</span><div><b>Rendered where</b><p>Built at build time, served from a CDN cache, or rendered for this request — read from the document's own response headers, with the CDN, cache state, age and TTFB.</p></div></div>
-      <div class="feat"><span class="ic">▚</span><div><b>Region breakdown</b><p>Which parts of the page the server sent and which ones JavaScript built, character by character. <code style="font-family:var(--mono);font-size:.85em;">#root</code> gained 12,400 characters after the scripts ran.</p></div></div>
+      <div class="feat"><span class="ic">▚</span><div><b>Server vs JavaScript, by region</b><p>What share of the visible text came from the server and what JavaScript added, then which parts of the page each one built, character by character. <code style="font-family:var(--mono);font-size:.85em;">#root</code> gained 12,400 characters after the scripts ran.</p></div></div>
       <div class="feat"><span class="ic">⌗</span><div><b>DevTools panel</b><p>The whole report at full width in a “Rendering” panel, re-running on every navigation while you work.</p></div></div>
       <div class="feat"><span class="ic">⬡</span><div><b>Framework detection</b><p>Next.js (incl. App Router), Nuxt, React, Vue, Angular, SvelteKit, Astro, Gatsby, WordPress and more.</p></div></div>
       <div class="feat"><span class="ic">⚡</span><div><b>Core Web Vitals</b><p>LCP, CLS, INP and TTFB measured on the live page — plus Long Animation Frame stats.</p></div></div>
@@ -487,6 +598,10 @@
     <span class="sec-eyebrow">FAQ</span>
     <h2>Questions people actually ask.</h2>
     <div class="faq reveal">
+      <details>
+        <summary>Why does my page look empty without JavaScript?</summary>
+        <p>Because the server sent an empty shell. In a client-rendered app the HTML response is mostly a <code>&lt;div id="root"&gt;&lt;/div&gt;</code> and a script tag; the bundle then fetches data and builds the page. With JavaScript off, or for any reader that doesn't run it, nothing builds the page and the root stays empty. The usual fixes are server-side rendering, static generation at build time, or at least putting the title and meta tags in the server HTML. Run the extension before and after the change: the share of visible text from the server should go up.</p>
+      </details>
       <details>
         <summary>What exactly leaves my browser?</summary>
         <p>Detection itself: nothing — the diff and scoring run locally. If telemetry is on (it is by default), the extension sends one anonymous record per analysis: render type, confidence, frameworks, Web Vitals, and the site's <strong>origin</strong> (e.g. <code>example.com</code>) — never the full URL, path, or page content. Response headers and the region breakdown are never sent at all; they are computed on your device, shown to you, and discarded. Disable telemetry in settings with one toggle.</p>
@@ -553,7 +668,7 @@ const SITES = {
       ['ok',  'verdict → SSR 92 / CSR 8'],
     ],
     verdict: ['ssr', '✓ Server-Side Rendered'],
-    conf: 'confidence <b>92%</b>',
+    conf: 'confidence <b>High</b>',
     fill: ['ssr', 92], score: 'SSR 92 · CSR 8',
     indicators: [
       ['ssr', '+30', 'raw HTML matches rendered content'],
@@ -575,7 +690,7 @@ const SITES = {
       ['bad', 'verdict → SSR 6 / CSR 94'],
     ],
     verdict: ['csr', '✗ Client-Side Rendered'],
-    conf: 'confidence <b>94%</b>',
+    conf: 'confidence <b>High</b>',
     fill: ['csr', 94], score: 'SSR 6 · CSR 94',
     indicators: [
       ['csr', '+40', 'raw ≪ rendered (4% of text)'],
@@ -596,7 +711,7 @@ const SITES = {
       ['warn','verdict → SSR 48 / CSR 22 → hybrid'],
     ],
     verdict: ['mix', '◐ Hybrid / Islands'],
-    conf: 'confidence <b>78%</b>',
+    conf: 'confidence <b>Medium</b>',
     fill: ['mix', 55], score: 'SSR 48 · CSR 22 · hybrid 30',
     indicators: [
       ['ssr', '+30', 'raw HTML has the content'],
@@ -615,7 +730,7 @@ const SITES = {
       ['ok',  'verdict → SSR 86 / CSR 14'],
     ],
     verdict: ['ssr', '✓ Server-Side Rendered'],
-    conf: 'confidence <b>86%</b>',
+    conf: 'confidence <b>High</b>',
     fill: ['ssr', 86], score: 'SSR 86 · CSR 14',
     indicators: [
       ['ssr', '+30', 'raw HTML matches rendered content'],
