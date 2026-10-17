@@ -267,6 +267,46 @@
     "message": "Regions",
     "description": "Card title for the per-region server/client breakdown"
   },
+  "highlightRegions": {
+    "message": "Highlight on page",
+    "description": "Button that outlines the analyzed regions on the live page"
+  },
+  "removeHighlight": {
+    "message": "Remove highlight",
+    "description": "Button that removes the region outlines from the live page"
+  },
+  "highlightHint": {
+    "message": "Outline each region on the page, coloured by where it came from.",
+    "description": "Hint shown beside the button before highlighting page regions"
+  },
+  "highlightStatus": {
+    "message": "Outlined $1 of $2 regions. Press Esc on the page to remove them.",
+    "description": "Status after outlines were added; $1 is drawn count and $2 is total count"
+  },
+  "highlightNoneFound": {
+    "message": "None of these regions are on the page any more. Analyze again.",
+    "description": "Status when none of the analyzed regions match the live page"
+  },
+  "highlightFailed": {
+    "message": "Could not draw on this page.",
+    "description": "Status when page region highlighting fails"
+  },
+  "highlightOriginClient": {
+    "message": "Added by JS",
+    "description": "Chip label for a region added by client-side JavaScript"
+  },
+  "highlightOriginMixed": {
+    "message": "Mixed",
+    "description": "Chip label for a region containing server and client content"
+  },
+  "highlightOriginServer": {
+    "message": "From server",
+    "description": "Chip label for a region supplied by the server"
+  },
+  "highlightServerShare": {
+    "message": "$1% from server",
+    "description": "Server share shown in a page highlight chip; $1 is the percentage"
+  },
   "tabOverview": {
     "message": "Overview",
     "description": "Tab label"

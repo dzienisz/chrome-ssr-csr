@@ -246,13 +246,7 @@ function structuralChildren(el) {
  * @returns {Element|null}
  */
 function findInRaw(rawBody, key) {
-  if (!rawBody) return null;
-  if (key === "body") return rawBody;
-  try {
-    return rawBody.querySelector(key.startsWith("#") ? key : `:scope > ${key}`);
-  } catch (e) {
-    return null;
-  }
+  return window.resolveRegionKey(rawBody, key);
 }
 
 /**
