@@ -275,6 +275,25 @@ await serverViewPage.goto(
 await serverViewPage.waitForSelector("#server-viewport iframe");
 await serverViewPage.waitForTimeout(1000);
 
+const mobileWidthRadio = serverViewPage.locator(
+  '#server-width-controls [data-width-id="mobile"]',
+);
+await mobileWidthRadio.click();
+const mobileWidthState = await serverViewPage.evaluate(() => ({
+  width: document.querySelector("#server-viewport iframe")?.getAttribute("width"),
+  noteVisible: !document.getElementById("server-width-note").hidden,
+}));
+check(
+  mobileWidthState.width === "390" && mobileWidthState.noteVisible,
+  "Mobile selects a 390px server frame and shows the width-only note",
+  JSON.stringify(mobileWidthState),
+);
+await mobileWidthRadio.press("ArrowLeft");
+const tabletSelected = await serverViewPage
+  .locator('#server-width-controls [data-width-id="tablet"]')
+  .getAttribute("aria-checked");
+check(tabletSelected === "true", "ArrowLeft selects Tablet from Mobile");
+
 check(
   !serverViewMessages.some((message) => message.includes("SERVER-VIEW-")),
   "server HTML scripts and event handlers do not run",

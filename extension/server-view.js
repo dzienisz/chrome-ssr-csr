@@ -7,8 +7,6 @@
  * src/ui/server-view-doc.js) — nothing from it touches this document.
  */
 
-const DEFAULT_VIEWPORT = { width: 1280, height: 800 };
-
 document.addEventListener("DOMContentLoaded", () => {
   window.applyI18n(document);
   applyTheme();
@@ -132,26 +130,26 @@ function render(entry) {
   noticeBox.replaceChildren(...notices);
   noticeBox.hidden = notices.length === 0;
 
-  const viewport = validViewport(entry.viewport);
+  const widthApi = window.SSRServerViewWidth;
+  const viewport = widthApi.validViewport(entry.viewport);
+  const options = widthApi.buildOptions(viewport);
   const prepared = window.SSRServerView.prepareSrcdoc(entry.html, entry.url);
   const frame = window.SSRServerView.createServerFrame(
     document,
     prepared.srcdoc,
     window.t("serverViewServerPane", "From the server (no JavaScript)"),
   );
-  frame.width = String(viewport.width);
-  frame.height = String(viewport.height);
   const serverBox = document.getElementById("server-viewport");
   serverBox.replaceChildren(frame);
 
   const liveBox = document.getElementById("live-viewport");
   const liveNote = document.getElementById("live-note");
-  if (typeof entry.liveShot === "string" && entry.liveShot.startsWith("data:image/")) {
+  const hasLiveShot = typeof entry.liveShot === "string" && entry.liveShot.startsWith("data:image/");
+  if (hasLiveShot) {
     const img = document.createElement("img");
     img.src = entry.liveShot;
     img.alt = window.t("serverViewLivePane", "Live page (after JavaScript)");
     liveBox.replaceChildren(img);
-    liveNote.textContent = window.t("serverViewShotNote", "Screenshot of the tab when you opened this view.");
   } else {
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder";
@@ -163,23 +161,92 @@ function render(entry) {
     liveNote.textContent = "";
   }
 
-  document.getElementById("panes").hidden = false;
+  const widthNote = document.getElementById("server-width-note");
+  const widthControls = document.getElementById("server-width-controls");
+  const labelKeys = {
+    desktop: ["serverViewWidthDesktop", "Desktop"],
+    tablet: ["serverViewWidthTablet", "Tablet"],
+    mobile: ["serverViewWidthMobile", "Mobile"],
+    window: ["serverViewWidthWindow", "Window"],
+  };
+  const buttons = options.map((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-checked", "false");
+    button.dataset.widthId = option.id;
+    button.tabIndex = -1;
+
+    const [key, fallback] = labelKeys[option.id];
+    const name = document.createElement("span");
+    name.textContent = window.t(key, fallback);
+    const width = document.createElement("span");
+    width.className = "width-option-value";
+    width.textContent = String(option.width);
+    button.append(name, width);
+    button.addEventListener("click", () => selectOption(option));
+    return button;
+  });
+  widthControls.replaceChildren(...buttons);
+
+  let selectedOption = options.find(
+    (option) => option.id === widthApi.defaultOptionId(viewport),
+  ) || options[0];
 
   const fit = () => {
-    const scale = serverBox.clientWidth / viewport.width;
-    const height = `${Math.round(viewport.height * scale)}px`;
+    const { scale, boxHeight, offsetX } = widthApi.computeFit(
+      serverBox.clientWidth,
+      selectedOption.width,
+      selectedOption.height,
+    );
+    frame.width = String(selectedOption.width);
+    frame.height = String(selectedOption.height);
     frame.style.transform = `scale(${scale})`;
-    serverBox.style.height = height;
-    if (!liveBox.querySelector("img")) liveBox.style.height = height;
+    frame.style.left = `${offsetX}px`;
+    serverBox.style.height = `${boxHeight}px`;
+    if (!hasLiveShot) liveBox.style.height = `${boxHeight}px`;
   };
-  fit();
-  new ResizeObserver(fit).observe(serverBox);
-}
 
-function validViewport(value) {
-  const width = Number(value && value.width);
-  const height = Number(value && value.height);
-  return width >= 200 && width <= 10000 && height >= 200 && height <= 10000
-    ? { width: Math.round(width), height: Math.round(height) }
-    : DEFAULT_VIEWPORT;
+  function selectOption(option) {
+    selectedOption = option;
+    buttons.forEach((button) => {
+      const checked = button.dataset.widthId === option.id;
+      button.setAttribute("aria-checked", String(checked));
+      button.tabIndex = checked ? 0 : -1;
+    });
+    widthNote.hidden = !widthApi.showsWidthNote(option.id);
+    if (hasLiveShot) {
+      liveNote.textContent = widthApi.liveShotLabelNeeded(option, viewport)
+        ? window
+            .t("serverViewShotAtWidth", "Live screenshot at {width}px (your window)")
+            .replace("{width}", String(viewport.width))
+        : window.t("serverViewShotNote", "Screenshot of the tab when you opened this view.");
+    }
+    fit();
+  }
+
+  widthControls.addEventListener("keydown", (event) => {
+    const currentIndex = buttons.findIndex((button) => button === document.activeElement);
+    if (currentIndex < 0) return;
+
+    let nextIndex;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (currentIndex + 1) % buttons.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = buttons.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    selectOption(options[nextIndex]);
+    buttons[nextIndex].focus();
+  });
+
+  document.getElementById("panes").hidden = false;
+  selectOption(selectedOption);
+  new ResizeObserver(fit).observe(serverBox);
 }
