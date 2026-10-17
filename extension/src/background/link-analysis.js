@@ -156,9 +156,9 @@ function formatLinkVerdict(result, host, t) {
   }
 
   const levels = {
-    High: t("confidenceLevelHigh", "High"),
-    Medium: t("confidenceLevelMedium", "Medium"),
-    Low: t("confidenceLevelLow", "Low"),
+    high: t("confidenceLevelHigh", "High"),
+    medium: t("confidenceLevelMedium", "Medium"),
+    low: t("confidenceLevelLow", "Low"),
   };
   const levelLabel = levels[result.confidenceLevel] || `${Math.round(result.confidence)}%`;
   const origin = result.renderOrigin?.label ? ` · ${result.renderOrigin.label}` : "";

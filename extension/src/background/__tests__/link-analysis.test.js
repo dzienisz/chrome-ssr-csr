@@ -235,7 +235,7 @@ describe("formatLinkVerdict", () => {
       assessable: true,
       renderType: "Server-Side Rendered (SSR)",
       confidence: 93,
-      confidenceLevel: "High",
+      confidenceLevel: "high",
       renderOrigin: { label: "Rendered once, served from cache" },
     }, "en.wikipedia.org", translate)).toEqual({
       title: "en.wikipedia.org: Server-Side Rendered (SSR)",
@@ -267,7 +267,7 @@ describe("formatLinkVerdict", () => {
       assessable: true,
       renderType: "Hybrid",
       confidence: 41,
-      confidenceLevel: "Medium",
+      confidenceLevel: "medium",
       renderOrigin: { label: "Generated on the server" },
     }, "example.com", translate).message).toBe("Medium confidence · Generated on the server");
   });
