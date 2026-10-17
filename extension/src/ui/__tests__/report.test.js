@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import "../jev.js";
 import "../report.js";
@@ -8,6 +8,7 @@ const {
   verdictBadge,
   confidenceLevelLabel,
   historyConfidenceText,
+  regionServerPct,
   renderVerdict,
   renderOverview,
   renderSignals,
@@ -987,6 +988,21 @@ describe("renderDelivery", () => {
 });
 
 describe("renderDiff", () => {
+  it("calculates the region server percentage using covered or raw characters", () => {
+    expect(
+      regionServerPct({
+        rawChars: 80,
+        coveredChars: 50,
+        renderedChars: 200,
+      }),
+    ).toBe(25);
+    expect(regionServerPct({ rawChars: 80, renderedChars: 100 })).toBe(80);
+    expect(regionServerPct({ rawChars: 80, renderedChars: 0 })).toBe(100);
+    expect(
+      regionServerPct({ rawChars: 200, coveredChars: 500, renderedChars: 100 }),
+    ).toBe(100);
+  });
+
   it("renders one row per region", () => {
     const container = document.createElement("div");
     container.appendChild(renderDiff(result()));
@@ -1014,9 +1030,72 @@ describe("renderDiff", () => {
 
     expect(container.textContent).toContain("0 from server");
     expect(track.querySelector(".split-server").style.width).toBe("0%");
+    expect(regionServerPct(data.detailedInfo.domDiff.regions[0])).toBe(0);
     expect(track.getAttribute("aria-label")).toBe(
       "0 characters from server, 720 added by JavaScript",
     );
+  });
+
+  it("renders the highlight control, toggles, and status copy when requested", () => {
+    const onToggle = vi.fn();
+    const container = document.createElement("div");
+    container.appendChild(
+      renderDiff(result(), { highlight: { active: false, status: "idle", onToggle } }),
+    );
+    const button = container.querySelector("#highlight-toggle");
+
+    expect(button.textContent).toBe("Highlight on page");
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+    expect(container.querySelector(".highlight-status").textContent).toBe(
+      "Outline each region on the page, coloured by where it came from.",
+    );
+    expect(container.children[0].className).toBe("card");
+    expect(container.children[1].className).toBe("highlight-row");
+    expect(container.children[2].className).toBe("card");
+    button.click();
+    expect(onToggle).toHaveBeenCalledOnce();
+
+    const active = document.createElement("div");
+    active.appendChild(
+      renderDiff(result(), {
+        highlight: { active: true, status: "shown", drawn: 1, total: 2 },
+      }),
+    );
+    expect(active.querySelector("#highlight-toggle").textContent).toBe("Remove highlight");
+    expect(active.querySelector("#highlight-toggle").getAttribute("aria-pressed")).toBe("true");
+    expect(active.querySelector(".highlight-status").textContent).toBe(
+      "Outlined 1 of 2 regions. Press Esc on the page to remove them.",
+    );
+  });
+
+  it.each([
+    ["none", "None of these regions are on the page any more. Analyze again."],
+    ["error", "Could not draw on this page."],
+  ])("shows the %s highlight status", (status, expected) => {
+    const container = document.createElement("div");
+    container.appendChild(renderDiff(result(), { highlight: { status } }));
+
+    expect(container.querySelector(".highlight-status").textContent).toBe(expected);
+  });
+
+  it("marks the highlight control busy while working", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderDiff(result(), { highlight: { status: "working" } }));
+    const button = container.querySelector("#highlight-toggle");
+
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    expect(container.querySelector(".highlight-status").textContent).toBe(
+      "Outline each region on the page, coloured by where it came from.",
+    );
+  });
+
+  it("keeps the DevTools rendering unchanged when no highlight option is supplied", () => {
+    const container = document.createElement("div");
+    container.appendChild(renderDiff(result()));
+
+    expect(container.querySelector("#highlight-toggle")).toBeNull();
+    expect(container.querySelector(".highlight-row")).toBeNull();
   });
 
   it("explains itself when the raw HTML was unavailable", () => {
@@ -1024,5 +1103,17 @@ describe("renderDiff", () => {
     data.detailedInfo.domDiff = { available: false };
 
     expect(renderDiff(data).className).toBe("empty");
+    expect(
+      renderDiff(data, { highlight: { active: false } }).querySelector("#highlight-toggle"),
+    ).toBeNull();
+  });
+
+  it("does not show a highlight control with no regions", () => {
+    const data = result();
+    data.detailedInfo.domDiff.regions = [];
+
+    expect(
+      renderDiff(data, { highlight: { active: false } }).querySelector("#highlight-toggle"),
+    ).toBeNull();
   });
 });

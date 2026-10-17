@@ -89,6 +89,17 @@ function historyConfidenceText(result) {
   return level ? `${level} · ` : `${result.confidence}% · `;
 }
 
+function regionServerChars(region) {
+  return region.coveredChars ?? Math.min(region.rawChars, region.renderedChars);
+}
+
+function regionServerPct(region) {
+  const serverChars = regionServerChars(region);
+  return region.renderedChars > 0
+    ? Math.max(0, Math.min(100, Math.round((serverChars / region.renderedChars) * 100)))
+    : 100;
+}
+
 function confidenceDetail(decision) {
   const measurement = decision.measurement;
   const limits = measurement?.bandLimits || {};
@@ -1040,7 +1051,7 @@ function renderDelivery(result) {
  * Diff tab: which regions the server sent and which JavaScript built.
  * @param {Object} result
  */
-function renderDiff(result) {
+function renderDiff(result, options = {}) {
   const diff = (result.detailedInfo || {}).domDiff;
 
   if (!diff || !diff.available) {
@@ -1059,6 +1070,62 @@ function renderDiff(result) {
   stats.appendChild(stat("After scripts", num(diff.renderedElements)));
   frag.appendChild(el("section", { className: "card", children: [stats] }));
 
+  if (options.highlight && diff.regions.length > 0) {
+    const highlight = options.highlight;
+    const working = highlight.status === "working";
+    const button = el("button", {
+      className: "btn",
+      attrs: {
+        type: "button",
+        id: "highlight-toggle",
+        "aria-pressed": String(Boolean(highlight.active)),
+        "aria-busy": working ? "true" : null,
+        disabled: working ? "" : null,
+      },
+      text: label(
+        highlight.active ? "removeHighlight" : "highlightRegions",
+        highlight.active ? "Remove highlight" : "Highlight on page",
+      ),
+    });
+    button.addEventListener("click", () => {
+      if (typeof highlight.onToggle === "function") highlight.onToggle();
+    });
+
+    let statusText;
+    if (highlight.status === "shown") {
+      statusText = label(
+        "highlightStatus",
+        `Outlined ${highlight.drawn} of ${highlight.total} regions. Press Esc on the page to remove them.`,
+        [String(highlight.drawn), String(highlight.total)],
+      );
+    } else if (highlight.status === "none") {
+      statusText = label(
+        "highlightNoneFound",
+        "None of these regions are on the page any more. Analyze again.",
+      );
+    } else if (highlight.status === "error") {
+      statusText = label("highlightFailed", "Could not draw on this page.");
+    } else {
+      statusText = label(
+        "highlightHint",
+        "Outline each region on the page, coloured by where it came from.",
+      );
+    }
+    frag.appendChild(
+      el("div", {
+        className: "highlight-row",
+        children: [
+          button,
+          el("p", {
+            className: "highlight-status",
+            attrs: { role: "status" },
+            text: statusText,
+          }),
+        ],
+      }),
+    );
+  }
+
   if (!diff.regions.length) {
     frag.appendChild(
       el("div", { className: "empty", text: "This page has no regions large enough to compare." }),
@@ -1067,12 +1134,8 @@ function renderDiff(result) {
   }
 
   const rows = diff.regions.map((region) => {
-    const serverChars =
-      region.coveredChars ?? Math.min(region.rawChars, region.renderedChars);
-    const serverPct =
-      region.renderedChars > 0
-        ? Math.max(0, Math.min(100, Math.round((serverChars / region.renderedChars) * 100)))
-        : 100;
+    const serverChars = regionServerChars(region);
+    const serverPct = regionServerPct(region);
     const server = el("div", { className: "split-server" });
     const client = el("div", { className: "split-client" });
     server.style.width = `${serverPct}%`;
@@ -1127,6 +1190,7 @@ if (typeof window !== "undefined") {
     stat,
     num,
     ms,
+    regionServerPct,
     verdictKind,
     verdictBadge,
     confidenceLevelLabel,

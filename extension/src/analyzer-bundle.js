@@ -1163,6 +1163,32 @@ if (typeof module !== "undefined" && module.exports) {
 
 
 /**
+ * src/core/region-key.js
+ */
+
+/**
+ * Resolve region keys identically in the analyzer's raw document and in the
+ * live page used by the highlight overlay.
+ * @param {Element|null} root
+ * @param {string} key
+ * @returns {Element|null}
+ */
+function resolveRegionKey(root, key) {
+  if (!root) return null;
+  if (key === "body") return root;
+  try {
+    return root.querySelector(key.startsWith("#") ? key : `:scope > ${key}`);
+  } catch (e) {
+    return null;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.resolveRegionKey = resolveRegionKey;
+}
+
+
+/**
  * src/detectors/dom-diff-detector.js
  */
 
@@ -1414,13 +1440,7 @@ function structuralChildren(el) {
  * @returns {Element|null}
  */
 function findInRaw(rawBody, key) {
-  if (!rawBody) return null;
-  if (key === "body") return rawBody;
-  try {
-    return rawBody.querySelector(key.startsWith("#") ? key : `:scope > ${key}`);
-  } catch (e) {
-    return null;
-  }
+  return window.resolveRegionKey(rawBody, key);
 }
 
 /**

@@ -15,6 +15,7 @@ const detectorFiles = [
   'src/core/config.js',
   'src/detectors/comparison-detector.js',
   'src/detectors/delivery-detector.js',
+  'src/core/region-key.js',
   'src/detectors/dom-diff-detector.js',
   'src/detectors/csr-pattern-detector.js',
   'src/detectors/hybrid-detector.js',
