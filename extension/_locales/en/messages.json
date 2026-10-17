@@ -703,6 +703,10 @@
     "message": "Scripts, forms and pop-ups are disabled in this frame. Styles and images load from the site.",
     "description": "Explains restrictions on the server HTML frame"
   },
+  "serverViewShotAtWidth": {
+    "message": "Live screenshot at {width}px (your window)",
+    "description": "Caption for the unchanged live screenshot when the server frame uses a different width"
+  },
   "serverViewLoading": {
     "message": "Loading server view…",
     "description": "Loading message on the server view page"
@@ -710,5 +714,29 @@
   "serverViewShotNote": {
     "message": "Screenshot of the tab when you opened this view.",
     "description": "Caption for the live page screenshot"
+  },
+  "serverViewWidthDesktop": {
+    "message": "Desktop",
+    "description": "Desktop option in the server-frame width selector"
+  },
+  "serverViewWidthLabel": {
+    "message": "Width",
+    "description": "Accessible label for the server-frame width selector"
+  },
+  "serverViewWidthMobile": {
+    "message": "Mobile",
+    "description": "Mobile option in the server-frame width selector"
+  },
+  "serverViewWidthNote": {
+    "message": "Width only: this is the HTML your browser received. Sites that send different HTML to phones may look different on a real phone.",
+    "description": "Caution shown when the server frame is narrowed to tablet or mobile width"
+  },
+  "serverViewWidthTablet": {
+    "message": "Tablet",
+    "description": "Tablet option in the server-frame width selector"
+  },
+  "serverViewWidthWindow": {
+    "message": "Window",
+    "description": "Option matching the captured browser window width"
   }
 }
