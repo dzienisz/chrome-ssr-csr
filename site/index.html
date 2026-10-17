@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CSR vs SSR Detector — real content, or an empty shell? (Chrome, Edge &amp; Firefox)</title>
+<title>CSR vs SSR Detector — does your server send content, or an empty shell? (Chrome, Edge &amp; Firefox)</title>
 <meta name="description" content="Many modern apps send an empty HTML shell and build the page with JavaScript. This free extension re-fetches the server HTML, compares it with what you see, and shows SSR, CSR or hybrid with the evidence.">
 <link rel="canonical" href="https://dzienko.dev/chrome-ssr-csr/">
-<meta property="og:title" content="CSR vs SSR Detector — real content, or an empty shell?">
+<meta property="og:title" content="CSR vs SSR Detector — does your server send content, or an empty shell?">
 <meta property="og:description" content="Re-fetches the page's server HTML, compares it with the rendered page, and shows the verdict, a confidence level and how much of the visible text came from the server. Chrome, Edge &amp; Firefox.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dzienko.dev/chrome-ssr-csr/">
@@ -17,7 +17,7 @@
 <meta property="og:site_name" content="CSR vs SSR Detector">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CSR vs SSR Detector — real content, or an empty shell?">
+<meta name="twitter:title" content="CSR vs SSR Detector — does your server send content, or an empty shell?">
 <meta name="twitter:description" content="Re-fetches the page's server HTML, compares it with the rendered page, and shows how much of the visible text came from the server.">
 <meta name="twitter:image" content="https://dzienko.dev/chrome-ssr-csr/og-image.png">
 <meta name="theme-color" content="#0a0f1a">
@@ -404,8 +404,8 @@
 
   <header class="hero">
     <span class="eyebrow"><span class="dot"></span> free extension · Chrome + Edge + Firefox · MIT</span>
-    <h1>Real content, or an <span class="w-csr">empty&nbsp;shell</span>?<span class="cursor"></span></h1>
-    <p class="hero-sub">Many modern apps send <code>&lt;div id="root"&gt;&lt;/div&gt;</code> and a script bundle, then build the page in the browser. Anything that reads only the server's HTML gets that shell. One click <strong>re-fetches the page's server HTML and compares it with what you see</strong>, then tells you whether it is <strong>server-rendered</strong>, <strong>client-rendered</strong> or hybrid, and how much of the visible text the server actually sent.</p>
+    <h1>Does your server send content — or an <span class="w-csr">empty&nbsp;shell</span>?<span class="cursor"></span></h1>
+    <p class="hero-sub">Googlebot runs JavaScript later; many AI crawlers and link previews don't run it at all. One click <strong>compares the page's server HTML with what you see</strong>: <strong>SSR</strong>, <strong>CSR</strong> or hybrid, with the evidence.</p>
     <div class="cta-row">
       <a class="btn btn-ink" href="https://chromewebstore.google.com/detail/csr-vs-ssr-detector/fhiopdjeekafnhmfbcfoolhejdgjpkgg">Add to Chrome</a>
       <a class="btn btn-line" href="https://microsoftedge.microsoft.com/addons/detail/ffnkjnckfaboknffjlfenkbjfhmoahih">Get it for Edge</a>
@@ -528,38 +528,23 @@
     <div class="steps reveal">
       <div class="step"><span class="num">$ 01</span><b>Click the icon</b><p>On any page. The extension fetches the same URL again, which returns the server's HTML before any JavaScript runs, and reads the live page next to it. If the site refuses that second request, it falls back to a text measurement taken while the page was parsing, and lowers the confidence level.</p></div>
       <div class="step"><span class="num">$ 02</span><b>Compare server HTML with the page</b><p>Both sides are measured the same way: <code>script/style/noscript</code> and hidden elements are left out, and visible words are counted. If the server sent only a small share of the visible words, that's strong client-rendered evidence.</p></div>
-      <div class="step"><span class="num">$ 03</span><b>Get the verdict</b><p>15+ weighted signals (hydration markers, serialized state, timing, meta) refine the comparison into SSR, CSR or hybrid, with a High, Medium or Low confidence level and a “Why this verdict” path you can inspect.</p></div>
+      <div class="step"><span class="num">$ 03</span><b>Get one of three verdicts</b><p>15+ weighted signals (hydration markers, serialized state, timing, meta) refine the comparison into SSR, CSR or hybrid, with a High, Medium or Low confidence level and a “Why this verdict” path you can inspect.</p></div>
     </div>
-  </section>
-
-  <section id="verdicts">
-    <span class="sec-eyebrow">Three verdicts</span>
-    <h2>Every rendering strategy has a fingerprint.</h2>
     <div class="verdicts reveal">
       <div class="vcard vc-ssr">
         <span class="vtag">● SSR</span>
         <h3>Server-Side Rendered</h3>
-        <p>The content is already in the HTML the server sends. Crawlers, link previews and slow devices all get the full page immediately.</p>
-        <pre><span class="p">&lt;!-- raw HTML, 104 KB --&gt;</span>
-<span class="hl">&lt;article&gt;Real text,
-  fully formed&lt;/article&gt;</span>
-<span class="c-ssr">&lt;script id="__NEXT_DATA__"&gt;</span></pre>
+        <p>The content is already in the HTML the server sends. Readers that don't run JavaScript still get the full page, and slow devices see it sooner.</p>
       </div>
       <div class="vcard vc-csr">
         <span class="vtag">● CSR</span>
         <h3>Client-Side Rendered</h3>
         <p>The server sends a shell and a bundle; JavaScript builds everything after load. Fast for apps, risky for content that needs to rank.</p>
-        <pre><span class="p">&lt;!-- raw HTML, 8 KB --&gt;</span>
-<span class="hl">&lt;div id="root"&gt;&lt;/div&gt;</span>
-<span class="c-csr">&lt;script src="bundle.js"&gt;</span></pre>
       </div>
       <div class="vcard vc-mix">
         <span class="vtag">● HYBRID</span>
         <h3>Islands / partial hydration</h3>
         <p>A static server-rendered shell with interactive islands hydrated on top — Astro, Next.js partial hydration, streamed Suspense boundaries.</p>
-        <pre><span class="p">&lt;!-- mostly SSR shell --&gt;</span>
-<span class="hl">&lt;astro-island&gt;</span>
-<span class="c-mix">hydrated islands: 4</span></pre>
       </div>
     </div>
   </section>
