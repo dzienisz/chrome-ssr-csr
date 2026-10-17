@@ -10,6 +10,7 @@ const {
   historyConfidenceText,
   renderVerdict,
   renderOverview,
+  renderServerViewCard,
   renderSignals,
   renderDelivery,
   renderDiff,
@@ -843,6 +844,44 @@ describe("renderOverview", () => {
     expect(button.disabled).toBe(false);
     button.click();
     expect(onAsk).toHaveBeenCalledOnce();
+  });
+
+  it("renders an idle server view button and wires its handler", () => {
+    const onOpen = vi.fn();
+    const card = renderServerViewCard({ status: "idle", onOpen });
+    const button = card.querySelector("button");
+
+    expect(button.textContent).toBe("See server view");
+    expect(button.disabled).toBe(false);
+    button.click();
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it("renders a disabled opening state and an accessible error", () => {
+    const loading = renderServerViewCard({ status: "loading" });
+    const button = loading.querySelector("button");
+
+    expect(button.textContent).toBe("Opening…");
+    expect(button.disabled).toBe(true);
+
+    const failed = renderServerViewCard({
+      status: "error",
+      errorMessage: "The page changed.",
+    });
+    expect(failed.querySelector(".server-view-error").getAttribute("aria-live")).toBe("polite");
+    expect(failed.textContent).toContain("Couldn't open the server view (The page changed.)");
+  });
+
+  it("includes the server view card in an overview only when requested", () => {
+    const plain = document.createElement("div");
+    plain.appendChild(renderOverview(result()));
+    expect(plain.querySelector(".server-view-card")).toBeNull();
+
+    const withServerView = document.createElement("div");
+    withServerView.appendChild(
+      renderOverview(result(), { serverView: { status: "idle", onOpen: vi.fn() } }),
+    );
+    expect(withServerView.querySelector(".server-view-card")).not.toBeNull();
   });
 
   it("disables Ask Jev when the comparison did not come from a fetch", () => {

@@ -79,6 +79,23 @@ const ENGLISH_ONLY_KEYS = [
   "jevSettingsTitle",
   "jevUnavailable",
   "privacyNeverBodyJev",
+  "serverViewButton",
+  "serverViewFailed",
+  "serverViewFetchError",
+  "serverViewFetched",
+  "serverViewHint",
+  "serverViewLivePane",
+  "serverViewLoading",
+  "serverViewMissing",
+  "serverViewNoShot",
+  "serverViewNotOk",
+  "serverViewOpening",
+  "serverViewSandboxNote",
+  "serverViewServerPane",
+  "serverViewShotNote",
+  "serverViewStatus",
+  "serverViewTitle",
+  "serverViewTruncated",
 ];
 
 const LOCALES = readdirSync(LOCALES_DIR);

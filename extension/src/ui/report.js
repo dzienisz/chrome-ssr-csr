@@ -760,8 +760,58 @@ function renderOverview(result, options = {}) {
   }
 
   if (options.jev) frag.appendChild(renderJevCard(options.jev));
+  if (options.serverView) frag.appendChild(renderServerViewCard(options.serverView));
 
   return frag;
+}
+
+function renderServerViewCard(serverView) {
+  const button = el("button", {
+    className: "btn",
+    text:
+      serverView.status === "loading"
+        ? label("serverViewOpening", "Opening…")
+        : label("serverViewButton", "See server view"),
+    attrs: {
+      type: "button",
+      disabled: serverView.status === "loading" ? "disabled" : null,
+    },
+  });
+  if (typeof serverView.onOpen === "function") {
+    button.addEventListener("click", serverView.onOpen);
+  }
+
+  const children = [
+    el("div", {
+      className: "server-view-row",
+      children: [
+        el("p", {
+          className: "server-view-hint",
+          text: label(
+            "serverViewHint",
+            "Compare the HTML the server sent with what you see now.",
+          ),
+        }),
+        button,
+      ],
+    }),
+  ];
+  if (serverView.status === "error") {
+    children.push(
+      el("p", {
+        className: "server-view-error",
+        attrs: { "aria-live": "polite" },
+        text: `${label("serverViewFailed", "Couldn't open the server view")}${
+          serverView.errorMessage ? ` (${serverView.errorMessage})` : ""
+        }`,
+      }),
+    );
+  }
+
+  return el("section", {
+    className: "card server-view-card",
+    children,
+  });
 }
 
 function renderJevCard(jev) {
@@ -1135,6 +1185,7 @@ if (typeof window !== "undefined") {
     renderOverview,
     describeDecision,
     renderJevCard,
+    renderServerViewCard,
     renderSignal,
     renderSignals,
     renderDelivery,

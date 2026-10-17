@@ -642,5 +642,73 @@
   "pageChanged": {
     "message": "The page navigated while it was being analyzed. Run it again.",
     "description": "Shown when the page navigated while it was being analyzed"
+  },
+  "serverViewButton": {
+    "message": "See server view",
+    "description": "Button to open the server HTML and live page comparison"
+  },
+  "serverViewHint": {
+    "message": "Compare the HTML the server sent with what you see now.",
+    "description": "Short explanation next to the server view button"
+  },
+  "serverViewOpening": {
+    "message": "Opening…",
+    "description": "Server view button label while the page is opening"
+  },
+  "serverViewFailed": {
+    "message": "Couldn't open the server view",
+    "description": "Error shown when the server view could not be opened"
+  },
+  "serverViewTitle": {
+    "message": "Server view",
+    "description": "Title of the server view page"
+  },
+  "serverViewServerPane": {
+    "message": "From the server (no JavaScript)",
+    "description": "Heading for the server HTML pane"
+  },
+  "serverViewLivePane": {
+    "message": "Live page (after JavaScript)",
+    "description": "Heading for the live screenshot pane"
+  },
+  "serverViewFetched": {
+    "message": "Fetched {time}",
+    "description": "Time the server HTML was fetched"
+  },
+  "serverViewStatus": {
+    "message": "HTTP {status}",
+    "description": "HTTP status returned with the server HTML"
+  },
+  "serverViewTruncated": {
+    "message": "The server HTML was larger than 2 MB, so only the first 2 MB are shown.",
+    "description": "Notice that the server HTML was truncated to 2 MB"
+  },
+  "serverViewNotOk": {
+    "message": "The server answered HTTP {status}. This may be a bot check or an error page, not what visitors get.",
+    "description": "Notice that the server response may not be a normal page"
+  },
+  "serverViewFetchError": {
+    "message": "The page's HTML could not be fetched again ({error}).",
+    "description": "Notice that the server HTML could not be fetched"
+  },
+  "serverViewNoShot": {
+    "message": "No screenshot of the live page was available.",
+    "description": "Placeholder shown when the live page screenshot is missing"
+  },
+  "serverViewMissing": {
+    "message": "This preview is no longer available. Open the extension on the page and choose “See server view” again.",
+    "description": "Message shown when the server view preview data is missing"
+  },
+  "serverViewSandboxNote": {
+    "message": "Scripts, forms and pop-ups are disabled in this frame. Styles and images load from the site.",
+    "description": "Explains restrictions on the server HTML frame"
+  },
+  "serverViewLoading": {
+    "message": "Loading server view…",
+    "description": "Loading message on the server view page"
+  },
+  "serverViewShotNote": {
+    "message": "Screenshot of the tab when you opened this view.",
+    "description": "Caption for the live page screenshot"
   }
 }
