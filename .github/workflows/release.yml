@@ -78,6 +78,7 @@ jobs:
             manifest.json popup.html popup.js popup.css \
             options.html options.js options.css \
             background.js welcome.html welcome.js welcome.css \
+            server-view.html server-view.js server-view.css \
             devtools/ icon*.png src/ _locales/ \
             -x '*.DS_Store' '*/__tests__/*' '*/fixtures/*'
 

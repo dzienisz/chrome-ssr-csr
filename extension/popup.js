@@ -38,6 +38,8 @@ const state = {
   tab: "overview",
   settings: { ...DEFAULTS },
   jev: { status: "idle" },
+  serverView: { status: "idle" },
+  live: false,
   highlight: { active: false, status: "idle", drawn: 0, total: 0 },
   // Incremented per analysis. Auto-analyze on open and the re-run button can
   // both be in flight at once, and a slower earlier run finishing last would
@@ -139,6 +141,8 @@ async function analyze() {
   const stale = () => runId !== state.runId;
 
   state.jev = { status: "idle" };
+  state.serverView = { status: "idle" };
+  state.live = false;
   state.highlight = { active: false, status: "idle", drawn: 0, total: 0 };
   setBusy(true);
   showStatus();
@@ -205,6 +209,7 @@ async function analyze() {
 
     state.page = page;
     state.result = result;
+    state.live = true;
     render(result);
     void syncHighlightState(tab.id);
     updateBadge(result.renderType, tab.id);
@@ -534,16 +539,23 @@ function render(result) {
     state.settings,
     state.settings.jevHasKey,
   );
+  const overviewOptions = {
+    jev: jevOffer
+      ? {
+          ...state.jev,
+          source: result.detailedInfo?.contentComparison?.source,
+          onAsk: askJevForPage,
+        }
+      : null,
+  };
+  if (state.live) {
+    overviewOptions.serverView = {
+      ...state.serverView,
+      onOpen: openServerView,
+    };
+  }
   renderPanel("overview", () =>
-    window.SSRReport.renderOverview(result, {
-      jev: jevOffer
-        ? {
-            ...state.jev,
-            source: result.detailedInfo?.contentComparison?.source,
-            onAsk: askJevForPage,
-          }
-        : null,
-    }),
+    window.SSRReport.renderOverview(result, overviewOptions),
   );
   renderPanel("signals", () => window.SSRReport.renderSignals(result));
   renderPanel("delivery", () => window.SSRReport.renderDelivery(result));
@@ -658,6 +670,134 @@ async function askJevForPage() {
   render(state.result);
 }
 
+async function openServerView() {
+  if (!state.result || state.serverView.status === "loading") return;
+
+  state.serverView = { status: "loading" };
+  render(state.result);
+
+  try {
+    const tab = await getActiveTab();
+    if (!tab || !tab.id || state.page.url !== tab.url) {
+      throw new Error("The page changed. Run the analysis again.");
+    }
+
+    const [injection] = await executeScript({
+      target: { tabId: tab.id },
+      func: async () => {
+        try {
+          const response = await fetch(location.href, {
+            credentials: "same-origin",
+            headers: { Accept: "text/html" },
+          });
+          return {
+            html: await response.text(),
+            status: response.status,
+            url: location.href,
+            title: document.title,
+            viewport: { width: innerWidth, height: innerHeight },
+          };
+        } catch (error) {
+          return {
+            html: "",
+            status: 0,
+            fetchError: String((error && error.message) || error).slice(0, 200),
+            url: location.href,
+            title: document.title,
+            viewport: { width: innerWidth, height: innerHeight },
+          };
+        }
+      },
+    });
+    if (!injection || !injection.result) throw new Error("Page content was unavailable");
+
+    const liveShot = await captureVisibleTab(tab.windowId);
+    const { html, truncated } = window.SSRServerView.capHtml(injection.result.html);
+    const { area, deleteAfterRead } = window.SSRServerView.storageArea(chrome);
+    const id = window.SSRServerView.newId();
+    const key = window.SSRServerView.STORAGE_PREFIX + id;
+
+    const stored = await storageCall(area, "get", null);
+    const existing = Object.entries(stored || {})
+      .filter(([storedKey]) => storedKey.startsWith(window.SSRServerView.STORAGE_PREFIX))
+      .sort(([, first], [, second]) => (Number(second?.fetchedAt) || 0) - (Number(first?.fetchedAt) || 0));
+    const staleKeys = existing.slice(1).map(([storedKey]) => storedKey);
+    if (staleKeys.length) await storageCall(area, "remove", staleKeys);
+
+    await storageCall(area, "set", {
+      [key]: {
+        html,
+        liveShot,
+        url: injection.result.url,
+        title: injection.result.title,
+        status: injection.result.status,
+        truncated,
+        fetchedAt: Date.now(),
+        viewport: injection.result.viewport,
+        fetchError: injection.result.fetchError || "",
+        deleteAfterRead,
+      },
+    });
+
+    await new Promise((resolve, reject) => {
+      try {
+        chrome.tabs.create(
+          {
+            url: chrome.runtime.getURL(`server-view.html?id=${id}`),
+            index: tab.index + 1,
+            openerTabId: tab.id,
+          },
+          () => {
+            const error = chrome.runtime.lastError;
+            if (error) reject(new Error(error.message));
+            else resolve();
+          },
+        );
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    state.serverView = { status: "idle" };
+    render(state.result);
+  } catch (error) {
+    state.serverView = {
+      status: "error",
+      errorMessage: String((error && error.message) || error)
+        .replace(/\s+/g, " ")
+        .slice(0, 100),
+    };
+    render(state.result);
+  }
+}
+
+function captureVisibleTab(windowId) {
+  return new Promise((resolve) => {
+    try {
+      chrome.tabs.captureVisibleTab(windowId, { format: "jpeg", quality: 70 }, (dataUrl) => {
+        const error = chrome.runtime.lastError;
+        resolve(error ? null : dataUrl || null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function storageCall(area, method, ...args) {
+  return new Promise((resolve, reject) => {
+    try {
+      area[method](...args, (result) => {
+        const error = chrome.runtime.lastError;
+        if (error) reject(new Error(error.message));
+        else resolve(result);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 /* ------------------------------------------------------------------ history */
 
 /**
@@ -732,6 +872,7 @@ function renderHistoryPanel() {
       item.addEventListener("click", () => {
         state.result = entry.results;
         state.page = { url: entry.url, title: entry.title };
+        state.live = false;
         state.tab = "overview";
         render(entry.results);
       });

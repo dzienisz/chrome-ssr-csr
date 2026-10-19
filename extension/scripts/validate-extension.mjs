@@ -40,6 +40,7 @@ const PAGES = [
   { path: "options.html", ready: "#save" },
   { path: "welcome.html", ready: "#open-settings" },
   { path: "devtools/panel.html", ready: "#status, #report" },
+  { path: "server-view.html", ready: "#status" },
 ];
 
 /** Console messages that are noise rather than a defect. */
@@ -232,6 +233,111 @@ for (const { path, ready } of PAGES) {
 
   await extensionPage.close();
 }
+
+/* -------------------------------- server view keeps hostile HTML inert */
+
+const hostileHTML =
+  '<!doctype html><html><head><meta http-equiv="refresh" content="0;url=about:blank#escaped"><title>Hostile</title></head><body><p id="server-text">Server paragraph</p><script>console.log("SERVER-VIEW-SCRIPT-RAN"); parent.document && (parent.document.title = "pwned")</script></iframe><script>console.log("SERVER-VIEW-ESCAPED")</script><img src=x onerror="console.log(\'SERVER-VIEW-HANDLER-RAN\')"></body></html>';
+const serverViewPage = await context.newPage();
+await serverViewPage.goto(`chrome-extension://${extensionId}/options.html`, {
+  waitUntil: "domcontentloaded",
+});
+const serverViewSeeded = await serverViewPage.evaluate(
+  ({ html, url }) =>
+    new Promise((resolve) => {
+      chrome.storage.session.set(
+        {
+          "serverView:validate": {
+            html,
+            liveShot: null,
+            url,
+            title: "Hostile",
+            status: 200,
+            truncated: false,
+            fetchedAt: Date.now(),
+            viewport: { width: 1280, height: 800 },
+            deleteAfterRead: false,
+          },
+        },
+        () => resolve(!chrome.runtime.lastError),
+      );
+    }),
+  { html: hostileHTML, url: `${origin}/` },
+);
+check(serverViewSeeded, "hostile server HTML fixture is stored");
+
+const serverViewMessages = [];
+serverViewPage.on("console", (message) => serverViewMessages.push(message.text()));
+await serverViewPage.goto(
+  `chrome-extension://${extensionId}/server-view.html?id=validate`,
+  { waitUntil: "domcontentloaded" },
+);
+await serverViewPage.waitForSelector("#server-viewport iframe");
+await serverViewPage.waitForTimeout(1000);
+
+const mobileWidthRadio = serverViewPage.locator(
+  '#server-width-controls [data-width-id="mobile"]',
+);
+await mobileWidthRadio.click();
+const mobileWidthState = await serverViewPage.evaluate(() => ({
+  width: document.querySelector("#server-viewport iframe")?.getAttribute("width"),
+  noteVisible: !document.getElementById("server-width-note").hidden,
+}));
+check(
+  mobileWidthState.width === "390" && mobileWidthState.noteVisible,
+  "Mobile selects a 390px server frame and shows the width-only note",
+  JSON.stringify(mobileWidthState),
+);
+await mobileWidthRadio.press("ArrowLeft");
+const tabletSelected = await serverViewPage
+  .locator('#server-width-controls [data-width-id="tablet"]')
+  .getAttribute("aria-checked");
+check(tabletSelected === "true", "ArrowLeft selects Tablet from Mobile");
+
+check(
+  !serverViewMessages.some((message) => message.includes("SERVER-VIEW-")),
+  "server HTML scripts and event handlers do not run",
+  serverViewMessages.filter((message) => message.includes("SERVER-VIEW-")).join(" | "),
+);
+const serverViewDocument = await serverViewPage.evaluate(() => ({
+  title: document.title,
+  frames: [...document.querySelectorAll("iframe")].map((frame) => ({
+    sandbox: frame.getAttribute("sandbox"),
+  })),
+}));
+check(
+  serverViewDocument.title !== "pwned",
+  "server HTML cannot change the extension page title",
+  `title became ${serverViewDocument.title}`,
+);
+check(
+  serverViewDocument.frames.length === 1,
+  "hostile iframe markup stays inside the single server frame",
+  `found ${serverViewDocument.frames.length} iframes`,
+);
+check(
+  serverViewDocument.frames[0]?.sandbox === "",
+  "server frame has an empty sandbox attribute",
+  `sandbox was ${JSON.stringify(serverViewDocument.frames[0]?.sandbox)}`,
+);
+const serverDocumentFrame = serverViewPage.frames().find((frame) => frame !== serverViewPage.mainFrame());
+const serverDocumentFrameUrl = await serverDocumentFrame?.evaluate(() => location.href).catch(() => "");
+check(
+  serverDocumentFrameUrl === "about:srcdoc",
+  "server frame remains at about:srcdoc after refresh is stripped",
+  `frame URL was ${serverDocumentFrameUrl || serverDocumentFrame?.url() || "missing"}`,
+);
+try {
+  const serverText = await serverDocumentFrame.locator("#server-text").textContent({ timeout: 1500 });
+  check(
+    serverText?.trim() === "Server paragraph",
+    "sandboxed server frame displays the fetched paragraph",
+    `found ${JSON.stringify(serverText)}`,
+  );
+} catch {
+  notes.push("  note Playwright could not read the sandboxed frame; paragraph assertion skipped");
+}
+await serverViewPage.close();
 
 /* ------------------------------------ popup on a page it cannot analyze */
 
