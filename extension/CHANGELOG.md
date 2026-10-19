@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Region labels stack instead of overlapping when scrolled above the viewport.
+
 ## [4.5.0] - 2026-10-19
 
 ### Added

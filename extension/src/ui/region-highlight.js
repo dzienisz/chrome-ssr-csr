@@ -38,6 +38,46 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
     return `${originText} · ${label}${share}`;
   }
 
+  function layoutChips(entries) {
+    const ordered = entries
+      .map((entry, index) => ({
+        index,
+        rect: entry.rect,
+        width: entry.width,
+        height: entry.height,
+        left: Math.max(entry.rect.left, 0),
+        top: Math.max(entry.rect.top, 0),
+        hidden: false,
+      }))
+      .sort((a, b) => a.top - b.top || a.index - b.index);
+    const placed = [];
+
+    for (const chip of ordered) {
+      let overlap;
+      while (
+        (overlap = placed.find(
+          (other) =>
+            chip.left < other.left + other.width &&
+            chip.left + chip.width > other.left &&
+            chip.top < other.top + other.height &&
+            chip.top + chip.height > other.top,
+        ))
+      ) {
+        chip.top = overlap.top + overlap.height + 2;
+      }
+
+      if (chip.top + chip.height > chip.rect.bottom) {
+        chip.hidden = true;
+      } else {
+        placed.push(chip);
+      }
+    }
+
+    return ordered
+      .sort((a, b) => a.index - b.index)
+      .map(({ top, left, hidden }) => ({ top, left, hidden }));
+  }
+
   function remove() {
     if (!state) return false;
 
@@ -182,6 +222,7 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
   }
 
   function reposition(highlightState) {
+    const visibleItems = [];
     for (const item of highlightState.items) {
       const rect = item.el.getBoundingClientRect();
       const offscreen =
@@ -202,18 +243,35 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
         width: `${rect.width}px`,
         height: `${rect.height}px`,
       });
-      Object.assign(item.chip.style, {
-        display: "block",
-        left: `${Math.max(rect.left, 0)}px`,
-        top: `${Math.max(rect.top, 0)}px`,
+      item.chip.style.display = "block";
+      const chipRect = item.chip.getBoundingClientRect();
+      visibleItems.push({
+        item,
+        rect,
+        width: chipRect.width,
+        height: chipRect.height,
       });
     }
+
+    const placements = layoutChips(visibleItems);
+    visibleItems.forEach(({ item }, index) => {
+      const placement = placements[index];
+      if (placement.hidden) {
+        item.chip.style.display = "none";
+        return;
+      }
+      Object.assign(item.chip.style, {
+        left: `${placement.left}px`,
+        top: `${placement.top}px`,
+      });
+    });
   }
 
   window.SSRRegionHighlight = {
     ORIGIN_STYLES,
     originStyle,
     chipText,
+    layoutChips,
     show,
     remove,
     isActive,
