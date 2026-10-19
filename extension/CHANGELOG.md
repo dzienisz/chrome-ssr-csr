@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-10-19
+
 ### Added
 
 - Overview → **See server view** opens the page as its server HTML draws it with JavaScript off (a sandboxed frame with no permissions), next to a screenshot of the live tab.
