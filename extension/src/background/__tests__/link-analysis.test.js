@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { runInNewContext } from "node:vm";
 import {
   formatLinkVerdict,
   linkFailureMessage,
@@ -37,6 +40,77 @@ function createTabs(initialTab) {
     },
   };
   return tabs;
+}
+
+function createBackgroundHarness(result) {
+  const tab = {
+    id: 7,
+    url: "https://example.com/article",
+    title: "Example article",
+    windowId: 1,
+  };
+  const addListener = () => {};
+  const chrome = {
+    runtime: {
+      onInstalled: { addListener },
+      onMessage: { addListener },
+      lastError: null,
+      getURL: (path) => path,
+    },
+    contextMenus: {
+      onClicked: { addListener },
+      removeAll: (callback) => callback(),
+      create: () => {},
+    },
+    notifications: {
+      onClicked: { addListener },
+      create: vi.fn(),
+      clear: () => {},
+    },
+    tabs: {
+      onUpdated: { addListener },
+      get: (_tabId, callback) => callback(tab),
+    },
+    scripting: {
+      executeScript: (options, callback) => {
+        callback(
+          options.files
+            ? [{ documentId: "document-1" }]
+            : [{ documentId: "document-1", result }],
+        );
+      },
+    },
+    action: {
+      setBadgeText: () => {},
+      setBadgeBackgroundColor: () => {},
+    },
+    storage: {
+      sync: {
+        get: (defaults, callback) =>
+          callback({ ...defaults, notifications: true, historyLimit: 10 }),
+      },
+      local: {
+        get: (_keys, callback) => callback({ analysisHistory: [] }),
+        set: (_values, callback) => callback(),
+      },
+    },
+    i18n: { getMessage: () => "" },
+  };
+  const context = {
+    chrome,
+    URL,
+    SSRLinkAnalysis: { formatLinkVerdict },
+  };
+  const source = readFileSync(
+    resolve(import.meta.dirname, "../../../background.js"),
+    "utf8",
+  );
+  runInNewContext(
+    `${source}\nglobalThis.__testApi = { analyzeTab, notify };`,
+    context,
+  );
+
+  return { api: context.__testApi, chrome, tab };
 }
 
 function expectClean(tabs) {
@@ -292,6 +366,45 @@ describe("formatLinkVerdict", () => {
       confidenceLevel: "medium",
       renderOrigin: { label: "Generated on the server" },
     }, "example.com", translate).message).toBe("Medium confidence · Generated on the server");
+  });
+});
+
+describe("link-analysis notifications", () => {
+  const result = {
+    assessable: true,
+    renderType: "Server-Side Rendered (SSR)",
+    confidence: 95,
+    confidenceLevel: "high",
+  };
+  const hint = "Opened in a tab next to the current one.";
+
+  it("ends link verdict notifications with the tab-location hint", async () => {
+    const { api, chrome, tab } = createBackgroundHarness(result);
+
+    await api.analyzeTab(tab, { activateTabId: tab.id, link: true });
+
+    const [notificationId, options] = chrome.notifications.create.mock.calls[0];
+    expect(notificationId).toMatch(/^link-analysis:7:\d+$/);
+    expect(options.message).toBe(`High confidence\n${hint}`);
+  });
+
+  it("does not add the tab-location hint to normal page notifications", async () => {
+    const { api, chrome, tab } = createBackgroundHarness(result);
+
+    await api.analyzeTab(tab);
+
+    const [options] = chrome.notifications.create.mock.calls[0];
+    expect(options.message).toBe("example.com");
+    expect(options.message).not.toContain(hint);
+  });
+
+  it("uses the tab-location hint by itself when the link message is empty", () => {
+    const { api, chrome, tab } = createBackgroundHarness(result);
+
+    api.notify("Link verdict", "", tab.id);
+
+    const [, options] = chrome.notifications.create.mock.calls[0];
+    expect(options.message).toBe(hint);
   });
 });
 

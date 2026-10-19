@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Link-analysis notifications say that the analyzed page opened in the adjacent tab.
+
 ## [4.5.0] - 2026-10-19
 
 ### Added

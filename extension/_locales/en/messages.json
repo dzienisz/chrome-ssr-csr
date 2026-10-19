@@ -415,6 +415,10 @@
       }
     }
   },
+  "linkTabHint": {
+    "message": "Opened in a tab next to the current one.",
+    "description": "Notification hint explaining where a linked page was opened"
+  },
   "rerunOnNavigation": {
     "message": "Re-run on navigation",
     "description": "Checkbox in the DevTools panel"
