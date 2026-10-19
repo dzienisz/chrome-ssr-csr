@@ -67,6 +67,81 @@ describe("originStyle and chipText", () => {
   });
 });
 
+describe("layoutChips", () => {
+  it("stacks partially offscreen chips below the viewport edge", () => {
+    const height = 16;
+    const placements = highlight.layoutChips(
+      [-20, -40, -60].map((top) => ({
+        rect: { top, left: 20, right: 120, bottom: 100 },
+        width: 80,
+        height,
+      })),
+    );
+
+    expect(placements.map(({ top }) => top)).toEqual([
+      0,
+      height + 2,
+      height * 2 + 4,
+    ]);
+  });
+
+  it("leaves chips at the same top when they do not overlap horizontally", () => {
+    const placements = highlight.layoutChips(
+      [0, 120, 240].map((left) => ({
+        rect: { top: 0, left, right: left + 100, bottom: 100 },
+        width: 80,
+        height: 16,
+      })),
+    );
+
+    expect(placements.map(({ top }) => top)).toEqual([0, 0, 0]);
+  });
+
+  it("hides a bumped chip when it no longer fits inside its region", () => {
+    const placements = highlight.layoutChips([
+      {
+        rect: { top: -5, left: 10, right: 50, bottom: 50 },
+        width: 20,
+        height: 20,
+      },
+      {
+        rect: { top: -4, left: 10, right: 50, bottom: 15 },
+        width: 20,
+        height: 20,
+      },
+    ]);
+
+    expect(placements[0].hidden).toBe(false);
+    expect(placements[1]).toEqual({ top: 22, left: 10, hidden: true });
+  });
+
+  it("returns placements in the same order as the input entries", () => {
+    const placements = highlight.layoutChips([
+      {
+        rect: { top: 30, left: 0, right: 20, bottom: 50 },
+        width: 10,
+        height: 5,
+      },
+      {
+        rect: { top: 5, left: 40, right: 60, bottom: 50 },
+        width: 10,
+        height: 5,
+      },
+      {
+        rect: { top: 20, left: 80, right: 100, bottom: 50 },
+        width: 10,
+        height: 5,
+      },
+    ]);
+
+    expect(placements).toEqual([
+      { top: 30, left: 0, hidden: false },
+      { top: 5, left: 40, hidden: false },
+      { top: 20, left: 80, hidden: false },
+    ]);
+  });
+});
+
 describe("show and remove", () => {
   it("places one closed-shadow host under the document element without changing body HTML", () => {
     const main = addMain();
