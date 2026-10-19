@@ -29,6 +29,7 @@ const ENGLISH_ONLY_KEYS = [
   "linkAnalysisNavigated",
   "linkAnalysisPermissionDenied",
   "linkAnalysisTimeout",
+  "linkTabHint",
   "decisionConfidence",
   "confidenceTooltip",
   "decisionAlgorithm",
