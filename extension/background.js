@@ -322,13 +322,22 @@ function setBadge(renderType, tabId) {
 
 /** Notifications are opt-out; respect the setting before creating one. */
 function notify(title, message, activateTabId) {
+  const notificationMessage =
+    typeof activateTabId === "number"
+      ? [
+          message,
+          t("linkTabHint", "Opened in a tab next to the current one."),
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : message;
   chrome.storage.sync.get({ notifications: true }, (settings) => {
     if (!settings.notifications) return;
     const options = {
       type: "basic",
       iconUrl: chrome.runtime.getURL("icon48.png"),
       title,
-      message,
+      message: notificationMessage,
       priority: 1,
     };
     if (typeof activateTabId === "number") {

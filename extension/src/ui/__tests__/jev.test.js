@@ -31,21 +31,26 @@ afterEach(() => {
 
 describe("excerpt and buildState", () => {
   it("normalizes whitespace and truncates at the shared limit", () => {
-    expect(EXCERPT_CHARS).toBe(3000);
+    expect(EXCERPT_CHARS).toBe(12000);
     expect(excerpt("  one \n\n two  ")).toBe("one two");
     expect(excerpt("x".repeat(10), 4)).toBe("xxxx …[truncated]");
+  });
+
+  it("preserves 12,000 characters and truncates at 12,001", () => {
+    expect(excerpt("x".repeat(12000))).toBe("x".repeat(12000));
+    expect(excerpt("x".repeat(12001))).toBe(`${"x".repeat(12000)} …[truncated]`);
   });
 
   it("builds the audit state using the same excerpt rule", () => {
     const state = buildState({
       url: "https://example.test",
-      initialText: ` ${"x".repeat(3001)} `,
+      initialText: ` ${"x".repeat(12001)} `,
       initialBodyMarkup: "<main>HTML</main>",
       renderedText: "Visible text",
     });
 
     expect(state.url).toBe("https://example.test");
-    expect(state.initial_html_text).toBe(`${"x".repeat(3000)} …[truncated]`);
+    expect(state.initial_html_text).toBe(`${"x".repeat(12000)} …[truncated]`);
     expect(state.initial_body_markup).toBe("<main>HTML</main>");
     expect(state.rendered_text).toBe("Visible text");
   });

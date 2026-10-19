@@ -1,7 +1,7 @@
 (function (root) {
   const API_URL = "https://api.typesafe.ai/v1/systemone";
   const MODEL = "jev-latest";
-  const EXCERPT_CHARS = 3000;
+  const EXCERPT_CHARS = 12000;
 
   function excerpt(text, max = EXCERPT_CHARS) {
     const clean = String(text ?? "").replace(/\s+/g, " ").trim();

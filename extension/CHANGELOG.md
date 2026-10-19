@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Ask Jev sends up to 12,000 characters of each excerpt (was 3,000), so long server-rendered pages are no longer misjudged as client-rendered from their first few paragraphs.
+
 ### Fixed
 
+- Link-analysis notifications say that the analyzed page opened in the adjacent tab.
 - Region labels stack instead of overlapping when scrolled above the viewport.
 
 ## [4.5.0] - 2026-10-19
