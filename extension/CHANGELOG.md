@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-10-19
+
 ### Changed
 
 - Ask Jev sends up to 12,000 characters of each excerpt (was 3,000), so long server-rendered pages are no longer misjudged as client-rendered from their first few paragraphs.
