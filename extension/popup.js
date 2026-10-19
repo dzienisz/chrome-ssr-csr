@@ -38,6 +38,7 @@ const state = {
   tab: "overview",
   settings: { ...DEFAULTS },
   jev: { status: "idle" },
+  highlight: { active: false, status: "idle", drawn: 0, total: 0 },
   // Incremented per analysis. Auto-analyze on open and the re-run button can
   // both be in flight at once, and a slower earlier run finishing last would
   // otherwise replace the newer report, badge, history entry and telemetry
@@ -138,6 +139,7 @@ async function analyze() {
   const stale = () => runId !== state.runId;
 
   state.jev = { status: "idle" };
+  state.highlight = { active: false, status: "idle", drawn: 0, total: 0 };
   setBusy(true);
   showStatus();
 
@@ -204,6 +206,7 @@ async function analyze() {
     state.page = page;
     state.result = result;
     render(result);
+    void syncHighlightState(tab.id);
     updateBadge(result.renderType, tab.id);
     saveToHistory(page, result);
 
@@ -298,6 +301,88 @@ function executeScript(options) {
       resolve(results || []);
     });
   });
+}
+
+async function syncHighlightState(tabId) {
+  try {
+    const [injection] = await executeScript({
+      target: { tabId },
+      func: () =>
+        Boolean(window.SSRRegionHighlight && window.SSRRegionHighlight.isActive()),
+    });
+    if (injection && injection.result) {
+      state.highlight.active = true;
+      state.highlight.status = "idle";
+      renderDiffPanel();
+    }
+  } catch (e) {
+    // A page can navigate or lose its activeTab grant while the popup is open.
+  }
+}
+
+async function toggleHighlight() {
+  if (!state.result || state.highlight.status === "working") return;
+
+  state.highlight.status = "working";
+  renderDiffPanel();
+  try {
+    const tab = await getActiveTab();
+    if (!tab || !tab.id) throw new Error("No active tab");
+    if (state.page.url && tab.url && state.page.url !== tab.url) {
+      throw new Error("The page changed. Run the analysis again.");
+    }
+
+    if (state.highlight.active) {
+      await executeScript({
+        target: { tabId: tab.id },
+        func: () =>
+          window.SSRRegionHighlight ? window.SSRRegionHighlight.remove() : false,
+      });
+      state.highlight = { active: false, status: "idle", drawn: 0, total: 0 };
+    } else {
+      const [regions] = await executeScript({
+        target: { tabId: tab.id },
+        files: ["src/core/region-key.js", "src/ui/region-highlight.js"],
+      });
+      const diff = state.result.detailedInfo?.domDiff;
+      if (!diff?.available || !diff.regions?.length) {
+        throw new Error("No regions are available to highlight");
+      }
+      const payload = diff.regions.map((region) => ({
+        key: region.key,
+        label: region.label,
+        origin: region.origin,
+        serverPct: window.SSRReport.regionServerPct(region),
+      }));
+      const strings = {
+        client: window.t("highlightOriginClient", "Added by JS"),
+        mixed: window.t("highlightOriginMixed", "Mixed"),
+        server: window.t("highlightOriginServer", "From server"),
+        share: window.t("highlightServerShare", "$1% from server", ["$1"]),
+      };
+      const [injection] = await executeScript({
+        target: { tabId: tab.id },
+        args: [payload, strings],
+        func: (pageRegions, pageStrings) =>
+          window.SSRRegionHighlight.show(pageRegions, pageStrings),
+      });
+      if (!injection || !injection.result) {
+        throw new Error("The page did not return highlight results");
+      }
+      const { drawn, total } = injection.result;
+      state.highlight = {
+        active: drawn > 0,
+        status: drawn > 0 ? "shown" : "none",
+        drawn,
+        total,
+      };
+    }
+  } catch (e) {
+    state.highlight = { ...state.highlight, active: false, status: "error" };
+  }
+
+  renderDiffPanel();
+  document.getElementById("highlight-toggle")?.focus();
 }
 
 /**
@@ -462,7 +547,11 @@ function render(result) {
   );
   renderPanel("signals", () => window.SSRReport.renderSignals(result));
   renderPanel("delivery", () => window.SSRReport.renderDelivery(result));
-  renderPanel("diff", () => window.SSRReport.renderDiff(result));
+  renderPanel("diff", () =>
+    window.SSRReport.renderDiff(result, {
+      highlight: { ...state.highlight, onToggle: toggleHighlight },
+    }),
+  );
   renderHistoryPanel();
 
   selectTab(state.tab);
@@ -470,6 +559,15 @@ function render(result) {
 
 function renderPanel(name, build) {
   document.getElementById(`panel-${name}`).replaceChildren(build());
+}
+
+function renderDiffPanel() {
+  if (!state.result) return;
+  renderPanel("diff", () =>
+    window.SSRReport.renderDiff(state.result, {
+      highlight: { ...state.highlight, onToggle: toggleHighlight },
+    }),
+  );
 }
 
 function selectTab(name) {

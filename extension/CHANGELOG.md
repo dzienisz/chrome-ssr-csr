@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The Regions tab can highlight each region on the live page by origin (orange
+  for JavaScript-added, amber for mixed, green for server-rendered); press Esc
+  or choose “Remove highlight” to clear the outlines. No new permissions.
+
 ### Changed
 
 - Landing page and English store copy (Chrome, Edge, Firefox) now lead with

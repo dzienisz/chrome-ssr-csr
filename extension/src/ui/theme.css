@@ -575,6 +575,23 @@ a:hover {
 
 /* ---------------------------------------------------------------- regions */
 
+.highlight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.highlight-status {
+  margin: 0;
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 .region {
   padding: 8px 0;
   border-top: 1px solid var(--border);
