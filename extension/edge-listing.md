@@ -46,8 +46,9 @@ change them.
 
 ## Description (per language; English below)
 
-Reuse the Chrome Web Store full description from `store-listing.md`
-verbatim, and the translations from `store-listings.md` for the other
+English: reuse the Chrome Web Store full description from `store-listing.md`
+verbatim (it leads with the "empty shell" problem and who only sees the
+server HTML; keep the bot claims hedged as written there). Other locales: use the translations from `store-listings.md` for the other
 locales the package ships (ja, ko, fr, de, es, pt_BR, pl). Partner Center asks
 for a description and a logo for **every** locale in `_locales/`.
 
