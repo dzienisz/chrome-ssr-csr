@@ -371,6 +371,50 @@
     "message": "Analyze page rendering",
     "description": "Right-click menu entry"
   },
+  "contextMenuAnalyzeLink": {
+    "message": "Analyze link rendering (opens in background tab)",
+    "description": "Right-click menu entry for analyzing a link in a background tab"
+  },
+  "linkAnalysisTimeout": {
+    "message": "$HOST$ did not finish loading within 30 seconds. The tab was left open.",
+    "description": "Notification body when the linked page does not finish loading in time",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "linkAnalysisClosed": {
+    "message": "The tab for $HOST$ was closed before it could be analyzed.",
+    "description": "Notification body when the linked page tab is closed before analysis",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "linkAnalysisNavigated": {
+    "message": "The tab left $HOST$ before it could be analyzed. The tab was left open.",
+    "description": "Notification body when the linked page navigates to another origin before analysis",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "linkAnalysisPermissionDenied": {
+    "message": "Site access to $HOST$ was not granted, so the link was not opened.",
+    "description": "Notification body when site access for a linked page is denied",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
   "rerunOnNavigation": {
     "message": "Re-run on navigation",
     "description": "Checkbox in the DevTools panel"
