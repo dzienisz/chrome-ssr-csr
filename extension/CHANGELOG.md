@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Overview → **See server view** opens the page as its server HTML draws it with JavaScript off (a sandboxed frame with no permissions), next to a screenshot of the live tab.
+- Server view: Desktop / Tablet / Mobile width toggle for the server frame (width only — the HTML is still what your browser received).
 
 ## [4.4.0] - 2026-10-15
 

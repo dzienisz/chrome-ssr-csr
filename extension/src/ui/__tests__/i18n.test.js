@@ -92,10 +92,17 @@ const ENGLISH_ONLY_KEYS = [
   "serverViewOpening",
   "serverViewSandboxNote",
   "serverViewServerPane",
+  "serverViewShotAtWidth",
   "serverViewShotNote",
   "serverViewStatus",
   "serverViewTitle",
   "serverViewTruncated",
+  "serverViewWidthDesktop",
+  "serverViewWidthLabel",
+  "serverViewWidthMobile",
+  "serverViewWidthNote",
+  "serverViewWidthTablet",
+  "serverViewWidthWindow",
 ];
 
 const LOCALES = readdirSync(LOCALES_DIR);
