@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for JavaScript-added, amber for mixed, green for server-rendered); press Esc
   or choose “Remove highlight” to clear the outlines. No new permissions.
 
+### Changed
+
+- Landing page and English store copy (Chrome, Edge, Firefox) now lead with
+  the "empty shell" problem: an HTML-only example of a client-rendered vs a
+  server-rendered response, a "Who only sees your server HTML?" section with
+  sourced, hedged claims about Googlebot, link previews and AI crawlers, and
+  an FAQ entry "Why does my page look empty without JavaScript?". Translations
+  of the store copy are pending.
+
 ## [4.4.0] - 2026-10-15
 
 ### Added
