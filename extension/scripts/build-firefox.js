@@ -31,6 +31,7 @@ const SHIPPED = [
   'options.html', 'options.js', 'options.css',
   'background.js',
   'welcome.html', 'welcome.js', 'welcome.css',
+  'server-view.html', 'server-view.js', 'server-view.css',
   'devtools',
   'src',
   '_locales'

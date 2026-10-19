@@ -191,6 +191,31 @@ a:hover {
   margin-top: 10px;
 }
 
+.server-view-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.server-view-hint {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.server-view-card .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.server-view-error {
+  margin: 6px 0 0;
+  color: var(--csr);
+  font-size: 12px;
+}
+
 .card-title {
   font-size: 11px;
   font-weight: 650;
@@ -574,6 +599,23 @@ a:hover {
 }
 
 /* ---------------------------------------------------------------- regions */
+
+.highlight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.highlight-status {
+  margin: 0;
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
 
 .region {
   padding: 8px 0;

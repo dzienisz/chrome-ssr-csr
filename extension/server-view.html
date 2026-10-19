@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Server view — CSR vs SSR Detector</title>
+    <link rel="stylesheet" href="src/ui/theme.css" />
+    <link rel="stylesheet" href="server-view.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <h1>
+          <img src="icon48.png" alt="" width="24" height="24" />
+          <span data-i18n="serverViewTitle">Server view</span>
+        </h1>
+        <div id="page-info" class="page-info" hidden>
+          <div id="page-title" class="page-title"></div>
+          <a id="page-url" class="page-url" target="_blank" rel="noopener noreferrer"></a>
+          <div id="page-meta" class="page-meta"></div>
+        </div>
+      </header>
+
+      <div id="status" class="empty" role="status" aria-live="polite">
+        <span data-i18n="serverViewLoading">Loading server view…</span>
+      </div>
+
+      <div id="notices" class="notices" hidden></div>
+
+      <main id="panes" class="panes" hidden>
+        <section class="pane" aria-labelledby="server-heading">
+          <h2 id="server-heading" data-i18n="serverViewServerPane">From the server (no JavaScript)</h2>
+          <p class="pane-note" data-i18n="serverViewSandboxNote">
+            Scripts, forms and pop-ups are disabled in this frame. Styles and images load from the
+            site.
+          </p>
+          <div class="width-toolbar">
+            <span
+              id="server-width-label"
+              class="width-toolbar-label"
+              data-i18n="serverViewWidthLabel"
+              >Width</span
+            >
+            <div
+              id="server-width-controls"
+              class="width-options"
+              role="radiogroup"
+              aria-labelledby="server-width-label"
+            ></div>
+          </div>
+          <p id="server-width-note" class="width-note" role="note" data-i18n="serverViewWidthNote" hidden>
+            Width only: this is the HTML your browser received. Sites that send different HTML to
+            phones may look different on a real phone.
+          </p>
+          <div id="server-viewport" class="viewport"></div>
+        </section>
+        <section class="pane" aria-labelledby="live-heading">
+          <h2 id="live-heading" data-i18n="serverViewLivePane">Live page (after JavaScript)</h2>
+          <p class="pane-note" id="live-note"></p>
+          <div id="live-viewport" class="viewport"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="src/ui/i18n.js"></script>
+    <script src="src/ui/server-view-doc.js"></script>
+    <script src="src/ui/server-view-width.js"></script>
+    <script src="server-view.js"></script>
+  </body>
+</html>

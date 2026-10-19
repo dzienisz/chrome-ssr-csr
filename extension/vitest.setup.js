@@ -3,6 +3,7 @@ import { vi, beforeEach } from "vitest";
 // Load the config module
 import CONFIG from "./src/core/config.js";
 import "./src/detectors/comparison-detector.js";
+import "./src/core/region-key.js";
 
 // Polyfill innerText for jsdom (it doesn't implement innerText)
 if (!("innerText" in Element.prototype)) {
