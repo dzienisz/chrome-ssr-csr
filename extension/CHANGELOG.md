@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Link-analysis notifications say that the analyzed page opened in the adjacent tab.
 - Region labels stack instead of overlapping when scrolled above the viewport.
+- Settings and the privacy policy say Ask Jev sends up to 12,000 characters per excerpt.
 
 ## [4.5.0] - 2026-10-19
 

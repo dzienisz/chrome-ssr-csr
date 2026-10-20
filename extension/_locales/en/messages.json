@@ -456,7 +456,7 @@
     "description": "Label for the local-only Jev API key field"
   },
   "jevDisclosure": {
-    "message": "Off by default. When you click \"Ask Jev\" in the popup, this page's URL and up to 3,000 characters each of the server HTML's text, its body markup and the visible text are sent to TypeSafe (api.typesafe.ai) using your key. Nothing is sent automatically.",
+    "message": "Off by default. When you click \"Ask Jev\" in the popup, this page's URL and up to 12,000 characters each of the server HTML's text, its body markup and the visible text are sent to TypeSafe (api.typesafe.ai) using your key. Nothing is sent automatically.",
     "description": "Disclosure of the page content sent by the optional Ask Jev feature"
   },
   "jevApiKeyLink": {
