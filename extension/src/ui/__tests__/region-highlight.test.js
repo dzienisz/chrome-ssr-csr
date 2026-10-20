@@ -142,6 +142,50 @@ describe("layoutChips", () => {
   });
 });
 
+describe("chipMaxWidth", () => {
+  it("caps a wide region at 360px", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 100, right: 700 }, 1000),
+    ).toBe(360);
+  });
+
+  it("uses the full width of a 208px region", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 100, right: 308 }, 1200),
+    ).toBe(208);
+  });
+
+  it("counts only the visible part of a region off the left edge", () => {
+    expect(
+      highlight.chipMaxWidth({ left: -50, right: 150 }, 1000),
+    ).toBe(150);
+  });
+
+  it("counts only the visible part of a region off the right edge", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 900, right: 1400 }, 1000),
+    ).toBe(100);
+  });
+
+  it("caps width to a narrow viewport minus 16px", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 0, right: 500 }, 200),
+    ).toBe(184);
+  });
+
+  it("hides labels when the region is narrower than 40px", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 10, right: 40 }, 1000),
+    ).toBe(0);
+  });
+
+  it("floors the available width to whole pixels", () => {
+    expect(
+      highlight.chipMaxWidth({ left: 10, right: 150.9 }, 1000),
+    ).toBe(140);
+  });
+});
+
 describe("show and remove", () => {
   it("places one closed-shadow host under the document element without changing body HTML", () => {
     const main = addMain();
