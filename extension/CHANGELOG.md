@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Region labels are cut to fit their region's width instead of sticking out past its right edge; regions too narrow for a label show only the outline.
-
 ## [4.5.1] - 2026-10-19
 
 ### Changed
@@ -22,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Link-analysis notifications say that the analyzed page opened in the adjacent tab.
 - Region labels stack instead of overlapping when scrolled above the viewport.
 - Settings and the privacy policy say Ask Jev sends up to 12,000 characters per excerpt.
+- Region labels are cut to fit their region's width instead of sticking out past its right edge; regions too narrow for a label show only the outline.
 
 ## [4.5.0] - 2026-10-19
 
