@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Region labels are cut to fit their region's width instead of sticking out past its right edge; regions too narrow for a label show only the outline.
+
 ## [4.5.1] - 2026-10-19
 
 ### Changed

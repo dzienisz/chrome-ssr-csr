@@ -1,4 +1,5 @@
 if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
+  const MIN_CHIP_WIDTH = 40;
   const ORIGIN_STYLES = Object.freeze({
     client: Object.freeze({
       outline: "#ea580c",
@@ -76,6 +77,15 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
     return ordered
       .sort((a, b) => a.index - b.index)
       .map(({ top, left, hidden }) => ({ top, left, hidden }));
+  }
+
+  function chipMaxWidth(rect, viewportWidth) {
+    const available =
+      Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0);
+    const width = Math.floor(
+      Math.min(360, viewportWidth - 16, available),
+    );
+    return width < MIN_CHIP_WIDTH ? 0 : width;
   }
 
   function remove() {
@@ -156,6 +166,7 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
       const chip = document.createElement("div");
       Object.assign(chip.style, {
         position: "absolute",
+        boxSizing: "border-box",
         font: '600 12px/16px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
         padding: "3px 8px",
         borderRadius: "4px",
@@ -243,6 +254,12 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
         width: `${rect.width}px`,
         height: `${rect.height}px`,
       });
+      const maxWidth = chipMaxWidth(rect, window.innerWidth);
+      if (maxWidth === 0) {
+        item.chip.style.display = "none";
+        continue;
+      }
+      item.chip.style.maxWidth = `${maxWidth}px`;
       item.chip.style.display = "block";
       const chipRect = item.chip.getBoundingClientRect();
       visibleItems.push({
@@ -272,6 +289,7 @@ if (typeof window !== "undefined" && !window.SSRRegionHighlight) {
     originStyle,
     chipText,
     layoutChips,
+    chipMaxWidth,
     show,
     remove,
     isActive,
