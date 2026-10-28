@@ -13,6 +13,10 @@ Your browser's extension storage holds:
 
 History stays on your device; enabling sharing does not upload the history database. Preferences use browser sync storage and may sync through your browser account. Exports you create are under your control.
 
+## Uninstall survey
+
+After uninstalling, your browser opens an optional Google Form. The extension sends no data with it, and the link has no identifiers. Answers are anonymous and covered by Google's [Privacy Policy](https://policies.google.com/privacy). This survey is separate from the extension's optional telemetry and does not include telemetry data.
+
 ## Optional Telemetry (enabled by default, opt-out)
 
 The setting named "Share anonymous data" controls telemetry sharing. It is **enabled by default** and can be disabled in settings. The name of this setting is not a guarantee of anonymity: domains, timestamps and combinations of technical measurements can reveal context about an analyzed visit.
@@ -64,4 +68,4 @@ Telemetry records are retained for statistical analysis with no automatic deleti
 
 For privacy questions, please open an issue on the GitHub repository. Do not include private page content, credentials or sensitive URLs in a public issue.
 
-Last updated: 2026-09-09
+Last updated: 2026-10-28

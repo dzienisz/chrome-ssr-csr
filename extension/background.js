@@ -1,5 +1,12 @@
 if (typeof importScripts === "function") importScripts("src/background/link-analysis.js");
 
+const UNINSTALL_SURVEY_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdvwzHH0qPhL28O_X-w4m1dwxCvsi-xkLrN8h4neScGargOeg/viewform";
+
+if (chrome.runtime.setUninstallURL) {
+  chrome.runtime.setUninstallURL(UNINSTALL_SURVEY_URL);
+}
+
 /**
  * Background service worker (event page on Firefox).
  *

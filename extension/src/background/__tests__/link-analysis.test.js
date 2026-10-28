@@ -54,6 +54,7 @@ function createBackgroundHarness(result) {
     runtime: {
       onInstalled: { addListener },
       onMessage: { addListener },
+      setUninstallURL: vi.fn(),
       lastError: null,
       getURL: (path) => path,
     },
@@ -112,6 +113,19 @@ function createBackgroundHarness(result) {
 
   return { api: context.__testApi, chrome, tab };
 }
+
+describe("uninstall survey", () => {
+  it("registers an anonymous Google Form URL without query parameters", () => {
+    const { chrome } = createBackgroundHarness({});
+    const [url] = chrome.runtime.setUninstallURL.mock.calls[0];
+
+    expect(url).toBe(
+      "https://docs.google.com/forms/d/e/1FAIpQLSdvwzHH0qPhL28O_X-w4m1dwxCvsi-xkLrN8h4neScGargOeg/viewform",
+    );
+    expect(url.startsWith("https://docs.google.com/forms/")).toBe(true);
+    expect(url).not.toContain("?");
+  });
+});
 
 function expectClean(tabs) {
   expect(tabs.listenersEmpty()).toBe(true);

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- An optional anonymous Google Form survey opens in the browser after uninstalling.
+
 ## [4.5.1] - 2026-10-19
 
 ### Changed
