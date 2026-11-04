@@ -274,5 +274,20 @@
   },
   "pageChanged": {
     "message": "解析中にページが遷移しました。もう一度実行してください。"
+  },
+  "ratePromptLabel": {
+    "message": "CSR vs SSR Detector を評価"
+  },
+  "ratePromptTitle": {
+    "message": "CSR vs SSR Detector を気に入っていますか？"
+  },
+  "ratePromptBody": {
+    "message": "評価すると、ほかのユーザーにも見つけてもらいやすくなります。"
+  },
+  "ratePromptRate": {
+    "message": "評価する"
+  },
+  "ratePromptDismiss": {
+    "message": "今はしない"
   }
 }

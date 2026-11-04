@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A localized store-rating prompt can appear in the popup after three days and three opens.
+
 ## [4.5.2] - 2026-10-29
 
 ### Added

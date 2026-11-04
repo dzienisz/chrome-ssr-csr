@@ -826,5 +826,25 @@
   "serverViewWidthWindow": {
     "message": "Window",
     "description": "Option matching the captured browser window width"
+  },
+  "ratePromptLabel": {
+    "message": "Rate CSR vs SSR Detector",
+    "description": "Accessible label for the store-rating prompt"
+  },
+  "ratePromptTitle": {
+    "message": "Enjoying CSR vs SSR Detector?",
+    "description": "Heading in the store-rating prompt"
+  },
+  "ratePromptBody": {
+    "message": "A rating helps others find it.",
+    "description": "Supporting text in the store-rating prompt"
+  },
+  "ratePromptRate": {
+    "message": "Rate it",
+    "description": "Button opening the extension's store review page"
+  },
+  "ratePromptDismiss": {
+    "message": "Not now",
+    "description": "Button dismissing the store-rating prompt"
   }
 }

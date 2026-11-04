@@ -35,6 +35,12 @@ const RESTRICTED_PROTOCOLS = [
 ];
 
 chrome.runtime.onInstalled.addListener((details) => {
+  chrome.storage.local.get({ installedAt: null }, ({ installedAt }) => {
+    if (!Number.isFinite(installedAt)) {
+      chrome.storage.local.set({ installedAt: Date.now() });
+    }
+  });
+
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,

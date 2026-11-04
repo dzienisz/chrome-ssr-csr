@@ -63,6 +63,28 @@
       </button>
     </div>
 
+    <div
+      id="rate-prompt"
+      class="notice rate-prompt"
+      role="region"
+      aria-label="Rate CSR vs SSR Detector"
+      data-i18n-aria-label="ratePromptLabel"
+      hidden
+    >
+      <div class="rate-prompt-copy">
+        <strong data-i18n="ratePromptTitle">Enjoying CSR vs SSR Detector?</strong>
+        <span data-i18n="ratePromptBody">A rating helps others find it.</span>
+      </div>
+      <div class="rate-prompt-actions">
+        <button class="btn btn-primary" id="rate-prompt-rate" type="button" data-i18n="ratePromptRate">
+          Rate it
+        </button>
+        <button class="btn" id="rate-prompt-dismiss" type="button" data-i18n="ratePromptDismiss">
+          Not now
+        </button>
+      </div>
+    </div>
+
     <main id="main">
       <div id="status" class="empty" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
@@ -130,6 +152,7 @@
     <script src="src/ui/report.js"></script>
     <script src="src/ui/export.js"></script>
     <script src="src/ui/server-view-doc.js"></script>
+    <script src="src/ui/rate-prompt.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

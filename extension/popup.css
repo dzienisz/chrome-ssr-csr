@@ -27,8 +27,30 @@ body {
   gap: 2px;
 }
 
-#pin-banner {
+#pin-banner,
+#rate-prompt {
   margin-bottom: 10px;
+}
+
+.rate-prompt {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rate-prompt-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rate-prompt-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.rate-prompt-actions .btn {
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
 .panels {
