@@ -46,7 +46,7 @@ Ask Jev is off by default. If you enable it in settings and click **Ask Jev** in
 
 In Chrome, the site access the extension already uses for its content script also covers api.typesafe.ai, so turning Ask Jev off cannot revoke that access; it deletes your key, and without the setting and a key nothing is sent.
 
-Your API key is stored only in `chrome.storage.local`, never in sync storage. The extension does not retain the page excerpts or Jev's answer in history, exports or telemetry. Apart from the key, the feature stores no additional data in the extension.
+Your API key is stored only in `chrome.storage.local`, never in sync storage. The extension does not retain the page excerpts or Jev's answer in history, exports or telemetry. The optional store-rating prompt also stores `installedAt`, `popupOpens`, `ratePromptShown`, and `ratePromptDone` only in `chrome.storage.local`. These values are used only to decide whether to show the prompt; they are never sent anywhere.
 
 ## Public Dashboard and API
 

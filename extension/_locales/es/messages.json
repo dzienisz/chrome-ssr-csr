@@ -274,5 +274,20 @@
   },
   "pageChanged": {
     "message": "La página navegó mientras se analizaba. Vuelve a ejecutarlo."
+  },
+  "ratePromptLabel": {
+    "message": "Valorar CSR vs SSR Detector"
+  },
+  "ratePromptTitle": {
+    "message": "¿Te gusta CSR vs SSR Detector?"
+  },
+  "ratePromptBody": {
+    "message": "Una valoración ayuda a que otros lo descubran."
+  },
+  "ratePromptRate": {
+    "message": "Valorar"
+  },
+  "ratePromptDismiss": {
+    "message": "Ahora no"
   }
 }

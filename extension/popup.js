@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(state.settings.darkMode);
 
   wireEvents();
-  setupPinHint();
+  setupRatePrompt(setupPinHint());
 
   if (state.settings.autoAnalyze) {
     analyze();
@@ -972,20 +972,88 @@ function updateBadge(renderType, tabId) {
  * whether the user already has. Show the hint once, then never again.
  */
 function setupPinHint() {
-  if (!chrome.action || !chrome.action.getUserSettings) return;
+  if (!chrome.action || !chrome.action.getUserSettings) {
+    return Promise.resolve(false);
+  }
 
-  chrome.storage.local.get(["pinHintDismissed"], (data) => {
-    if (data.pinHintDismissed) return;
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["pinHintDismissed"], (data) => {
+      if (data.pinHintDismissed) {
+        resolve(false);
+        return;
+      }
 
-    chrome.action.getUserSettings((settings) => {
-      if (settings.isOnToolbar) return;
+      chrome.action.getUserSettings((settings) => {
+        if (settings.isOnToolbar) {
+          resolve(false);
+          return;
+        }
 
-      const banner = document.getElementById("pin-banner");
-      banner.hidden = false;
-      document.getElementById("pin-dismiss").addEventListener("click", () => {
-        banner.hidden = true;
-        chrome.storage.local.set({ pinHintDismissed: true });
+        const banner = document.getElementById("pin-banner");
+        banner.hidden = false;
+        document.getElementById("pin-dismiss").addEventListener("click", () => {
+          banner.hidden = true;
+          chrome.storage.local.set({ pinHintDismissed: true });
+        });
+        resolve(true);
       });
     });
+  });
+}
+
+function setupRatePrompt(pinHint) {
+  Promise.resolve(pinHint).then((pinHintVisible) => {
+    chrome.storage.local.get(
+      {
+        installedAt: null,
+        popupOpens: 0,
+        ratePromptShown: 0,
+        ratePromptDone: false,
+      },
+      (data) => {
+        const now = Date.now();
+        const installedAt = Number.isFinite(data.installedAt)
+          ? data.installedAt
+          : now;
+        const popupOpens = (Number.isFinite(data.popupOpens) ? data.popupOpens : 0) + 1;
+        const ratePromptShown = Number.isFinite(data.ratePromptShown)
+          ? data.ratePromptShown
+          : 0;
+        const state = { ...data, installedAt, popupOpens, ratePromptShown };
+        const shouldShow =
+          !pinHintVisible &&
+          window.SSRRatePrompt.shouldShowRatePrompt(state, now);
+        const updates = { installedAt, popupOpens };
+
+        if (shouldShow) updates.ratePromptShown = ratePromptShown + 1;
+
+        chrome.storage.local.set(updates, () => {
+          if (!shouldShow) return;
+
+          const banner = document.getElementById("rate-prompt");
+          banner.hidden = false;
+          document
+            .getElementById("rate-prompt-rate")
+            .addEventListener("click", () => {
+              chrome.storage.local.set({ ratePromptDone: true });
+              banner.hidden = true;
+              const isFirefox = Boolean(
+                chrome.runtime.getManifest().browser_specific_settings?.gecko,
+              );
+              const url = window.SSRRatePrompt.reviewUrlFor({
+                userAgent: navigator.userAgent,
+                isFirefox,
+              });
+              chrome.tabs.create({ url });
+            });
+          document
+            .getElementById("rate-prompt-dismiss")
+            .addEventListener("click", () => {
+              chrome.storage.local.set({ ratePromptDone: true });
+              banner.hidden = true;
+            });
+        });
+      },
+    );
   });
 }

@@ -274,5 +274,20 @@
   },
   "pageChanged": {
     "message": "Die Seite hat während der Analyse navigiert. Bitte erneut ausführen."
+  },
+  "ratePromptLabel": {
+    "message": "CSR vs SSR Detector bewerten"
+  },
+  "ratePromptTitle": {
+    "message": "Gefällt Ihnen CSR vs SSR Detector?"
+  },
+  "ratePromptBody": {
+    "message": "Eine Bewertung hilft anderen, die Erweiterung zu finden."
+  },
+  "ratePromptRate": {
+    "message": "Bewerten"
+  },
+  "ratePromptDismiss": {
+    "message": "Nicht jetzt"
   }
 }
