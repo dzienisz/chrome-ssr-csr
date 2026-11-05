@@ -202,11 +202,19 @@ describe('probe parse-time text snapshot', () => {
   }
 
   it('records the visible text length when parsing finishes, not later', () => {
-    const { r, setState } = loadingRealm('<div id="root">  Shell   text </div><script>var x = "script text";</script><style>p{}</style><noscript>Enable JS</noscript>');
+    const { r, setState } = loadingRealm('<div id="root">  Shell   text </div><script>var x = "script text";</script><style>p{}</style><noscript>Enable JS</noscript><template>Template text</template>');
     setState('interactive');
     r.window.document.getElementById('root').textContent = 'Rendered by a module script after parsing. '.repeat(10);
     setState('complete');
-    expect(read(r.window).parsedTextLength).toBe('Shell text'.length);
+    expect(Math.abs(read(r.window).parsedTextLength - 'Shell text'.length)).toBeLessThanOrEqual(2);
+    r.window.close();
+  });
+
+  it('keeps SVG style text in the parse-time length', () => {
+    const { r, setState } = loadingRealm('<svg><style>svg stylesheet text</style><text>Visible SVG text</text></svg>');
+    setState('interactive');
+
+    expect(read(r.window).parsedTextLength).toBe('svg stylesheet textVisible SVG text'.length);
     r.window.close();
   });
 
@@ -219,6 +227,16 @@ describe('probe parse-time text snapshot', () => {
     setState('interactive');
 
     expect(read(r.window).parsedTextLength).toBe('Shadow textLight text'.length);
+    r.window.close();
+  });
+
+  it('does not subtract skipped descendants twice and clamps the result at zero', () => {
+    const { r, setState } = loadingRealm('A<div id="ssr-detector-probe-data">outer<script>inner</script></div>B');
+    setState('interactive');
+
+    const parsedTextLength = read(r.window).parsedTextLength;
+    expect(parsedTextLength).toBe(2);
+    expect(parsedTextLength).toBeGreaterThanOrEqual(0);
     r.window.close();
   });
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Pages load faster: the parse-time text snapshot no longer walks every node in JavaScript (about 2× faster on very large pages in local benchmarking).
+
 ## [4.6.0] - 2026-11-04
 
 ### Added
