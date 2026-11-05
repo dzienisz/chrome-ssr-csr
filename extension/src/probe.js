@@ -125,6 +125,53 @@
   // Shadow-root text is included. Only the text length and title/URL hashes
   // are kept, never the text, title, or URL.
   const SNAPSHOT_SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1 };
+  const SNAPSHOT_SKIP_SELECTOR = "script,style,noscript,template,#ssr-detector-probe-data";
+  const HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
+  function collapsedLength(value) {
+    return value.replace(/\s+/g, " ").trim().length;
+  }
+  function isSkippedElement(element) {
+    return element.id === "ssr-detector-probe-data"
+      || (element.namespaceURI === HTML_NAMESPACE && SNAPSHOT_SKIP[element.tagName]);
+  }
+  function hasSkippedAncestor(element, body) {
+    let ancestor = element.parentElement;
+    while (ancestor && ancestor !== body) {
+      const skipped = ancestor.closest(SNAPSHOT_SKIP_SELECTOR);
+      if (!skipped) return false;
+      if (isSkippedElement(skipped)) return true;
+      ancestor = skipped.parentElement;
+    }
+    return false;
+  }
+  function measureShadowRootText(root) {
+    const parts = [];
+    const stack = [root];
+    function pushChildren(node) {
+      for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        stack.push(node.childNodes[i]);
+      }
+    }
+
+    while (stack.length) {
+      const node = stack.pop();
+      if (node.nodeType === 3) {
+        parts.push(node.data);
+        continue;
+      }
+
+      if (node.nodeType === 1) {
+        if (isSkippedElement(node)) continue;
+        pushChildren(node);
+        if (node.shadowRoot) pushChildren(node.shadowRoot);
+        continue;
+      }
+
+      if (node.nodeType === 11) pushChildren(node);
+    }
+
+    return collapsedLength(parts.join(""));
+  }
   function fnv1a(value) {
     const normalized = value.replace(/\s+/g, " ").trim();
     if (!normalized) return "";
@@ -140,34 +187,28 @@
     try {
       const body = document.body;
       if (!body) return;
-      const parts = [];
-      const stack = [body];
-      function pushChildren(node) {
-        for (let i = node.childNodes.length - 1; i >= 0; i--) {
-          stack.push(node.childNodes[i]);
-        }
-      }
-
-      while (stack.length) {
-        const node = stack.pop();
-        if (node.nodeType === 3) {
-          parts.push(node.data);
-          continue;
+      const bodySkipped = isSkippedElement(body);
+      let parsedTextLength = bodySkipped ? 0 : collapsedLength(body.textContent || "");
+      if (!bodySkipped) {
+        for (const skipped of body.querySelectorAll(SNAPSHOT_SKIP_SELECTOR)) {
+          if (!isSkippedElement(skipped) || hasSkippedAncestor(skipped, body)) continue;
+          parsedTextLength -= collapsedLength(skipped.textContent || "");
         }
 
-        if (node.nodeType === 1) {
-          if (SNAPSHOT_SKIP[node.tagName] || node.id === "ssr-detector-probe-data") {
-            continue;
+        const hosts = body.getElementsByTagName("*");
+        for (let i = 0; i < hosts.length; i++) {
+          const host = hosts[i];
+          if (
+            host.shadowRoot
+            && !isSkippedElement(host)
+            && !hasSkippedAncestor(host, body)
+          ) {
+            parsedTextLength += measureShadowRootText(host.shadowRoot);
           }
-          pushChildren(node);
-          if (node.shadowRoot) pushChildren(node.shadowRoot);
-          continue;
         }
-
-        if (node.nodeType === 11) pushChildren(node);
       }
 
-      STORE.parsedTextLength = parts.join("").replace(/\s+/g, " ").trim().length;
+      STORE.parsedTextLength = Math.max(0, parsedTextLength);
       const parsedTitleHash = fnv1a(document.title);
       if (parsedTitleHash) STORE.parsedTitleHash = parsedTitleHash;
       const parsedUrlHash = fnv1a(location.href);
