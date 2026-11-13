@@ -410,6 +410,34 @@ async function pageAnalyzer() {
       }
     }
 
+    // Islands architecture means a server-rendered page with interactive
+    // components dropped into it. When the server sent almost none of the
+    // visible text, that premise is false however many island markers the
+    // booted app left in the DOM — a `client:only` island is one element in an
+    // empty shell. Cap the hybrid score below thresholds.strongHybrid so those
+    // markers cannot decide the verdict on their own, ahead of the SSR/CSR
+    // shares.
+    if (comparisonResults?.isLikelyCSR || comparisonResults?.isDecisiveCSR) {
+      const cappedFrom = hybridScore;
+      hybridScore = Math.min(hybridScore, config.scoring.clientHeavyHybridCap);
+      const removed = cappedFrom - hybridScore;
+      if (removed > 0) {
+        indicators.push('raw HTML nearly empty vs rendered - hybrid signals capped (CSR)');
+        // Negative weight on the hybrid side, matching comparison.decisiveCsr:
+        // the branch takes points away from hybrid rather than handing them to
+        // CSR, so the hybrid signals above still total the score the verdict
+        // used.
+        signals.push({
+          id: "comparison.clientHeavyHybridCap",
+          label: "Islands signals capped",
+          impact: "hybrid",
+          weight: -removed,
+          detail:
+            `The served HTML held under 20% of the visible text, so the islands signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${hybridScore} rather than allowed to decide the verdict on a page the server barely sent.`,
+        });
+      }
+    }
+
     if (!comparisonResults) {
       indicators.push('raw HTML comparison unavailable - reduced confidence');
       signals.push({

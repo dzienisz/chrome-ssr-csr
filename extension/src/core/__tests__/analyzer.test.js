@@ -535,6 +535,89 @@ describe('decision metadata', () => {
   });
 });
 
+describe('client-heavy hybrid cap', () => {
+  beforeEach(() => {
+    document.title = 'Example page';
+    document.body.innerHTML = `<p>${'visible text '.repeat(80)}</p>`;
+  });
+
+  // An island-marked page measured at the given rendered-word coverage.
+  function islandPage(wordCoverage, flags) {
+    return {
+      hybrid: {
+        hybridScore: 30,
+        indicators: ['Astro islands architecture (1 islands)'],
+        signals: [
+          {
+            id: 'hybrid.astroIslands',
+            label: 'Astro islands (1)',
+            impact: 'hybrid',
+            weight: 30,
+            detail: 'islands',
+          },
+        ],
+        details: { astroIslands: 1 },
+      },
+      comparison: {
+        source: 'fetch',
+        measure: 'words',
+        rawLength: 400,
+        renderedLength: 3000,
+        contentRatio: wordCoverage,
+        wordCoverage,
+        rawWordCount: Math.round(wordCoverage * 250),
+        renderedWordCount: 250,
+        matchedWordCount: Math.round(wordCoverage * 250),
+        hiddenWordCount: 0,
+        isLikelyCSR: false,
+        isPartialCSR: false,
+        isLikelySSR: false,
+        isDecisiveCSR: false,
+        ...flags,
+      },
+    };
+  }
+
+  it('does not let islands markers decide the verdict when the server sent 12% of the text', async () => {
+    stubDetectors(
+      islandPage(0.12, { isLikelyCSR: true, isDecisiveCSR: true }),
+    );
+
+    const result = await window.pageAnalyzer();
+    const cap = result.signals.find(
+      (signal) => signal.id === 'comparison.clientHeavyHybridCap',
+    );
+
+    expect(result.renderType).toBe('Client-Side Rendered (CSR)');
+    expect(result.decision.rule).toBe('csr');
+    expect(result.decision.score.hybridScore).toBe(20);
+    expect(cap).toMatchObject({ impact: 'hybrid', weight: -10 });
+    expect(result.indicators).toContain(
+      'raw HTML nearly empty vs rendered - hybrid signals capped (CSR)',
+    );
+  });
+
+  it('leaves islands markers deciding the verdict when the server sent 95% of the text', async () => {
+    stubDetectors(islandPage(0.95, { isLikelySSR: true }));
+
+    const result = await window.pageAnalyzer();
+
+    expect(result.renderType).toBe('Hybrid/Islands Architecture');
+    expect(result.decision.rule).toBe('strongHybrid');
+    expect(result.decision.score.hybridScore).toBe(30);
+    expect(
+      result.signals.some(
+        (signal) => signal.id === 'comparison.clientHeavyHybridCap',
+      ),
+    ).toBe(false);
+    expect(
+      result.indicators.some((indicator) =>
+        indicator.includes('hybrid signals capped'),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe('confidence level', () => {
   beforeEach(() => {
     document.title = 'Example page';
@@ -589,19 +672,22 @@ describe('confidence level', () => {
     });
   });
 
-  it('uses low / verdict-contradicts-measurement for a strong-hybrid verdict against CSR coverage', async () => {
+  // The CSR band can no longer carry a strong-hybrid verdict — scoring.clientHeavyHybridCap
+  // cuts the islands markers below thresholds.strongHybrid there (see the
+  // 'client-heavy hybrid cap' suite). The SSR band still can: a page the server
+  // sent in full, with enough islands markers to outweigh its own SSR share.
+  it('uses low / verdict-contradicts-measurement for a strong-hybrid verdict against SSR coverage', async () => {
     stubDetectors({
       hybrid: { hybridScore: 35, indicators: ['islands'], details: {} },
-      comparison: fetchBand(0.15, {
-        isLikelyCSR: true,
-        isDecisiveCSR: true,
+      comparison: fetchBand(0.95, {
+        isLikelySSR: true,
       }),
     });
 
     const result = await window.pageAnalyzer();
 
     expect(result.renderType).toMatch(/Hybrid/);
-    expect(result.decision.measurement.band).toBe('csr');
+    expect(result.decision.measurement.band).toBe('ssr');
     expect(result.confidenceLevel).toBe('low');
     expect(result.confidenceLevelReason).toBe('verdict-contradicts-measurement');
   });
