@@ -45,6 +45,7 @@ const CONFIG = {
     fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
     decisiveCsrSsrCap: 10,     // Max SSR score when raw HTML is near-empty vs rendered
     partialCsrSsrCap: 50,      // Max SSR score under 40% text; with 40 CSR points, SSR share rounds to 56%, below the SSR threshold
+    clientHeavyHybridCap: 20,  // Max hybrid score under 20% text; below thresholds.strongHybrid, so islands markers cannot decide the verdict on a page the server barely sent
     // Modern platform signals (see platform-detector.js)
     speculationRules: 15,      // <script type="speculationrules"> in raw HTML = MPA
     crossDocViewTransition: 15,// @view-transition{navigation:auto} = MPA that animates
@@ -3303,6 +3304,34 @@ async function pageAnalyzer() {
           weight: -removed,
           detail:
             `The served HTML held under 40% of the visible text, so the SSR signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${ssrScore} rather than allowed to outvote that.`,
+        });
+      }
+    }
+
+    // Islands architecture means a server-rendered page with interactive
+    // components dropped into it. When the server sent almost none of the
+    // visible text, that premise is false however many island markers the
+    // booted app left in the DOM — a `client:only` island is one element in an
+    // empty shell. Cap the hybrid score below thresholds.strongHybrid so those
+    // markers cannot decide the verdict on their own, ahead of the SSR/CSR
+    // shares.
+    if (comparisonResults?.isLikelyCSR || comparisonResults?.isDecisiveCSR) {
+      const cappedFrom = hybridScore;
+      hybridScore = Math.min(hybridScore, config.scoring.clientHeavyHybridCap);
+      const removed = cappedFrom - hybridScore;
+      if (removed > 0) {
+        indicators.push('raw HTML nearly empty vs rendered - hybrid signals capped (CSR)');
+        // Negative weight on the hybrid side, matching comparison.decisiveCsr:
+        // the branch takes points away from hybrid rather than handing them to
+        // CSR, so the hybrid signals above still total the score the verdict
+        // used.
+        signals.push({
+          id: "comparison.clientHeavyHybridCap",
+          label: "Islands signals capped",
+          impact: "hybrid",
+          weight: -removed,
+          detail:
+            `The served HTML held under 20% of the visible text, so the islands signals above — read from the post-JavaScript DOM — were cut from ${cappedFrom} to ${hybridScore} rather than allowed to decide the verdict on a page the server barely sent.`,
         });
       }
     }
