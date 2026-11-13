@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A page whose server HTML is an empty shell is no longer called "Hybrid/Islands Architecture" just because the booted app left islands markers behind. Islands architecture means server-rendered markup with interactive components in it; when the served HTML held under 20% of the visible text, those markers are now capped below the strong-hybrid threshold and the SSR/CSR shares decide the verdict (an Astro `client:only` island now reads as CSR).
+
 ## [4.6.1] - 2026-11-05
 
 ### Changed

@@ -37,6 +37,7 @@ const CONFIG = {
     fastDomSlowFcp: 25,        // Fast DOMContentLoaded + slow FCP = CSR
     decisiveCsrSsrCap: 10,     // Max SSR score when raw HTML is near-empty vs rendered
     partialCsrSsrCap: 50,      // Max SSR score under 40% text; with 40 CSR points, SSR share rounds to 56%, below the SSR threshold
+    clientHeavyHybridCap: 20,  // Max hybrid score under 20% text; below thresholds.strongHybrid, so islands markers cannot decide the verdict on a page the server barely sent
     // Modern platform signals (see platform-detector.js)
     speculationRules: 15,      // <script type="speculationrules"> in raw HTML = MPA
     crossDocViewTransition: 15,// @view-transition{navigation:auto} = MPA that animates
