@@ -183,9 +183,13 @@ describe('Cumulative Layout Shift collection', () => {
   });
 
   it('ignores shifts the user caused and does not let them extend a window', async () => {
+    // 900ms is the load-bearing number. The two eligible shifts are 1600ms
+    // apart, so they belong to separate windows — unless the input-caused
+    // shift between them wrongly moved the window's last-shift time, which
+    // would make the gap 700ms and merge them into one window worth 0.1.
     layoutShiftEntries = [
       shift(0, 0.05),
-      { startTime: 500, value: 5, hadRecentInput: true },
+      { startTime: 900, value: 5, hadRecentInput: true },
       shift(1600, 0.05)
     ];
 
