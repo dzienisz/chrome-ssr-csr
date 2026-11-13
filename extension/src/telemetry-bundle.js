@@ -11,6 +11,11 @@ if (typeof window.__SSR_CSR_TELEMETRY_LOADED__ === 'undefined') {
  * Collects Core Web Vitals and performance metrics
  */
 
+// A CLS session window grows while shifts keep arriving within one second of
+// each other, and is capped at five seconds from its first shift.
+const CLS_SESSION_GAP_MS = 1000;
+const CLS_SESSION_MAX_MS = 5000;
+
 /**
  * Get when the page was first hidden, if known.
  */
@@ -85,17 +90,46 @@ function getLargestContentfulPaint() {
 
 /**
  * Get Cumulative Layout Shift (CLS)
+ *
+ * CLS is the largest burst of shifts, not their lifetime sum. A session
+ * window keeps growing while shifts arrive within a second of the previous
+ * one and within five seconds of the window's first, and the score is the
+ * largest window seen. Adding up every shift instead - what this collector
+ * did until v4.6.1 - overstates every long-lived page, and an SPA worst of
+ * all: one that shifts a little on each route change would eventually report
+ * "poor" however stable each individual view felt.
+ * https://web.dev/articles/cls
  * Target: < 0.1 (Good), < 0.25 (Needs Improvement), >= 0.25 (Poor)
  */
 function getCumulativeLayoutShift() {
   return new Promise((resolve) => {
     try {
+      // The largest window seen, and the one still being filled.
       let clsValue = 0;
+      let sessionValue = 0;
+      let sessionFirstShift = 0;
+      let sessionLastShift = 0;
+
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput) {
-            clsValue += entry.value;
+          // A shift the user caused by typing or clicking is not instability
+          // they can be surprised by.
+          if (entry.hadRecentInput) continue;
+
+          const continuesSession =
+            sessionValue > 0 &&
+            entry.startTime - sessionLastShift < CLS_SESSION_GAP_MS &&
+            entry.startTime - sessionFirstShift < CLS_SESSION_MAX_MS;
+
+          if (continuesSession) {
+            sessionValue += entry.value;
+          } else {
+            sessionValue = entry.value;
+            sessionFirstShift = entry.startTime;
           }
+          sessionLastShift = entry.startTime;
+
+          if (sessionValue > clsValue) clsValue = sessionValue;
         }
       });
       observer.observe({ type: 'layout-shift', buffered: true });
