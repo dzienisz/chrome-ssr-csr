@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import performanceSource from '../performance-collector.js?raw';
 
 let lcpEntries;
+let layoutShiftEntries;
 let visibilityEntries;
 let activationStart;
 
@@ -10,8 +11,11 @@ function setPerformanceObserver(supportedEntryTypes) {
     return {
       observe: vi.fn(({ type }) => {
         callback({
-          getEntries: () =>
-            type === 'largest-contentful-paint' ? lcpEntries : []
+          getEntries: () => {
+            if (type === 'largest-contentful-paint') return lcpEntries;
+            if (type === 'layout-shift') return layoutShiftEntries;
+            return [];
+          }
         });
       }),
       disconnect: vi.fn()
@@ -28,9 +32,21 @@ async function collectLcp() {
   return (await result).lcp;
 }
 
+async function collectCls() {
+  const result = window.collectCoreWebVitals();
+  await vi.runAllTimersAsync();
+  return (await result).cls;
+}
+
+/** A layout shift of `value` at `startTime`, uncaused by the user. */
+function shift(startTime, value) {
+  return { startTime, value, hadRecentInput: false };
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   lcpEntries = [];
+  layoutShiftEntries = [];
   visibilityEntries = [];
   activationStart = 0;
   setPerformanceObserver(['largest-contentful-paint', 'visibility-state']);
@@ -134,5 +150,49 @@ describe('Largest Contentful Paint collection', () => {
 
   it('returns null when there are no LCP entries', async () => {
     await expect(collectLcp()).resolves.toBeNull();
+  });
+});
+
+describe('Cumulative Layout Shift collection', () => {
+  it('reports the largest session window rather than the lifetime sum', async () => {
+    // Two bursts, a clear pause apart. The sum would be 0.24; CLS is 0.14.
+    layoutShiftEntries = [
+      shift(0, 0.05),
+      shift(500, 0.05),
+      shift(3000, 0.07),
+      shift(3500, 0.07)
+    ];
+
+    await expect(collectCls()).resolves.toBe(0.14);
+  });
+
+  it('opens a new window when more than a second passes between shifts', async () => {
+    layoutShiftEntries = [shift(0, 0.1), shift(1500, 0.1)];
+
+    await expect(collectCls()).resolves.toBe(0.1);
+  });
+
+  it('closes a window five seconds after its first shift', async () => {
+    // Shifts every 900ms never pause, so only the 5s cap can end the window:
+    // the six up to 4500ms belong to it, the one at 5400ms starts the next.
+    layoutShiftEntries = [0, 900, 1800, 2700, 3600, 4500, 5400].map((startTime) =>
+      shift(startTime, 0.05)
+    );
+
+    await expect(collectCls()).resolves.toBe(0.3);
+  });
+
+  it('ignores shifts the user caused and does not let them extend a window', async () => {
+    layoutShiftEntries = [
+      shift(0, 0.05),
+      { startTime: 500, value: 5, hadRecentInput: true },
+      shift(1600, 0.05)
+    ];
+
+    await expect(collectCls()).resolves.toBe(0.05);
+  });
+
+  it('reports zero for a page that never shifted', async () => {
+    await expect(collectCls()).resolves.toBe(0);
   });
 });

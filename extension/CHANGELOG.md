@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CLS is measured the way Core Web Vitals defines it.** The collector added
+  up every layout shift for the lifetime of the page; the metric is the
+  largest *session window* instead — shifts within 1s of each other and 5s of
+  the window's first. Summing overstated every long-lived page and SPAs worst
+  of all, so CLS values collected before this read higher than CrUX or
+  Lighthouse for the same page, and the gap grew the longer a tab stayed open.
+  Dashboard aggregates mix both definitions until the stats queries learn to
+  split on extension version.
+- **The raw-HTML re-fetch can no longer hang an analysis.** It had no timeout,
+  so a stalled origin left the popup spinning with nothing to cancel it. It
+  now gets a 5s budget (`contentComparison.fetchTimeoutMs`) and falls back to
+  the probe's parse-time snapshot, the path a refused fetch already took. The
+  timer is cleared in a `finally`, so the budget covers reading the body as
+  well as waiting for the response.
+
 ## [4.6.1] - 2026-11-05
 
 ### Changed

@@ -207,11 +207,25 @@ function wordCoverage(rawWords, renderedWords) {
 async function compareInitialVsRendered() {
   const config = window.DETECTOR_CONFIG;
 
+  // A re-fetch that never answers would hang the whole analysis, and neither
+  // the popup nor the DevTools panel offers a way to cancel one: it would
+  // spin until the user gave up and closed it. The probe's parse-time
+  // snapshot is a usable second source for exactly this case, so the network
+  // gets a budget and anything slower falls back to it.
+  const budgetMs = config.contentComparison.fetchTimeoutMs;
+  const controller =
+    typeof AbortController === "function" ? new AbortController() : null;
+  const budget =
+    controller && budgetMs > 0
+      ? setTimeout(() => controller.abort(), budgetMs)
+      : null;
+
   try {
     // Fetch raw HTML (before JS execution)
     const response = await fetch(window.location.href, {
       credentials: "same-origin",
       headers: { Accept: "text/html" },
+      signal: controller ? controller.signal : undefined,
     });
 
     if (!response.ok) {
@@ -319,9 +333,14 @@ async function compareInitialVsRendered() {
       rawHTML,
     };
   } catch (e) {
-    // Fetch failed (CORS, network error, etc.) - fall back to the probe
-    console.debug("CSR/SSR Detector: Raw HTML fetch failed", e.message);
+    // Fetch failed (CORS, network error, timed out) - fall back to the probe
+    const reason = e && e.name === "AbortError" ? "timed out" : "failed";
+    console.debug(`CSR/SSR Detector: Raw HTML fetch ${reason}`, e.message);
     return compareParsedSnapshot();
+  } finally {
+    // Cleared only here, so the budget also covers reading the body: a
+    // stalled response stream is the same hang with a faster first byte.
+    if (budget !== null) clearTimeout(budget);
   }
 }
 
