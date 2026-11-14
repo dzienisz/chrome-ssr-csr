@@ -1,5 +1,6 @@
 const RATE_PROMPT_MIN_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 const RATE_PROMPT_MAX_SHOWS = 3;
+const RATE_PROMPT_MIN_POPUP_OPENS = 10;
 
 const REVIEW_URLS = {
   chrome:
@@ -14,7 +15,7 @@ function shouldShowRatePrompt(state, now = Date.now()) {
     Number.isFinite(state?.installedAt) &&
     Number.isFinite(now) &&
     now - state.installedAt >= RATE_PROMPT_MIN_AGE_MS &&
-    state.popupOpens >= 3 &&
+    state.popupOpens >= RATE_PROMPT_MIN_POPUP_OPENS &&
     !state.ratePromptDone &&
     (state.ratePromptShown || 0) < RATE_PROMPT_MAX_SHOWS
   );
@@ -30,6 +31,7 @@ if (typeof window !== "undefined") {
   window.SSRRatePrompt = {
     RATE_PROMPT_MIN_AGE_MS,
     RATE_PROMPT_MAX_SHOWS,
+    RATE_PROMPT_MIN_POPUP_OPENS,
     shouldShowRatePrompt,
     reviewUrlFor,
   };
