@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import "../rate-prompt.js";
 
-const { RATE_PROMPT_MIN_AGE_MS, shouldShowRatePrompt, reviewUrlFor } =
-  window.SSRRatePrompt;
+const {
+  RATE_PROMPT_MIN_AGE_MS,
+  RATE_PROMPT_MIN_POPUP_OPENS,
+  shouldShowRatePrompt,
+  reviewUrlFor,
+} = window.SSRRatePrompt;
 const now = Date.UTC(2026, 0, 15);
 const eligibleState = {
   installedAt: now - RATE_PROMPT_MIN_AGE_MS,
-  popupOpens: 3,
+  popupOpens: RATE_PROMPT_MIN_POPUP_OPENS,
   ratePromptDone: false,
   ratePromptShown: 0,
 };
@@ -29,8 +33,9 @@ describe("shouldShowRatePrompt", () => {
     expect(shouldShowRatePrompt(eligibleState, now)).toBe(true);
   });
 
-  it("requires three popup opens", () => {
-    expect(shouldShowRatePrompt({ ...eligibleState, popupOpens: 2 }, now)).toBe(
+  it("requires ten popup opens", () => {
+    expect(RATE_PROMPT_MIN_POPUP_OPENS).toBe(10);
+    expect(shouldShowRatePrompt({ ...eligibleState, popupOpens: 9 }, now)).toBe(
       false,
     );
     expect(shouldShowRatePrompt(eligibleState, now)).toBe(true);
