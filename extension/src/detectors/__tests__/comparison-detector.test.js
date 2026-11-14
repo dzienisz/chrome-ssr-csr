@@ -934,3 +934,83 @@ describe("response header capture", () => {
     expect(document.body.innerHTML).not.toContain("session=secret");
   });
 });
+
+describe("raw-HTML fetch budget", () => {
+  function probeLength(parsedTextLength) {
+    document
+      .querySelectorAll("#ssr-detector-probe-data")
+      .forEach((node) => node.remove());
+    const bridge = document.createElement("meta");
+    bridge.id = "ssr-detector-probe-data";
+    bridge.setAttribute(
+      "data-ssr-detector-snapshot",
+      JSON.stringify({ parsedTextLength }),
+    );
+    document.head.appendChild(bridge);
+  }
+
+  /** A fetch that answers only by being aborted, like a stalled origin. */
+  function mockHangingFetch() {
+    global.fetch = vi.fn(
+      (url, options) =>
+        new Promise((resolve, reject) => {
+          options.signal.addEventListener("abort", () => {
+            const error = new Error("The operation was aborted.");
+            error.name = "AbortError";
+            reject(error);
+          });
+        }),
+    );
+  }
+
+  afterEach(() => {
+    document
+      .querySelectorAll("#ssr-detector-probe-data")
+      .forEach((node) => node.remove());
+    vi.useRealTimers();
+  });
+
+  it("falls back to the parse-time snapshot when the fetch outlives its budget", async () => {
+    vi.useFakeTimers();
+    probeLength(12);
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockHangingFetch();
+
+    const pending = window.compareInitialVsRendered();
+    await vi.advanceTimersByTimeAsync(
+      window.DETECTOR_CONFIG.contentComparison.fetchTimeoutMs,
+    );
+    const result = await pending;
+
+    expect(result.source).toBe("parser-snapshot");
+    expect(result.isDecisiveCSR).toBe(true);
+  });
+
+  it("returns null on a timeout with no snapshot to fall back to", async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+    mockHangingFetch();
+
+    const pending = window.compareInitialVsRendered();
+    await vi.advanceTimersByTimeAsync(
+      window.DETECTOR_CONFIG.contentComparison.fetchTimeoutMs,
+    );
+
+    await expect(pending).resolves.toBeNull();
+  });
+
+  it("does not abort a fetch that answered inside the budget", async () => {
+    vi.useFakeTimers();
+    mockFetchedHTML(`<html><body><main>${LONG_TEXT}</main></body></html>`);
+    document.body.innerHTML = `<main>${LONG_TEXT}</main>`;
+
+    const result = await window.compareInitialVsRendered();
+    const { signal } = global.fetch.mock.calls[0][1];
+    // Long past the budget: the timer must already have been cleared, or a
+    // finished analysis would still be aborting its own completed request.
+    await vi.advanceTimersByTimeAsync(60000);
+
+    expect(result.source).toBe("fetch");
+    expect(signal.aborted).toBe(false);
+  });
+});

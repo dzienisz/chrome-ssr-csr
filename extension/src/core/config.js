@@ -96,7 +96,8 @@ const CONFIG = {
     partialRatio: 0.4,      // Raw/rendered ratio below this (and >= csrRatio) = server sent under 40% of visible text: partial/mixed
     decisiveCsrRatio: 0.2,  // Entire CSR band: server sent under 20% (caps SSR signals)
     ssrRatio: 0.7,          // Raw/rendered ratio above this = likely SSR
-    minRenderedLength: 200  // Minimum text (either side) to trust the comparison
+    minRenderedLength: 200, // Minimum text (either side) to trust the comparison
+    fetchTimeoutMs: 5000    // Budget for the raw-HTML re-fetch before falling back to the probe snapshot
   },
 
   qualityGate: {
